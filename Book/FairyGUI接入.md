@@ -18,7 +18,7 @@ FairyGUI XML 工程是 AI UI 流程的唯一版本化事实来源。`D:\Unity\Pr
 | 发布脚本 | `Tools/FairyGUI/Publish-GDKDemo.ps1` |
 | 发布产物 | `Unity/Assets/Res/UI/FairyGUI/` |
 | GDK 适配层 | `Unity/Assets/Scripts/Game/UI/FairyGUI/AFairyUIForm.cs` |
-| FairyGUI 包管理 | `Unity/Assets/Scripts/Game/UI/FairyGUI/FairyPackageManager.cs` |
+| FairyGUI 包管理 | `Unity/Assets/Scripts/Game/UI/FairyGUI/FairyPackageManager.cs`、`FairyPackageCatalog.cs` |
 | GameHot Demo | `Unity/Assets/Scripts/Game/Hot/Code/UI/FairyDemoForm.cs` |
 | UIForm 宿主 | `Unity/Assets/Res/UI/UIForm/Hot/FairyDemoForm.prefab` |
 | 独立演示场景 | `Unity/Assets/FairyGUIDemo.unity` |
@@ -199,9 +199,12 @@ MainView.xml
 
 ### 运行时包管理
 
-`FairyPackageManager` 是 GDK 与 `UIPackage` 之间的唯一运行时边界。窗体打开时通过 `ResourceComponent` 加载
-`<Package>_fui.bytes`，同一包的并发获取共享一次注册；每个 `AFairyUIForm` 持有一个租约，关闭或打开失败时释放租约。
-最后一个租约释放后才会调用 `UIPackage.RemovePackage`，随后卸载描述符和通过 FairyGUI 外部资源回调加载的图集、字体、声音等资源。
+`FairyPackageManager` 是 GDK 与 `UIPackage` 之间的唯一运行时边界。发布成功时，生成的
+`GDKFairyManifest.json` 会与 `<Package>_fui.bytes` 一起同步到 Unity 资源目录；运行时先解析版本化清单、
+按依赖拓扑顺序加载包，再通过 `ResourceComponent` 加载描述符和外部资源。同一包的并发获取共享一次注册，
+每个 `AFairyUIForm` 持有包含依赖的独立租约；关闭、回收或取消时按根包到依赖包的逆序释放。
+最后一个租约释放后才会调用 `UIPackage.RemovePackage`，随后卸载描述符和通过 FairyGUI 外部资源回调加载的
+图集、字体、声音等资源。清单缺失、未知依赖和依赖环在加载前失败，过期异步结果不能复活已释放的包。
 
 `AFairyUIForm` 创建的 `UIPanel` 逻辑归属于对应 GF UIForm，层级保持在 `UI Group/UIForm` 子树中，并由 UIForm 持有和销毁。
 UIForm 与 `UIPanel` 之间的 `FairyGUI Transform Isolation` 节点会抵消 GF Canvas 传递的世界位置、旋转和缩放，避免 FairyGUI 渲染对象离开 Stage Camera 视锥。

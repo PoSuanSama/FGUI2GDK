@@ -133,6 +133,7 @@ $editorRoot = Resolve-FullPath $EditorProjectPath 'Editor FairyGUI project'
 $resolvedOutput = [System.IO.Path]::GetFullPath($OutputPath)
 [System.IO.Directory]::CreateDirectory($resolvedOutput) | Out-Null
 $artifact = Assert-PathInsideRoot $resolvedOutput (Join-Path $resolvedOutput ($PackageName + '_fui.bytes'))
+$runtimeManifest = Assert-PathInsideRoot $resolvedOutput (Join-Path $resolvedOutput 'GDKFairyManifest.json')
 $agent = Resolve-AgentExecutable $AgentExecutable
 $manifestPath = Join-Path $sourceRoot 'generated/GDKFairyManifest.json'
 $syncScript = Join-Path $PSScriptRoot 'Sync-GDKDemoToEditor.ps1'
@@ -180,6 +181,11 @@ try {
     if ($publish.success -ne $true) { throw "fgui-agent publish did not report success for '$PackageName'." }
     $after = Get-ArtifactSnapshot $artifact
     if (-not $after.exists -or $after.size -le 0) { throw "Published artifact is missing or empty: $artifact" }
+    [System.IO.File]::WriteAllBytes($runtimeManifest, [System.IO.File]::ReadAllBytes($manifestPath))
+    $runtimeManifestAfter = Get-ArtifactSnapshot $runtimeManifest
+    if (-not $runtimeManifestAfter.exists -or $runtimeManifestAfter.size -le 0) {
+        throw "Runtime FairyGUI manifest is missing or empty: $runtimeManifest"
+    }
 
     [pscustomobject][ordered]@{
         success = $true
@@ -192,6 +198,7 @@ try {
         cli = [ordered]@{ status = $status; publish = $publishResponse }
         artifactBefore = $before
         artifactAfter = $after
+        runtimeManifest = $runtimeManifestAfter
     } | ConvertTo-Json -Depth 100
 }
 catch { throw $_ }

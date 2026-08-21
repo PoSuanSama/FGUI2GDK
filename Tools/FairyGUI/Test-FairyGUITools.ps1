@@ -445,6 +445,11 @@ exit /b 0
         $publishJson = $publishResult.Output | ConvertFrom-Json
         Assert-True $publishJson.success 'Fake Wilson publish did not return success evidence.'
         Assert-True ($publishJson.artifactAfter.exists -and $publishJson.artifactAfter.size -gt 0) 'Fake Wilson publish artifact evidence is invalid.'
+        Assert-True ($publishJson.runtimeManifest.exists -and $publishJson.runtimeManifest.size -gt 0) 'Runtime manifest evidence is invalid.'
+        $publishedManifest = Join-Path $publishOutput 'GDKFairyManifest.json'
+        Assert-Equal (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $publishRepository 'generated/GDKFairyManifest.json')).Hash `
+            (Get-FileHash -Algorithm SHA256 -LiteralPath $publishedManifest).Hash `
+            'Published runtime manifest does not match the generated source manifest.'
         $loggedArgs = [System.IO.File]::ReadAllText($fakeLog)
         Assert-True $loggedArgs.Contains('publish --scope packages --package Package1 --publish-timeout 10') 'Publish arguments were not exact.'
 

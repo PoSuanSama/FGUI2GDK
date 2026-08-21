@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using FairyGUI;
 using UnityEngine;
@@ -15,6 +16,7 @@ namespace Game
         private UIPanel m_UIPanel;
         private Transform m_TransformIsolation;
         private FairyPackageLease m_PackageLease;
+        private CancellationTokenSource m_LoadCancellation;
         private int m_OpenVersion;
         private bool m_ViewReady;
 
@@ -28,17 +30,40 @@ namespace Game
         {
             base.OnOpen(userData);
 
+            CancelPendingLoad();
+            m_LoadCancellation = new CancellationTokenSource();
             int openVersion = ++m_OpenVersion;
-            LoadFairyViewAsync(openVersion).Forget();
+            LoadFairyViewAsync(openVersion, m_LoadCancellation.Token).Forget();
         }
 
         protected override void OnClose(bool isShutdown, object userData)
         {
             ++m_OpenVersion;
+            CancelPendingLoad();
             ReleaseViewBindings();
             ReleaseFairyPanel();
             ReleaseFairyPackage();
             base.OnClose(isShutdown, userData);
+        }
+
+        protected override void OnRecycle()
+        {
+            ++m_OpenVersion;
+            CancelPendingLoad();
+            ReleaseViewBindings();
+            ReleaseFairyPanel();
+            ReleaseFairyPackage();
+            base.OnRecycle();
+        }
+
+        protected override void OnDestroy()
+        {
+            ++m_OpenVersion;
+            CancelPendingLoad();
+            ReleaseViewBindings();
+            ReleaseFairyPanel();
+            ReleaseFairyPackage();
+            base.OnDestroy();
         }
 
         protected override void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
@@ -61,11 +86,13 @@ namespace Game
         {
         }
 
-        private async UniTask LoadFairyViewAsync(int openVersion)
+        private async UniTask LoadFairyViewAsync(int openVersion, CancellationToken cancellationToken)
         {
             try
             {
-                FairyPackageLease packageLease = await FairyPackageManager.AcquireAsync(fairyPackageName);
+                FairyPackageLease packageLease = await FairyPackageManager.AcquireAsync(
+                    fairyPackageName,
+                    cancellationToken);
 
                 if (openVersion != m_OpenVersion)
                 {
@@ -104,6 +131,15 @@ namespace Game
                 m_ViewReady = true;
                 OnFairyViewReady();
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                if (openVersion == m_OpenVersion)
+                {
+                    ReleaseViewBindings();
+                    ReleaseFairyPanel();
+                    ReleaseFairyPackage();
+                }
+            }
             catch (Exception exception)
             {
                 if (openVersion == m_OpenVersion)
@@ -118,6 +154,19 @@ namespace Game
                         exception);
                 }
             }
+        }
+
+        private void CancelPendingLoad()
+        {
+            CancellationTokenSource cancellation = m_LoadCancellation;
+            m_LoadCancellation = null;
+            if (cancellation == null)
+            {
+                return;
+            }
+
+            cancellation.Cancel();
+            cancellation.Dispose();
         }
 
         private void ApplySortingOrder()

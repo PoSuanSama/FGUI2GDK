@@ -247,4 +247,12 @@ Unity 查询与修改必须使用当前会话运行时发现的 Agent Bridge 命
 - [x] `FairyDemoForm` 通过 GF UIForm 打开，`Package1/MainView` 成功创建并完成按钮计数交互。
 - [x] Unity Agent Bridge 编译为 0 error / 0 warning；Stage Camera、层、材质、可见性和视锥检查通过；GameView 截图显示完整 FairyGUI 页面。
 - [x] FairyGUI 项目 `-Check`、镜像 `Status=Equal`、Trellis context 校验和 GDK 变更守卫通过。
-- [ ] 本轮仅完成包管理与 GF/GameHot 演示纵向切片；依赖包拓扑、取消令牌、统一 GRoot UIGroup 容器、ETUI、启动引导、配套设施和全量页面迁移仍按后续阶段实施。
+- [x] 本轮完成包管理与 GF/GameHot 演示纵向切片；依赖拓扑、取消令牌、诊断快照和逆序释放已覆盖，统一 GRoot UIGroup 容器、ETUI、启动引导、配套设施和全量页面迁移仍按后续阶段实施。
+
+## 2026-08-21 包清单与生命周期门禁
+
+- [x] 运行时使用发布产物 `GDKFairyManifest.json`，由 XML/清单校验器生成并在发布成功后同步到 Unity 资源目录。
+- [x] `FairyPackageCatalog` 校验 schema、重复/未知包、依赖环，并返回依赖优先的确定性加载顺序。
+- [x] `FairyPackageManager` 支持调用方取消、代次失效、并发获取合并、包含依赖的引用计数租约和逆序释放。
+- [x] `AFairyUIForm` 在关闭、回收、销毁和重新打开时取消未完成获取；外部资源回调使用 `DestroyMethod.None` 并在过期结果返回时卸载。
+- [x] 工具链 103 条断言、Unity 编译 `0 error / 0 warning`、生命周期 AgentCallable（拓扑/循环/取消/并发/基线释放）通过。

@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.Threading;
 using AgentBridge;
 using Cysharp.Threading.Tasks;
 using FairyGUI;
+using GameFramework;
 using UnityEditor;
 using UnityEngine;
 using UnityGameFramework.Extension;
@@ -113,6 +116,149 @@ namespace Game.Editor
             {
                 throw new InvalidOperationException(
                     $"FairyGUI refresh click did not update the counter. Actual value: '{checkCountText.text}'.");
+            }
+        }
+
+        [AgentCallable("Validate FairyGUI package manifest topology, cancellation, coalescing, and reverse release.", 60)]
+        public static async UniTask ValidateFairyPackageManagerLifecycle()
+        {
+            if (!UnityGameFramework.Extension.Awaitable.IsValid)
+            {
+                UnityGameFramework.Extension.Awaitable.SubscribeEvent();
+            }
+
+            string validManifest =
+                "{\"schemaVersion\":1,\"packages\":[" +
+                "{\"id\":\"a\",\"name\":\"PackageA\",\"dependencies\":[\"b\"]}," +
+                "{\"id\":\"b\",\"name\":\"PackageB\",\"dependencies\":[]}]" +
+                "}";
+            IReadOnlyList<string> loadOrder = FairyPackageManager.ValidateCatalogAndGetLoadOrder(
+                validManifest,
+                "PackageA");
+            if (loadOrder.Count != 2 || loadOrder[0] != "PackageB" || loadOrder[1] != "PackageA")
+            {
+                throw new InvalidOperationException(
+                    $"FairyGUI dependency order is invalid: {string.Join(", ", loadOrder)}.");
+            }
+
+            string cycleManifest =
+                "{\"schemaVersion\":1,\"packages\":[" +
+                "{\"id\":\"a\",\"name\":\"PackageA\",\"dependencies\":[\"b\"]}," +
+                "{\"id\":\"b\",\"name\":\"PackageB\",\"dependencies\":[\"a\"]}]" +
+                "}";
+            bool cycleRejected = false;
+            try
+            {
+                FairyPackageManager.ValidateCatalogAndGetLoadOrder(cycleManifest, "PackageA");
+            }
+            catch (GameFrameworkException exception) when (exception.Message.Contains("cycle"))
+            {
+                cycleRejected = true;
+            }
+
+            if (!cycleRejected)
+            {
+                throw new InvalidOperationException("FairyGUI dependency cycle was not rejected.");
+            }
+
+            IReadOnlyList<FairyPackageDiagnostic> baselineDiagnostics = FairyPackageManager.GetDiagnostics();
+            int baselineReferenceCount = 0;
+            foreach (FairyPackageDiagnostic diagnostic in baselineDiagnostics)
+            {
+                if (diagnostic.Name == "Package1")
+                {
+                    baselineReferenceCount = diagnostic.ReferenceCount;
+                }
+            }
+
+            using (CancellationTokenSource cancellation = new CancellationTokenSource())
+            {
+                cancellation.Cancel();
+                bool canceled = false;
+                try
+                {
+                    await FairyPackageManager.AcquireAsync("Package1", cancellation.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    canceled = true;
+                }
+
+                IReadOnlyList<FairyPackageDiagnostic> afterCancellation = FairyPackageManager.GetDiagnostics();
+                int afterCancellationReferenceCount = 0;
+                foreach (FairyPackageDiagnostic diagnostic in afterCancellation)
+                {
+                    if (diagnostic.Name == "Package1")
+                    {
+                        afterCancellationReferenceCount = diagnostic.ReferenceCount;
+                    }
+                }
+
+                if (!canceled ||
+                    afterCancellation.Count != baselineDiagnostics.Count ||
+                    afterCancellationReferenceCount != baselineReferenceCount)
+                {
+                    throw new InvalidOperationException(
+                        $"Canceled FairyGUI acquire changed the baseline. " +
+                        $"Expected count/ref {baselineDiagnostics.Count}/{baselineReferenceCount}, " +
+                        $"actual {afterCancellation.Count}/{afterCancellationReferenceCount}.");
+                }
+            }
+
+            FairyPackageLease firstLease = null;
+            FairyPackageLease secondLease = null;
+            try
+            {
+                UniTask<FairyPackageLease> firstTask = FairyPackageManager.AcquireAsync("Package1");
+                UniTask<FairyPackageLease> secondTask = FairyPackageManager.AcquireAsync("Package1");
+                firstLease = await firstTask;
+                secondLease = await secondTask;
+
+                IReadOnlyList<FairyPackageDiagnostic> diagnostics = FairyPackageManager.GetDiagnostics();
+                if (diagnostics.Count != 1 ||
+                    diagnostics[0].Status != FairyPackageStatus.Ready ||
+                    diagnostics[0].ReferenceCount != baselineReferenceCount + 2)
+                {
+                    throw new InvalidOperationException("Concurrent FairyGUI acquire was not coalesced correctly.");
+                }
+
+                firstLease.Dispose();
+                firstLease = null;
+                diagnostics = FairyPackageManager.GetDiagnostics();
+                if (diagnostics.Count != 1 || diagnostics[0].ReferenceCount != baselineReferenceCount + 1)
+                {
+                    throw new InvalidOperationException("FairyGUI lease release changed the shared reference count incorrectly.");
+                }
+            }
+            finally
+            {
+                firstLease?.Dispose();
+                secondLease?.Dispose();
+            }
+
+            for (int i = 0; i < 120 && FairyPackageManager.GetDiagnostics().Count != 0; i++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            IReadOnlyList<FairyPackageDiagnostic> finalDiagnostics = FairyPackageManager.GetDiagnostics();
+            int finalReferenceCount = 0;
+            foreach (FairyPackageDiagnostic diagnostic in finalDiagnostics)
+            {
+                if (diagnostic.Name == "Package1")
+                {
+                    finalReferenceCount = diagnostic.ReferenceCount;
+                }
+            }
+
+            if (finalDiagnostics.Count != baselineDiagnostics.Count ||
+                finalReferenceCount != baselineReferenceCount ||
+                (baselineReferenceCount == 0 && UIPackage.GetByName("Package1") != null))
+            {
+                throw new InvalidOperationException(
+                    $"FairyGUI package state did not return to baseline after release. " +
+                    $"Expected count/ref {baselineDiagnostics.Count}/{baselineReferenceCount}, " +
+                    $"actual {finalDiagnostics.Count}/{finalReferenceCount}.");
             }
         }
 
