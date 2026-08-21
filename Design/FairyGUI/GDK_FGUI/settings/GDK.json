@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "id": "f55a1df4ff6bf82a1c877e5f4d91d8e6"
+  },
+  "packages": [
+    {
+      "id": "oozeu71h",
+      "name": "Package1",
+      "entry": {
+        "id": "7xe70",
+        "name": "MainView.xml",
+        "exported": true,
+        "requiredMembers": [
+          {
+            "name": "checkCountText",
+            "type": "GTextField"
+          },
+          {
+            "name": "refreshButton",
+            "type": "GButton"
+          },
+          {
+            "name": "statusText",
+            "type": "GTextField"
+          }
+        ]
+      }
+    }
+  ]
+}

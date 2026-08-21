@@ -1,0 +1,7 @@
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"将共享接入核心、GameHot 热更新代码、ET ModelView/HotfixView、Loader 和 Editor 工具放在正确的运行时/程序集边界。"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"只替换视图后端，同时保留 GF UI 生命周期和 ET Entity/System 所有权。"}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"用于保证包租约、异步打开取消、事件清理、对象池复用和应用关闭的正确性。"}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"使用生成的 UI ID 和类型化 FairyGUI 绑定；绝不编辑生成输出，也不退回字符串或反射方案。"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"追踪 XML/Luban 输入经过生成、Unity 资源、GameHot/ET 使用方直到运行时验证的完整路径。"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"复用 GF 辅助器、GDK 容器和 ET 模式；避免重复实现 GameHot/ET 包管理器或修改第三方代码。"}
+{"file":".trellis/tasks/08-20-fairygui-gdk-ai-ui-integration/research/current-state-and-risk-inventory.md","reason":"为实施决策提供仓库证据支持的当前 POC 缺陷、迁移清单、服务缺口和风险登记表。"}

@@ -28,7 +28,8 @@
         "Leihuo.UXTools.Editor",
         "CodeBind.Editor",
         "StateController",
-        "LoopScrollRect.Editor"
+        "LoopScrollRect.Editor",
+        "FairyGUI"
     ],
     "includePlatforms": [
         "Editor"

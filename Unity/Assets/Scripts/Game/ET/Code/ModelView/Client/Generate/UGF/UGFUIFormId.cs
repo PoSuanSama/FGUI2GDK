@@ -58,5 +58,10 @@ namespace ET.Client
         /// 关于
         /// </summary>
         public const int AboutForm = 102;
+
+        /// <summary>
+        /// FairyGUI演示
+        /// </summary>
+        public const int FairyDemoForm = 103;
     }
 }

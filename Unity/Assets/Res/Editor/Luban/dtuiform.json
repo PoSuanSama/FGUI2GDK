@@ -88,5 +88,14 @@
     "UIGroupName": "Default",
     "AllowMultiInstance": false,
     "PauseCoveredUIForm": true
+  },
+  {
+    "Id": 103,
+    "CSName": "FairyDemoForm",
+    "Desc": "FairyGUI演示",
+    "AssetName": "Hot/FairyDemoForm",
+    "UIGroupName": "Default",
+    "AllowMultiInstance": false,
+    "PauseCoveredUIForm": true
   }
 ]

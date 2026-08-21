@@ -28,6 +28,7 @@
         "LitMotion.Animation",
         "LoopScrollRect.Runtime",
         "ReplaceComponent.Runtime",
+        "FairyGUI",
         "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],

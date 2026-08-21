@@ -1,0 +1,31 @@
+{
+  "id": "fairygui-gdk-ai-ui-integration",
+  "name": "fairygui-gdk-ai-ui-integration",
+  "title": "FairyGUI 完整接入 GDK 与 AI UI 闭环",
+  "description": "以 FairyGUI 作为唯一游戏 UI 后端，移除 GDK 自有 Player 与 Editor UGUI 流程，保留并重构 GDK/UGF/ET 的 UI 管理能力，建立可复现、可验证的 AI UI 生产闭环。",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "PoSuanSama",
+  "assignee": "PoSuanSama",
+  "createdAt": "2026-08-20",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "08-20-fairygui-cli-publish",
+    "08-20-fairygui-source-generation",
+    "08-21-fairygui-mcp-integration",
+    "08-21-fairygui-psd-asset-reuse"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

@@ -14,7 +14,7 @@ namespace Game.Hot
     public class ProcedureMenu : ProcedureBase
     {
         private bool m_StartGame = false;
-        private MenuForm m_MenuForm = null;
+        private FairyDemoForm m_FairyDemoForm = null;
 
         public void StartGame()
         {
@@ -28,7 +28,7 @@ namespace Game.Hot
             GameEntry.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnOpenUIFormSuccess);
 
             m_StartGame = false;
-            GameEntry.UI.OpenUIForm(UIFormId.MenuForm, this);
+            GameEntry.UI.OpenUIForm(UIFormId.FairyDemoForm, this);
         }
 
         protected override void OnLeave(IFsm<ProcedureComponent> procedureOwner, bool isShutdown)
@@ -37,10 +37,10 @@ namespace Game.Hot
             {
                 GameEntry.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnOpenUIFormSuccess);
 
-                if (m_MenuForm != null)
+                if (m_FairyDemoForm != null)
                 {
-                    m_MenuForm.Close();
-                    m_MenuForm = null;
+                    m_FairyDemoForm.Close();
+                    m_FairyDemoForm = null;
                 }
             }
 
@@ -67,7 +67,7 @@ namespace Game.Hot
                 return;
             }
 
-            m_MenuForm = (MenuForm)ne.UIForm.Logic;
+            m_FairyDemoForm = (FairyDemoForm)ne.UIForm.Logic;
         }
     }
 }

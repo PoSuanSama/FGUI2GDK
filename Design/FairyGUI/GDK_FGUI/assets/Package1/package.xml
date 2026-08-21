@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="oozeu71h">
+  <resources>
+    <component id="7xe70" name="MainView.xml" path="/" exported="true"/>
+    <component id="btn01" name="RefreshButton.xml" path="/"/>
+  </resources>
+  <publish name="Package1"/>
+</packageDescription>

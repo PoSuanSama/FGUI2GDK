@@ -1,0 +1,31 @@
+{
+  "atlasSetting": {
+    "allowRotation": false,
+    "forceSquare": false,
+    "paging": true,
+    "sizeOption": "pot",
+    "trimImage": true
+  },
+  "binaryFormat": true,
+  "branchPath": "",
+  "codeGeneration": {
+    "allowGenCode": true,
+    "classNamePrefix": "UI_",
+    "codePath": "../../../Unity/Assets/Scripts/Game/Hot/Code/Generate/FairyGUI",
+    "codeType": "",
+    "getMemberByName": true,
+    "ignoreNoname": true,
+    "memberNamePrefix": "m_",
+    "packageName": "Game.Hot.FairyGUI"
+  },
+  "compressPNG": true,
+  "compressDesc": true,
+  "include2x": false,
+  "include3x": false,
+  "include4x": false,
+  "includeHighResolution": 0,
+  "jpegQuality": 80,
+  "packageCount": 1,
+  "path": "../../../Unity/Assets/Res/UI/FairyGUI",
+  "seperatedAtlasForBranch": false
+}

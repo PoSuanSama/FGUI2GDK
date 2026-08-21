@@ -1,0 +1,386 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "id": "f55a1df4ff6bf82a1c877e5f4d91d8e6",
+    "type": "Unity",
+    "version": "5.0"
+  },
+  "sourceHash": "6905f07d0d2b85204e1eb0aa4800f54c49c3a4d7fa74d8b54f3c534bdc8313f2",
+  "contractHash": "ba6794173335c8b7164aa1dbf97511f400730b0110816fc5e0cad5e6deb17fa1",
+  "packages": [
+    {
+      "id": "oozeu71h",
+      "name": "Package1",
+      "file": "assets/Package1/package.xml",
+      "hash": "60bedeed78ed8476dbaad4b59b3680c94a9bd0ce9485bdcea7529a5db5784f76",
+      "dependencies": [],
+      "resources": [
+        {
+          "type": "component",
+          "id": "7xe70",
+          "name": "MainView.xml",
+          "path": "/",
+          "exported": true,
+          "file": "assets/Package1/MainView.xml",
+          "hash": "52332ff82d99e7a9acf0e2ab0c058b5bc27265bd3d67752aaa75a746953ad919",
+          "members": [
+            {
+              "id": "accent",
+              "name": "accent",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "arrow1",
+              "name": "arrow1",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "arrow2",
+              "name": "arrow2",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "arrow3",
+              "name": "arrow3",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "bg",
+              "name": "background",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "checkcount",
+              "name": "checkCountText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "checklabel",
+              "name": "checkLabel",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "checkunit",
+              "name": "checkUnit",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "flowband",
+              "name": "flowBand",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "flowtitle",
+              "name": "flowTitle",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "footer",
+              "name": "footer",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "metricline",
+              "name": "metricLine",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "metricspanel",
+              "name": "metricsPanel",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "packagekey",
+              "name": "packageKey",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "packagevalue",
+              "name": "packageValue",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "refresh",
+              "name": "refreshButton",
+              "type": "GButton",
+              "src": "btn01",
+              "pkg": ""
+            },
+            {
+              "id": "section1",
+              "name": "sectionTitle",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "section2",
+              "name": "metricsTitle",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "status",
+              "name": "statusText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "statusdetail",
+              "name": "statusDetail",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "statusdot",
+              "name": "statusDot",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "statuslabel",
+              "name": "statusLabel",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "statusline",
+              "name": "statusLine",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "statuspanel",
+              "name": "statusPanel",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step1",
+              "name": "step1",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step1d",
+              "name": "step1Detail",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step1n",
+              "name": "step1Number",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step1t",
+              "name": "step1Title",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step2",
+              "name": "step2",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step2d",
+              "name": "step2Detail",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step2n",
+              "name": "step2Number",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step2t",
+              "name": "step2Title",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step3",
+              "name": "step3",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step3d",
+              "name": "step3Detail",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step3n",
+              "name": "step3Number",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step3t",
+              "name": "step3Title",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step4",
+              "name": "step4",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step4d",
+              "name": "step4Detail",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step4n",
+              "name": "step4Number",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "step4t",
+              "name": "step4Title",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "subtitle",
+              "name": "subtitle",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "title",
+              "name": "title",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "topbar",
+              "name": "topbar",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "viewkey",
+              "name": "viewKey",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "viewvalue",
+              "name": "viewValue",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            }
+          ]
+        },
+        {
+          "type": "component",
+          "id": "btn01",
+          "name": "RefreshButton.xml",
+          "path": "/",
+          "exported": false,
+          "file": "assets/Package1/RefreshButton.xml",
+          "hash": "cff1c8e918db078e340c4ee89e2791368d94610448c705b827b16d1b5bdf36f0",
+          "members": [
+            {
+              "id": "btnbg0",
+              "name": "up",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "btnbg1",
+              "name": "over",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "btnbg2",
+              "name": "down",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "btntitle",
+              "name": "title",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

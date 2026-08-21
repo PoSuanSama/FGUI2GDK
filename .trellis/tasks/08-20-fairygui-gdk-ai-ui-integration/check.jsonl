@@ -1,0 +1,5 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"要求提供 Unity 导入、编译和日志证据，以及代表性 UI 截图/交互、资源检查和仓库守卫。"}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"审查初始化/清理对称性、异步等待后的取消、重复生命周期、对象池复用和应用关闭。"}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"审查生成源码归属、asmdef 边界、类型化 ID/绑定，并确认没有字符串或反射捷径。"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"验证 Luban、FairyGUI、GF、GameHot 与 ET 之间的事实来源、生成物、资源、运行时数据流和失败契约。"}
+{"file":".trellis/tasks/08-20-fairygui-gdk-ai-ui-integration/research/current-state-and-risk-inventory.md","reason":"检查实施是否解决每项已确认的 POC、资源、启动引导、本地化、声音、无障碍和迁移风险。"}

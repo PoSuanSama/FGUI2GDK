@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="1280,720">
+  <displayList>
+    <graph id="bg" name="background" xy="0,0" size="1280,720" touchable="false" type="rect" lineSize="0" fillColor="#ff090f18">
+      <relation target="" sidePair="width-width,height-height"/>
+    </graph>
+    <graph id="topbar" name="topbar" xy="0,0" size="1280,92" touchable="false" type="rect" lineSize="0" fillColor="#ff111c2b">
+      <relation target="" sidePair="width-width"/>
+    </graph>
+    <graph id="accent" name="accent" xy="48,28" size="4,36" touchable="false" type="rect" lineSize="0" fillColor="#ff22d3ee"/>
+    <text id="title" name="title" xy="68,25" size="470,30" fontSize="24" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="GDK UI 自动化流程"/>
+    <text id="subtitle" name="subtitle" xy="68,56" size="520,20" fontSize="12" color="#94a3b8" autoSize="none" singleLine="true" text="FAIRYGUI XML  /  GDK 资源组件  /  UGF 生命周期"/>
+    <component id="refresh" name="refreshButton" src="btn01" fileName="RefreshButton.xml" xy="1036,22" size="196,48"/>
+    <text id="section1" name="sectionTitle" xy="48,122" size="420,24" fontSize="13" color="#67e8f9" autoSize="none" bold="true" singleLine="true" text="实时接入状态"/>
+    <graph id="statuspanel" name="statusPanel" xy="48,156" size="788,218" touchable="false" type="rect" lineColor="#ff243447" fillColor="#ff101a27"/>
+    <graph id="statusdot" name="statusDot" xy="80,188" size="14,14" touchable="false" type="eclipse" lineSize="0" fillColor="#ff34d399"/>
+    <text id="statuslabel" name="statusLabel" xy="110,182" size="210,24" fontSize="12" color="#94a3b8" vAlign="middle" autoSize="none" singleLine="true" text="运行时连接"/>
+    <text id="status" name="statusText" xy="80,224" size="700,40" fontSize="27" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="FairyGUI 资源包已就绪_发布测试112200"/>
+    <text id="statusdetail" name="statusDetail" xy="80,278" size="700,46" fontSize="14" color="#94a3b8" leading="6" autoSize="none" text="Package1_fui.bytes 已通过 GDK 资源组件加载。&#xA;当前界面由 UGF 界面窗体托管，并保持完整的层级生命周期。"/>
+    <graph id="statusline" name="statusLine" xy="80,342" size="724,2" touchable="false" type="rect" lineSize="0" fillColor="#ff22d3ee"/>
+    <text id="section2" name="metricsTitle" xy="872,122" size="280,24" fontSize="13" color="#fbbf24" autoSize="none" bold="true" singleLine="true" text="流程信号"/>
+    <graph id="metricspanel" name="metricsPanel" xy="872,156" size="360,218" touchable="false" type="rect" lineColor="#ff3f3a24" fillColor="#ff171a20"/>
+    <text id="checklabel" name="checkLabel" xy="904,184" size="190,20" fontSize="12" color="#94a3b8" autoSize="none" singleLine="true" text="交互检查"/>
+    <text id="checkcount" name="checkCountText" xy="904,212" size="200,56" fontSize="42" color="#fbbf24" autoSize="none" bold="true" singleLine="true" text="0"/>
+    <text id="checkunit" name="checkUnit" xy="974,239" size="150,22" fontSize="13" color="#94a3b8" autoSize="none" singleLine="true" text="次刷新"/>
+    <graph id="metricline" name="metricLine" xy="904,282" size="296,1" touchable="false" type="rect" lineSize="0" fillColor="#ff3f4652"/>
+    <text id="packagekey" name="packageKey" xy="904,304" size="130,20" fontSize="12" color="#94a3b8" autoSize="none" singleLine="true" text="资源包"/>
+    <text id="packagevalue" name="packageValue" xy="1054,304" size="146,20" fontSize="13" color="#f8fafc" align="right" autoSize="none" bold="true" singleLine="true" text="Package1"/>
+    <text id="viewkey" name="viewKey" xy="904,334" size="130,20" fontSize="12" color="#94a3b8" autoSize="none" singleLine="true" text="视图"/>
+    <text id="viewvalue" name="viewValue" xy="1054,334" size="146,20" fontSize="13" color="#f8fafc" align="right" autoSize="none" bold="true" singleLine="true" text="MainView"/>
+    <text id="flowtitle" name="flowTitle" xy="48,414" size="360,24" fontSize="13" color="#34d399" autoSize="none" bold="true" singleLine="true" text="自动化交接流程"/>
+    <graph id="flowband" name="flowBand" xy="34,448" size="1184,180" touchable="false" type="rect" lineColor="#ff243447" fillColor="#ff0d1622"/>
+    <graph id="step1" name="step1" xy="80,480" size="48,48" touchable="false" type="eclipse" lineColor="#ff22d3ee" fillColor="#ff083344"/>
+    <text id="step1n" name="step1Number" xy="80,480" size="48,48" fontSize="18" color="#67e8f9" align="center" vAlign="middle" autoSize="none" bold="true" singleLine="true" text="01"/>
+    <text id="step1t" name="step1Title" xy="80,544" size="210,24" fontSize="16" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="AI 编辑 XML"/>
+    <text id="step1d" name="step1Detail" xy="80,574" size="220,20" fontSize="12" color="#94a3b8" autoSize="none" singleLine="true" text="稳定 ID 与命名节点"/>
+    <graph id="step2" name="step2" xy="402,480" size="48,48" touchable="false" type="eclipse" lineColor="#ff34d399" fillColor="#ff064e3b"/>
+    <text id="step2n" name="step2Number" xy="402,480" size="48,48" fontSize="18" color="#6ee7b7" align="center" vAlign="middle" autoSize="none" bold="true" singleLine="true" text="02"/>
+    <text id="step2t" name="step2Title" xy="402,544" size="210,24" fontSize="16" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="批量发布测试测试110021"/>
+    <text id="step2d" name="step2Detail" xy="402,574" size="220,20" fontSize="12" color="#94a3b8" autoSize="none" singleLine="true" text="FairyGUI 编辑器发布"/>
+    <graph id="arrow1" name="arrow1" xy="141,503" size="250,2" touchable="false" type="rect" lineSize="0" fillColor="#ff475569"/>
+    <graph id="arrow2" name="arrow2" xy="462,503" size="250,2" touchable="false" type="rect" lineSize="0" fillColor="#ff475569"/>
+    <graph id="arrow3" name="arrow3" xy="783,503" size="250,2" touchable="false" type="rect" lineSize="0" fillColor="#ff475569"/>
+    <graph id="step3" name="step3" xy="724,480" size="48,48" touchable="false" type="eclipse" lineColor="#fffbbf24" fillColor="#ff4a3708"/>
+    <text id="step3n" name="step3Number" xy="724,480" size="48,48" fontSize="18" color="#fde68a" align="center" vAlign="middle" autoSize="none" bold="true" singleLine="true" text="03"/>
+    <text id="step3t" name="step3Title" xy="724,544" size="210,24" fontSize="16" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="GDK 加载资源包"/>
+    <text id="step3d" name="step3Detail" xy="724,574" size="220,20" fontSize="12" color="#94a3b8" autoSize="none" singleLine="true" text="资源组件统一持有"/>
+    <graph id="step4" name="step4" xy="1046,480" size="48,48" touchable="false" type="eclipse" lineColor="#fffb7185" fillColor="#ff4c0519"/>
+    <text id="step4n" name="step4Number" xy="1046,480" size="48,48" fontSize="18" color="#fda4af" align="center" vAlign="middle" autoSize="none" bold="true" singleLine="true" text="04"/>
+    <text id="step4t" name="step4Title" xy="1046,544" size="160,24" fontSize="16" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="UGF 打开界面"/>
+    <text id="step4d" name="step4Detail" xy="1046,574" size="160,20" fontSize="12" color="#94a3b8" autoSize="none" singleLine="true" text="保留界面生命周期"/>
+    <text id="footer" name="footer" xy="48,664" size="1184,20" fontSize="11" color="#64748b" align="center" autoSize="none" singleLine="true" text="源文件：Design/FairyGUI/GDK_FGUI   |   发布目录：Assets/Res/UI/FairyGUI"/>
+  </displayList>
+</component>

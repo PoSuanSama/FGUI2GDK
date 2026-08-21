@@ -11,6 +11,7 @@
         "CodeBind",
         "UniTask",
         "Game.Hot.Loader",
+        "FairyGUI",
         "Coffee.UIEffect",
         "Coffee.UIParticle",
         "Coffee.SoftMaskForUGUI",
