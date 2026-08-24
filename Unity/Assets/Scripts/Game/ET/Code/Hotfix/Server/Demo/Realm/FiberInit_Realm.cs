@@ -15,7 +15,8 @@ namespace ET.Server
             root.AddComponent<ProcessInnerSender>();
             root.AddComponent<MessageSender>();
             var startSceneConfig = Tables.Instance.DTStartSceneConfig.Get(Options.Instance.StartConfig, root.Fiber.Id);
-            root.AddComponent<NetComponent, IPEndPoint, NetworkProtocol>(startSceneConfig.InnerIPPort, NetworkProtocol.UDP);
+            IPEndPoint bindAddress = new(IPAddress.Any, startSceneConfig.InnerIPPort.Port);
+            root.AddComponent<NetComponent, IPEndPoint, NetworkProtocol>(bindAddress, NetworkProtocol.UDP);
 
             await UniTask.CompletedTask;
         }

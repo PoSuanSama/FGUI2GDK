@@ -17,7 +17,14 @@ namespace ET.Server
 
             // 启动本机所有非Agent和非Admin的进程
             var agentProcess = root.AddComponent<AgentProcessComponent>();
-            StartServerProcesses(agentProcess);
+            if (AgentProcessManagementOptions.Enabled)
+            {
+                StartServerProcesses(agentProcess);
+            }
+            else
+            {
+                Log.Info("Agent process management is disabled; server processes are managed externally");
+            }
 
             // 添加心跳组件，定期向 Admin 发送状态上报
             root.AddComponent<AgentHeartbeatComponent>();

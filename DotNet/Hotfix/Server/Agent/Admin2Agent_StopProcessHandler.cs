@@ -8,6 +8,13 @@ namespace ET.Server
     {
         protected override async UniTask Run(Scene scene, Admin2Agent_StopProcessRequest request, Admin2Agent_StopProcessResponse response)
         {
+            if (!AgentProcessManagementOptions.Enabled)
+            {
+                response.Error = 1;
+                response.Message = "Process management is disabled; server processes are managed externally";
+                return;
+            }
+
             var agentProcess = scene.GetComponent<AgentProcessComponent>();
             if (agentProcess == null)
             {

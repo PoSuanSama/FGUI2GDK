@@ -1,0 +1,4 @@
+{"file":".trellis/spec/tools/index.md","reason":"工具质量门禁与聚焦验证要求。"}
+{"file":".trellis/spec/tools/fairygui-cli-publish.md","reason":"确保事实来源工具不会破坏受许可证约束的 CLI 发布契约。"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"验证事实来源、生成数据、本地 Editor 副本和运行时输出始终正确分离。"}
+{"file":".trellis/tasks/08-20-fairygui-gdk-ai-ui-integration/research/current-state-and-risk-inventory.md","reason":"对照已知的事实来源漂移与绑定生成风险进行评审。"}

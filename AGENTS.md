@@ -2,6 +2,21 @@
 
 This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
+<!-- TRELLIS:START -->
+# Trellis Instructions
+
+This project is managed by Trellis. The working knowledge for AI-assisted development lives under `.trellis/`:
+
+- `.trellis/workflow.md` - development phases, task creation, and skill routing
+- `.trellis/spec/` - package- and layer-scoped coding guidelines
+- `.trellis/workspace/` - per-developer journals and session traces
+- `.trellis/tasks/` - active and archived PRDs, research, and context
+
+Prefer an available Trellis command or skill over manually reproducing its workflow. Codex helpers live in `.agents/skills/` and `.codex/agents/`.
+
+Managed by Trellis. Edits outside this block are preserved; edits inside may be overwritten by `trellis update`.
+<!-- TRELLIS:END -->
+
 ## Project Overview
 
 GameDevelopmentKit is a dual-end (client/server) game development framework for Unity. It combines:
@@ -10,6 +25,12 @@ GameDevelopmentKit is a dual-end (client/server) game development framework for 
 - **Hot Reload**: HybridCLR
 - **Async**: UniTask (replaces ETTask)
 - **Configuration**: Luban
+
+## 强制执行 GDK 开发工作流
+
+在本仓库进行实现、调试、审查、验证、Unity 资源/配置操作或 Git 交付时，必须加载并遵循 `.agents/skills/gdk-development-workflow/SKILL.md` 中的 `$gdk-development-workflow`。不作工程判断的简单只读说明可以跳过。
+
+交接前，必须运行该 Skill 的变更守卫，以及针对受影响变更面选择的验证。绝不将生成文件作为事实来源直接编辑，绝不拆分 Unity 资源及其 `.meta`，绝不声称 .NET 构建可以证明 Unity 编译或运行时行为正确。
 
 ## Build Commands
 
@@ -371,11 +392,3 @@ Detailed documentation is in the `Book/` directory (in Chinese):
 
 先寻找 `Assets/` 与已存在 `.agentbridge/` 同级的 Unity 工程；Bridge root 直接使用固定的 `request.json`、`processing.json`、`response.json` 槽位，空闲时这些文件可以不存在。目录存在只表示桥接配置过，不保证宿主当前已启用。找不到 Bridge root 时停止并报告 Unity 没有安装或运行 AgentBridge，不得自行创建目录。实际 command、params schema 和 batch policy 只从运行时 `list_commands` 获取，不得使用硬编码清单。
 <!-- END UNITY_AGENT_BRIDGE -->
-
-
-
-
-
-
-
-

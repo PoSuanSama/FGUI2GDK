@@ -77,7 +77,9 @@ namespace ET
             builder.Services.AddSingleton<AdminActorService>();
             builder.Services.AddSingleton<AgentActorService>();
             builder.Services.AddSingleton<AdminDatabase>();
+            builder.Services.AddSingleton<ConfigService>();
             builder.Services.AddSingleton<LogService>();
+            builder.Services.AddHostedService<PeriodicLogTestService>();
             // Authentication state belongs to one Blazor circuit. A singleton would leak a
             // logged-in user to every connected browser session.
             builder.Services.AddScoped<AuthService>();
@@ -87,7 +89,6 @@ namespace ET
             builder.Services.AddHostedService<ServerMonitorBackgroundService>();
             builder.Services.AddSingleton<VersionService>();
             builder.Services.AddSingleton<PlayerService>();
-            builder.Services.AddSingleton<ConfigService>();
             builder.Services.AddSingleton<HotReloadService>();
             builder.Services.AddScoped<AuthenticationStateProvider, AdminAuthStateProvider>();
             builder.Services.AddControllers()

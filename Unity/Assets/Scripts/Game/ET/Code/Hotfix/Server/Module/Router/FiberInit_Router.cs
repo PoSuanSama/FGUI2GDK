@@ -11,8 +11,9 @@ namespace ET.Server
             Scene root = fiberInit.Fiber.Root;
             var startSceneConfig = Tables.Instance.DTStartSceneConfig.Get(Options.Instance.StartConfig, (int)root.Id);
             
-            // 开发期间使用OuterIPPort，云服务器因为本机没有OuterIP，所以要改成InnerIPPort，然后在云防火墙中端口映射到InnerIPPort
-            root.AddComponent<RouterComponent, IPEndPoint, string>(startSceneConfig.OuterIPPort, startSceneConfig.StartProcessConfig.InnerIP);
+            // 外部地址用于公告给客户端，监听地址必须覆盖容器网卡，不能绑定到容器回环地址。
+            IPEndPoint bindAddress = new(IPAddress.Any, startSceneConfig.OuterIPPort.Port);
+            root.AddComponent<RouterComponent, IPEndPoint, string>(bindAddress, startSceneConfig.StartProcessConfig.InnerIP);
             Log.Console($"Router create: {root.Fiber.Id}");
             await UniTask.CompletedTask;
         }

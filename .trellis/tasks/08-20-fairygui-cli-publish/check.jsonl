@@ -1,0 +1,2 @@
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"评审这个单用途 FairyGUI 适配器是否存在不必要的抽象或重复辅助逻辑。"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"评审从 PowerShell 包装器经过 Editor 插件到发布输出的请求/结果流。"}

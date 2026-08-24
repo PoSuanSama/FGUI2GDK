@@ -240,6 +240,12 @@
 
     private void SaveConfig(ConfigService.ConfigEntry config)
     {
+        if (!ConfigService.TryValidateConfigValue(config.Key, _editingValue, out string error))
+        {
+            Snackbar.Add(error, Severity.Error);
+            return;
+        }
+
         ConfigService.SetConfig(config.Key, _editingValue, config.Type, config.Description, CurrentUser);
         _editingKey = null;
         Snackbar.Add($"配置 {config.Key} 已更新", Severity.Success);
@@ -312,6 +318,11 @@
         if (string.IsNullOrWhiteSpace(_newConfigKey))
         {
             Snackbar.Add("请填写配置键", Severity.Warning);
+            return;
+        }
+        if (!ConfigService.TryValidateConfigValue(_newConfigKey, _newConfigValue, out string error))
+        {
+            Snackbar.Add(error, Severity.Error);
             return;
         }
         ConfigService.SetConfig(_newConfigKey, _newConfigValue, _newConfigType, _newConfigDesc, CurrentUser);

@@ -1,0 +1,4 @@
+{"file":".trellis/spec/tools/index.md","reason":"GDK tooling ownership and process safety"}
+{"file":".trellis/spec/tools/fairygui-source-generation.md","reason":"source/editor sync, lint and manifest gates"}
+{"file":".trellis/spec/tools/fairygui-cli-publish.md","reason":"publish adapter contract to revise"}
+{"file":".trellis/tasks/08-21-fairygui-mcp-integration/research/wilson-agent-bridge-consumption.md","reason":"verified external CLI and plugin contract"}

@@ -4,6 +4,9 @@ namespace ET
 {
     public class ConfigService
     {
+        public const string LogTestIntervalSecondsKey = "LogTestIntervalSeconds";
+        public const int MaxLogTestIntervalSeconds = 3600;
+
         private readonly ILiteCollection<ConfigEntry> _configs;
         private readonly ILiteCollection<Announcement> _announcements;
 
@@ -25,6 +28,11 @@ namespace ET
             if (GetConfig("MaintenanceMessage") == null)
             {
                 SetConfig("MaintenanceMessage", "服务器维护中，请稍后再试...", "string", "维护公告内容", "system");
+            }
+
+            if (GetConfig(LogTestIntervalSecondsKey) == null)
+            {
+                SetConfig(LogTestIntervalSecondsKey, "0", "int", "测试日志间隔（秒，0为关闭）", "system");
             }
         }
 
@@ -65,6 +73,21 @@ namespace ET
             }
         }
 
+        public bool TryValidateConfigValue(string key, string value, out string error)
+        {
+            if (key == LogTestIntervalSecondsKey
+                && (!int.TryParse(value, out int intervalSeconds)
+                    || intervalSeconds < 0
+                    || intervalSeconds > MaxLogTestIntervalSeconds))
+            {
+                error = $"测试日志间隔必须是 0-{MaxLogTestIntervalSeconds} 之间的整数";
+                return false;
+            }
+
+            error = "";
+            return true;
+        }
+
         // Announcements
         public List<Announcement> GetAllAnnouncements()
         {
@@ -98,6 +121,19 @@ namespace ET
         {
             get => GetConfig("MaintenanceMessage").Value;
             set => SetConfig("MaintenanceMessage", value, "string", "维护公告内容", "system");
+        }
+
+        public int LogTestIntervalSeconds
+        {
+            get
+            {
+                var config = GetConfig(LogTestIntervalSecondsKey);
+                return int.TryParse(config?.Value, out int intervalSeconds)
+                    && intervalSeconds >= 0
+                    && intervalSeconds <= MaxLogTestIntervalSeconds
+                        ? intervalSeconds
+                        : 0;
+            }
         }
 
         public class ConfigEntry

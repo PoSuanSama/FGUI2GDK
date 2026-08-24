@@ -1,0 +1,145 @@
+name: gdk
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: gdk-mongodb
+    restart: unless-stopped
+    command: ["mongod", "--bind_ip_all"]
+    ports:
+      - "5200:5200/tcp"
+      - "30002-30004:30002-30004/tcp"
+      - "30002-30004:30002-30004/udp"
+      - "30300-30304:30300-30304/tcp"
+      - "30300-30304:30300-30304/udp"
+    volumes:
+      - "${GDK_DOCKER_DATA_ROOT:-D:/Docker/main/data}/gdk-mongodb:/data/db"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  log-retention:
+    image: mcr.microsoft.com/dotnet/aspnet:8.0
+    container_name: gdk-log-retention
+    restart: unless-stopped
+    init: true
+    environment:
+      GDK_LOG_MAX_SIZE_MB: "${GDK_LOG_MAX_SIZE_MB:-5120}"
+      GDK_LOG_TARGET_SIZE_MB: "${GDK_LOG_TARGET_SIZE_MB:-4096}"
+      GDK_LOG_CHECK_INTERVAL_SECONDS: "${GDK_LOG_CHECK_INTERVAL_SECONDS:-60}"
+    command: ["bash", "/gdk/Tools/log-retention.sh"]
+    volumes:
+      - ./log-retention.sh:/gdk/Tools/log-retention.sh:ro
+      - "${GDK_DOCKER_DATA_ROOT:-D:/Docker/main/data}/gdk-logs:/gdk/Logs"
+
+  server:
+    image: mcr.microsoft.com/dotnet/aspnet:8.0
+    container_name: gdk-server
+    restart: unless-stopped
+    init: true
+    network_mode: "service:mongodb"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    working_dir: /gdk/Bin
+    command:
+      - dotnet
+      - App.dll
+      - --AppType=Server
+      - --Process=1
+      - --StartConfig=Localhost
+      - --Console=1
+    volumes:
+      - ../../Publish/Server:/gdk/Bin
+      - ../../Config:/gdk/Config:ro
+      - "${GDK_DOCKER_DATA_ROOT:-D:/Docker/main/data}/gdk-logs:/gdk/Logs"
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          found=0; for proc in /proc/[0-9]*; do
+          if [ "$(cat "$$proc/comm" 2>/dev/null)" = dotnet ] &&
+          tr '\0' ' ' < "$$proc/cmdline" 2>/dev/null | grep -q -- '--AppType=Server';
+          then found=1; break; fi; done;
+          [ "$$found" -eq 1 ] && exec 3<>/dev/tcp/127.0.0.1/30300
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    stop_grace_period: 30s
+
+  admin:
+    image: mcr.microsoft.com/dotnet/aspnet:8.0
+    container_name: gdk-admin
+    restart: unless-stopped
+    init: true
+    network_mode: "service:mongodb"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    working_dir: /gdk/Bin
+    command:
+      - dotnet
+      - App.dll
+      - --AppType=Admin
+      - --Process=100002
+      - --StartConfig=Localhost
+      - --Console=1
+    environment:
+      Admin__BootstrapPassword: "${GDK_ADMIN_PASSWORD:-admin123}"
+    volumes:
+      - ../../Publish/Server:/gdk/Bin
+      - ../../Config:/gdk/Config:ro
+      - "${GDK_DOCKER_DATA_ROOT:-D:/Docker/main/data}/gdk-admin:/gdk/Bin/Data"
+      - "${GDK_DOCKER_DATA_ROOT:-D:/Docker/main/data}/gdk-logs:/gdk/Logs"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/5200"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    stop_grace_period: 30s
+
+  agent:
+    image: mcr.microsoft.com/dotnet/aspnet:8.0
+    container_name: gdk-agent
+    restart: unless-stopped
+    init: true
+    network_mode: "service:mongodb"
+    depends_on:
+      admin:
+        condition: service_healthy
+    working_dir: /gdk/Bin
+    command:
+      - dotnet
+      - App.dll
+      - --AppType=Agent
+      - --Process=100001
+      - --StartConfig=Localhost
+      - --Console=1
+    environment:
+      GDK_AGENT_MANAGE_PROCESSES: "false"
+    volumes:
+      - ../../Publish/Server:/gdk/Bin
+      - ../../Config:/gdk/Config:ro
+      - "${GDK_DOCKER_DATA_ROOT:-D:/Docker/main/data}/gdk-logs:/gdk/Logs"
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          for proc in /proc/[0-9]*; do
+          if [ "$(cat "$$proc/comm" 2>/dev/null)" = dotnet ] &&
+          tr '\0' ' ' < "$$proc/cmdline" 2>/dev/null | grep -q -- '--AppType=Agent';
+          then exit 0; fi; done; exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    stop_grace_period: 30s

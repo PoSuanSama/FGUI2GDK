@@ -1,0 +1,1 @@
+{"_example":"填写 {\"file\":\"<路径>\",\"reason\":\"<原因>\"}。只放规范/调研文件，不放代码路径。运行 `python .trellis/scripts/get_context.py --mode packages` 列出可用规范。添加真实条目后删除本行。"}

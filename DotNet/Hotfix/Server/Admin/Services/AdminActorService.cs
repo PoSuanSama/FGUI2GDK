@@ -11,6 +11,12 @@ namespace ET
         {
         }
 
+        internal void MarkProcessAlive(int processId)
+        {
+            SetProcessAlive(processId, true);
+            OnServerStatusChanged(processId, ServerStatus.Running);
+        }
+
         public async Task<List<FiberInfo>> GetFibersAsync(int processId)
         {
             var response = await CallAsync<Admin2S_GetFibersRequest, Admin2S_GetFibersResponse>(processId, ConstFiberId.Main, Admin2S_GetFibersRequest.Create());

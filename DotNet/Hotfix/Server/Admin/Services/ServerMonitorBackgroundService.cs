@@ -8,6 +8,7 @@ namespace ET
         private readonly ServerMonitorNotifier _notifier;
         private readonly ServerMonitorService _monitorService;
         private readonly ProcessManagerService _processManager;
+        private readonly AdminActorService _actorService;
         private readonly ILogger<ServerMonitorBackgroundService> _logger;
         private readonly int _pollingIntervalSeconds;
 
@@ -27,6 +28,7 @@ namespace ET
             _notifier = notifier;
             _monitorService = monitorService;
             _processManager = processManager;
+            _actorService = actorService;
             _logger = logger;
             _pollingIntervalSeconds = configuration.GetValue<int>("Monitoring:PollingIntervalSeconds");
             if (_pollingIntervalSeconds <= 0)
@@ -93,7 +95,6 @@ namespace ET
             var servers = _monitorService.GetServerStatus();
             _notifier.UpdateServers(servers);
 
-            var runningServers = servers.Where(s => s.Status == ServerStatus.Running).ToList();
             var stoppedProcessIds = servers
                 .Where(s => s.Status != ServerStatus.Running)
                 .Select(s => s.ProcessId)
@@ -102,10 +103,10 @@ namespace ET
             foreach (var processId in stoppedProcessIds)
             {
                 _notifier.RemoveProcessData(processId);
-                _failureCounts.TryRemove(processId, out _);
             }
 
-            var tasks = runningServers
+            // Keep probing stopped processes so a transient timeout cannot leave them permanently offline.
+            var tasks = servers
                 .Where(server => ShouldPoll(server.ProcessId))
                 .Select(server => PollServerAsync(server.ProcessId, ct));
             await Task.WhenAll(tasks);
@@ -136,13 +137,14 @@ namespace ET
                 var fibers = await fibersTask;
                 var scenes = await scenesTask;
 
-                if (fibers.Count == 0 && scenes.Count == 0)
+                if (fibers.Count == 0 || scenes.Count == 0)
                 {
                     _failureCounts.AddOrUpdate(processId, 1, (_, count) => count + 1);
                     return;
                 }
 
                 _failureCounts.TryRemove(processId, out _);
+                _actorService.MarkProcessAlive(processId);
                 _notifier.UpdateFibers(processId, fibers);
                 _notifier.UpdateScenes(processId, scenes);
             }

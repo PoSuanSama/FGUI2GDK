@@ -1,0 +1,4 @@
+{"file":".trellis/spec/tools/fairygui-source-generation.md","reason":"check sync isolation and deterministic gates"}
+{"file":".trellis/spec/tools/fairygui-cli-publish.md","reason":"check Wilson CLI adapter behavior and failure matrix"}
+{"file":".trellis/tasks/08-21-fairygui-mcp-integration/prd.md","reason":"check all acceptance criteria against implementation evidence"}
+{"file":".trellis/tasks/08-21-fairygui-mcp-integration/research/wilson-agent-bridge-consumption.md","reason":"check implementation against verified upstream 0.8.1 surface"}
