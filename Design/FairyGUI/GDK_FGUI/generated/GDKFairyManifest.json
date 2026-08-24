@@ -5,7 +5,7 @@
     "type": "Unity",
     "version": "5.0"
   },
-  "sourceHash": "6905f07d0d2b85204e1eb0aa4800f54c49c3a4d7fa74d8b54f3c534bdc8313f2",
+  "sourceHash": "6f18c98beb792a97fdcdecd46d6e0212fd2b03eba019d9a2f341a85285b44c57",
   "contractHash": "ba6794173335c8b7164aa1dbf97511f400730b0110816fc5e0cad5e6deb17fa1",
   "packages": [
     {
@@ -22,7 +22,7 @@
           "path": "/",
           "exported": true,
           "file": "assets/Package1/MainView.xml",
-          "hash": "52332ff82d99e7a9acf0e2ab0c058b5bc27265bd3d67752aaa75a746953ad919",
+          "hash": "59c39aaaf8be3ccab721579a570444aa513dae172b5c6e743b2a8bcf9e73433e",
           "members": [
             {
               "id": "accent",

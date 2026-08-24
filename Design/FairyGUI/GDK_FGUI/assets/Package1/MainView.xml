@@ -15,7 +15,7 @@
     <graph id="statuspanel" name="statusPanel" xy="48,156" size="788,218" touchable="false" type="rect" lineColor="#ff243447" fillColor="#ff101a27"/>
     <graph id="statusdot" name="statusDot" xy="80,188" size="14,14" touchable="false" type="eclipse" lineSize="0" fillColor="#ff34d399"/>
     <text id="statuslabel" name="statusLabel" xy="110,182" size="210,24" fontSize="12" color="#94a3b8" vAlign="middle" autoSize="none" singleLine="true" text="运行时连接"/>
-    <text id="status" name="statusText" xy="80,224" size="700,40" fontSize="27" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="FairyGUI 资源包已就绪_发布测试112200"/>
+    <text id="status" name="statusText" xy="80,224" size="700,40" fontSize="27" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="FairyGUI 资源包已就绪"/>
     <text id="statusdetail" name="statusDetail" xy="80,278" size="700,46" fontSize="14" color="#94a3b8" leading="6" autoSize="none" text="Package1_fui.bytes 已通过 GDK 资源组件加载。&#xA;当前界面由 UGF 界面窗体托管，并保持完整的层级生命周期。"/>
     <graph id="statusline" name="statusLine" xy="80,342" size="724,2" touchable="false" type="rect" lineSize="0" fillColor="#ff22d3ee"/>
     <text id="section2" name="metricsTitle" xy="872,122" size="280,24" fontSize="13" color="#fbbf24" autoSize="none" bold="true" singleLine="true" text="流程信号"/>
@@ -36,7 +36,7 @@
     <text id="step1d" name="step1Detail" xy="80,574" size="220,20" fontSize="12" color="#94a3b8" autoSize="none" singleLine="true" text="稳定 ID 与命名节点"/>
     <graph id="step2" name="step2" xy="402,480" size="48,48" touchable="false" type="eclipse" lineColor="#ff34d399" fillColor="#ff064e3b"/>
     <text id="step2n" name="step2Number" xy="402,480" size="48,48" fontSize="18" color="#6ee7b7" align="center" vAlign="middle" autoSize="none" bold="true" singleLine="true" text="02"/>
-    <text id="step2t" name="step2Title" xy="402,544" size="210,24" fontSize="16" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="批量发布测试测试110021"/>
+    <text id="step2t" name="step2Title" xy="402,544" size="210,24" fontSize="16" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="批量发布"/>
     <text id="step2d" name="step2Detail" xy="402,574" size="220,20" fontSize="12" color="#94a3b8" autoSize="none" singleLine="true" text="FairyGUI 编辑器发布"/>
     <graph id="arrow1" name="arrow1" xy="141,503" size="250,2" touchable="false" type="rect" lineSize="0" fillColor="#ff475569"/>
     <graph id="arrow2" name="arrow2" xy="462,503" size="250,2" touchable="false" type="rect" lineSize="0" fillColor="#ff475569"/>
@@ -49,6 +49,6 @@
     <text id="step4n" name="step4Number" xy="1046,480" size="48,48" fontSize="18" color="#fda4af" align="center" vAlign="middle" autoSize="none" bold="true" singleLine="true" text="04"/>
     <text id="step4t" name="step4Title" xy="1046,544" size="160,24" fontSize="16" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="UGF 打开界面"/>
     <text id="step4d" name="step4Detail" xy="1046,574" size="160,20" fontSize="12" color="#94a3b8" autoSize="none" singleLine="true" text="保留界面生命周期"/>
-    <text id="footer" name="footer" xy="48,664" size="1184,20" fontSize="11" color="#64748b" align="center" autoSize="none" singleLine="true" text="源文件：Design/FairyGUI/GDK_FGUI   |   发布目录：Assets/Res/UI/FairyGUI"/>
+    <text id="footer" name="footer" xy="48,664" size="1184,20" fontSize="11" color="#64748b" align="center" autoSize="none" singleLine="true" text="源文件：Design/FairyGUI/GDK_FGUI   |   发布目录：Assets/Res/UI/FairyGUI   |   测试"/>
   </displayList>
 </component>
