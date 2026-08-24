@@ -165,7 +165,7 @@ D:\Unity\Project\GDK_FGUI\GDK_FGUI.fairy
 
 | 设置 | 值 |
 | --- | --- |
-| 发布路径 | `D:\GitHubProject\GDK\Unity\Assets\Res\UI\FairyGUI` |
+| 发布路径 | `D:\GitHubProject\FGUI2GDK\Unity\Assets\Res\UI\FairyGUI` |
 | 扩展名 | `bytes` |
 | 包格式 | 使用二进制格式 |
 | 描述文件压缩 | 开启 |
@@ -175,7 +175,7 @@ D:\Unity\Project\GDK_FGUI\GDK_FGUI.fairy
 | 允许旋转 | 关闭 |
 | 裁剪图片边缘空白 | 开启 |
 | 发布代码 | 开启 |
-| 代码路径 | `D:\GitHubProject\GDK\Unity\Assets\Scripts\Game\Hot\Code\Generate\FairyGUI` |
+| 代码路径 | `D:\GitHubProject\FGUI2GDK\Unity\Assets\Scripts\Game\Hot\Code\Generate\FairyGUI` |
 | 获取成员方式 | 按名称 |
 
 选择 `Package1` 后点击“发布”。成功标志是同时生成非空的 `Package1_fui.bytes` 和官方 C# 绑定目录。不要把 `.objs`、Editor 缓存、临时文件或 `.gdk-sync-state.json` 加入仓库。
