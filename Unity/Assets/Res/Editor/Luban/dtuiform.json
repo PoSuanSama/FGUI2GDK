@@ -93,8 +93,35 @@
     "Id": 103,
     "CSName": "FairyDemoForm",
     "Desc": "FairyGUI演示",
-    "AssetName": "Hot/FairyDemoForm",
+    "AssetName": "FairyGUI/FairyDemoForm",
     "UIGroupName": "Default",
+    "AllowMultiInstance": false,
+    "PauseCoveredUIForm": true
+  },
+  {
+    "Id": 104,
+    "CSName": "FairyInventoryForm",
+    "Desc": "FairyGUI背包界面",
+    "AssetName": "FairyGUI/FairyInventoryForm",
+    "UIGroupName": "Default",
+    "AllowMultiInstance": false,
+    "PauseCoveredUIForm": false
+  },
+  {
+    "Id": 105,
+    "CSName": "FairyItemDetailForm",
+    "Desc": "FairyGUI物品详情浮动窗口",
+    "AssetName": "FairyGUI/FairyItemDetailForm",
+    "UIGroupName": "Pop",
+    "AllowMultiInstance": true,
+    "PauseCoveredUIForm": false
+  },
+  {
+    "Id": 106,
+    "CSName": "FairyInventoryOverlayForm",
+    "Desc": "FairyGUI背包遮罩界面",
+    "AssetName": "FairyGUI/FairyInventoryOverlayForm",
+    "UIGroupName": "Pop",
     "AllowMultiInstance": false,
     "PauseCoveredUIForm": true
   }
