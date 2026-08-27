@@ -13,7 +13,7 @@ namespace Game
 
         public FairyUIFormDescriptor Descriptor => m_PreparedState?.Descriptor;
 
-        public FairyGUI.GComponent View => m_PreparedState?.View;
+        public global::FairyGUI.GComponent View => m_PreparedState?.View;
 
         public IFairyUIPresenter Presenter => m_PreparedState?.Presenter;
 

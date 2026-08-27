@@ -22,6 +22,8 @@ namespace Game
     {
         public static FairyUIManager Instance { get; } = new FairyUIManager();
 
+        public static Func<int, DRUIForm> UIFormTableProvider;
+
         private const string DescriptorAssetRoot = "Assets/Res/UI/FairyGUI";
         private const int DesignResolutionX = 1280;
         private const int DesignResolutionY = 720;
@@ -122,7 +124,9 @@ namespace Game
             object userData = null,
             CancellationToken ownerToken = default)
         {
-            DRUIForm uiForm = GameEntry.Tables.DTUIForm.GetOrDefault(uiId);
+            DRUIForm uiForm = UIFormTableProvider != null
+                ? UIFormTableProvider(uiId)
+                : GameEntry.Tables.DTUIForm.GetOrDefault(uiId);
             if (uiForm == null)
             {
                 throw new GameFrameworkException($"Can not load UI form '{uiId}' from data table.");

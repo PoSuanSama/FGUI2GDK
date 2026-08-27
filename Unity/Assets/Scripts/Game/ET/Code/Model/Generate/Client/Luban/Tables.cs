@@ -17,6 +17,7 @@ public partial class Tables
     public DTAIConfig DTAIConfig { private set; get; }
     public DTUnitConfig DTUnitConfig { private set; get; }
     public DTDemo DTDemo { private set; get; }
+    public DTInventory DTInventory { private set; get; }
     private System.Collections.Generic.Dictionary<string, IDataTable> _tables;
     public System.Collections.Generic.IEnumerable<IDataTable> DataTables => _tables.Values;
     public IDataTable GetDataTable(string tableName) => _tables.TryGetValue(tableName, out var v) ? v : null;
@@ -40,6 +41,9 @@ public partial class Tables
         DTDemo = new DTDemo(() => loader("dtdemo"));
         loadTasks.Add(DTDemo.LoadAsync());
         _tables.Add("DTDemo", DTDemo);
+        DTInventory = new DTInventory(() => loader("dtinventory"));
+        loadTasks.Add(DTInventory.LoadAsync());
+        _tables.Add("DTInventory", DTInventory);
 
         await Cysharp.Threading.Tasks.UniTask.WhenAll(loadTasks);
 
@@ -54,6 +58,7 @@ public partial class Tables
         DTAIConfig.ResolveRef(this);
         DTUnitConfig.ResolveRef(this);
         DTDemo.ResolveRef(this);
+        DTInventory.ResolveRef(this);
         PostResolveRef();
     }
 

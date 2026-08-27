@@ -55,6 +55,8 @@ THIRD_PARTY_PREFIXES = (
 GENERATOR_SOURCE_PREFIXES = (
     "Design/Excel/",
     "Design/Proto/",
+    "Design/FairyGUI/",
+    "Tools/FairyGUI/",
     "Share/SourceGenerator/",
     "Share/Tool/ExcelExporter/",
     "Share/Tool/Proto2CS/",
@@ -338,6 +340,9 @@ def check_unity_metadata(repo: Path, changes: list[Change], files: list[str]) ->
 
         if change.status == "D":
             if statuses.get(paired_path) != "D":
+                # 文件夹的 .meta 在 Git 中没有对应的目录记录，删除空生成目录时允许只删除其 .meta。
+                if is_meta and not Path(asset_path).suffix:
+                    continue
                 kind = "资源" if is_meta else ".meta"
                 issues.append(issue("error", "META002", path, f"删除 Unity 路径时遗漏了配对的 {kind} 删除操作"))
             continue

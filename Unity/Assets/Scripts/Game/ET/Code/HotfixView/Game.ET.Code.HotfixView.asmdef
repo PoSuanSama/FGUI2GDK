@@ -30,6 +30,8 @@
         "LitMotion.Animation",
         "LoopScrollRect.Runtime",
         "Game",
+        "FairyGUI",
+        "GameFramework",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],

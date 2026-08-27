@@ -12,6 +12,7 @@ namespace ET.Client
             root.AddComponent<UGFComponent>();
             
             GlobalComponent globalComponent = root.AddComponent<GlobalComponent>();
+            await FairyGUIBootstrap.InitializeAsync();
             root.AddComponent<UIComponent>();
             root.AddComponent<PlayerComponent>();
             root.AddComponent<CurrentScenesComponent>();

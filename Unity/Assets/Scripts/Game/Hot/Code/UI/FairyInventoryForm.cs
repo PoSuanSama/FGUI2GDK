@@ -1,6 +1,6 @@
 using System;
 using FairyGUI;
-using Game.Hot.FairyGUI.Package1;
+using Game.FairyGUI.Package1;
 using UnityGameFramework.Runtime;
 
 namespace Game.Hot

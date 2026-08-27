@@ -10,6 +10,6 @@
   "packageName": "Package1",
   "componentId": "i20a3",
   "componentName": "ItemDetailWindow",
-  "bindingType": "Game.Hot.FairyGUI.Package1.UIItemDetailWindow",
+  "bindingType": "Game.FairyGUI.Package1.UIItemDetailWindow",
   "dependencies": []
 }

@@ -5,7 +5,7 @@ param(
     [string]$SourceProjectPath = (Join-Path $PSScriptRoot '../../Design/FairyGUI/GDK_FGUI'),
     [string]$EditorProjectPath = 'D:\Unity\Project\GDK_FGUI',
     [string]$OutputPath = (Join-Path $PSScriptRoot '../../Unity/Assets/Res/UI/FairyGUI'),
-    [string]$CodeOutputPath = (Join-Path $PSScriptRoot '../../Unity/Assets/Scripts/Game/Hot/Code/Generate/FairyGUI'),
+    [string]$CodeOutputPath = (Join-Path $PSScriptRoot '../../Unity/Assets/Scripts/Game/Generate/FairyGUI'),
     [switch]$Initialize
 )
 
@@ -257,7 +257,7 @@ function Convert-PublishSettings {
     $settings.codeGeneration.getMemberByName = $true
     $settings.codeGeneration.ignoreNoname = $true
     $settings.codeGeneration.memberNamePrefix = 'm_'
-    $settings.codeGeneration.packageName = 'Game.Hot.FairyGUI'
+    $settings.codeGeneration.packageName = 'Game.FairyGUI'
     if ($Target -eq 'Editor') {
         $settings.path = $resolvedOutput.Replace('\', '/')
         $settings.codeGeneration.codePath = $resolvedCodeOutput.Replace('\', '/')

@@ -676,7 +676,7 @@ exit /b 0
     Assert-Equal $true $descriptorJson.pauseCoveredUIForm 'Descriptor PauseCoveredUIForm is not sourced from Luban.'
     Assert-Equal 'oozeu71h' $descriptorJson.packageId 'Descriptor packageId is wrong.'
     Assert-Equal '7xe70' $descriptorJson.componentId 'Descriptor componentId is wrong.'
-    Assert-Equal 'Game.Hot.FairyGUI.Package1.UIMainView' $descriptorJson.bindingType 'Descriptor bindingType is wrong.'
+    Assert-Equal 'Game.FairyGUI.Package1.UIMainView' $descriptorJson.bindingType 'Descriptor bindingType is wrong.'
     Assert-Equal 'Package1' $descriptorJson.packageName 'Descriptor packageName is not sourced from Luban.'
     Assert-Equal 'MainView' $descriptorJson.componentName 'Descriptor componentName is not sourced from Luban.'
 

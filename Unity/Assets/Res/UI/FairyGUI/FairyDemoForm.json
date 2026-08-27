@@ -10,6 +10,6 @@
   "packageName": "Package1",
   "componentId": "7xe70",
   "componentName": "MainView",
-  "bindingType": "Game.Hot.FairyGUI.Package1.UIMainView",
+  "bindingType": "Game.FairyGUI.Package1.UIMainView",
   "dependencies": []
 }

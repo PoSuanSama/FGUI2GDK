@@ -11,12 +11,12 @@
   "codeGeneration": {
     "allowGenCode": true,
     "classNamePrefix": "UI",
-    "codePath": "../../../Unity/Assets/Scripts/Game/Hot/Code/Generate/FairyGUI",
+    "codePath": "../../../Unity/Assets/Scripts/Game/Generate/FairyGUI",
     "codeType": "",
     "getMemberByName": true,
     "ignoreNoname": true,
     "memberNamePrefix": "m_",
-    "packageName": "Game.Hot.FairyGUI"
+    "packageName": "Game.FairyGUI"
   },
   "compressPNG": true,
   "compressDesc": true,

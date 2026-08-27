@@ -521,7 +521,7 @@ $expectedCodeSettings = [ordered]@{
     getMemberByName = $true
     ignoreNoname = $true
     memberNamePrefix = 'm_'
-    packageName = 'Game.Hot.FairyGUI'
+    packageName = 'Game.FairyGUI'
 }
 foreach ($setting in $expectedCodeSettings.GetEnumerator()) {
     if ($publishSettings.codeGeneration.($setting.Key) -cne $setting.Value) {

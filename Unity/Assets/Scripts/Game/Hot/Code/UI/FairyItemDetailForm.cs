@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FairyGUI;
-using Game.Hot.FairyGUI.Package1;
+using Game.FairyGUI.Package1;
 using UnityEngine;
 
 namespace Game.Hot

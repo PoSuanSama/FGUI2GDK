@@ -92,7 +92,7 @@ namespace Game.Editor
 
             GComponent view = existing.View;
             if (view == null ||
-                view.GetType().FullName != "Game.Hot.FairyGUI.Package1.UIMainView")
+                view.GetType().FullName != "Game.FairyGUI.Package1.UIMainView")
             {
                 throw new InvalidOperationException("Native FairyGUI host did not expose the generated UIMainView binding.");
             }
@@ -432,7 +432,7 @@ namespace Game.Editor
             FairyUIForm uiForm = FairyUIManager.Instance.GetUIForm(DescriptorAsset);
             GComponent view = uiForm?.View;
             if (view == null ||
-                view.GetType().FullName != "Game.Hot.FairyGUI.Package1.UIMainView")
+                view.GetType().FullName != "Game.FairyGUI.Package1.UIMainView")
             {
                 throw new InvalidOperationException("No open native FairyGUI demo form exists in PlayMode.");
             }

@@ -9,7 +9,10 @@
         "Game.ET.Code.Hotfix",
         "Game.ET.Code.HotfixView",
         "Game.ET.Code.Model",
-        "Game.ET.Code.ModelView"
+        "Game.ET.Code.ModelView",
+        "Game",
+        "AgentBridge.Editor",
+        "UniTask"
     ],
     "includePlatforms": [
         "Editor"

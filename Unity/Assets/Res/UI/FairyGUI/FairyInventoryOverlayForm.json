@@ -10,6 +10,6 @@
   "packageName": "Package1",
   "componentId": "i20a4",
   "componentName": "InventoryOverlayView",
-  "bindingType": "Game.Hot.FairyGUI.Package1.UIInventoryOverlayView",
+  "bindingType": "Game.FairyGUI.Package1.UIInventoryOverlayView",
   "dependencies": []
 }

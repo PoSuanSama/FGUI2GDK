@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using AgentBridge;
 using Cysharp.Threading.Tasks;
-using Game.Hot.FairyGUI.Package1;
+using Game.FairyGUI.Package1;
 using UnityEditor;
 
 namespace Game.Hot.Editor
