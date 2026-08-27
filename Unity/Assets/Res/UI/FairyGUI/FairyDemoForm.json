@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "uiId": 103,
+  "csName": "FairyDemoForm",
+  "uiAssetName": "Hot/FairyDemoForm",
+  "uiGroupName": "Default",
+  "allowMultiInstance": false,
+  "pauseCoveredUIForm": true,
+  "packageId": "oozeu71h",
+  "packageName": "Package1",
+  "componentId": "7xe70",
+  "componentName": "MainView",
+  "bindingType": "Game.Hot.FairyGUI.Package1.UIMainView",
+  "presenterType": "Game.Hot.FairyDemoForm",
+  "dependencies": [],
+  "bootstrap": false,
+  "preload": "onOpen"
+}

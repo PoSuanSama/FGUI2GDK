@@ -138,6 +138,7 @@ $agent = Resolve-AgentExecutable $AgentExecutable
 $manifestPath = Join-Path $sourceRoot 'generated/GDKFairyManifest.json'
 $syncScript = Join-Path $PSScriptRoot 'Sync-GDKDemoToEditor.ps1'
 $validator = Join-Path $PSScriptRoot 'Test-GDKProject.ps1'
+$runtimeManifestGenerator = Join-Path $PSScriptRoot 'Generate-FairyRuntimeManifest.ps1'
 
 try {
     $null = & $validator -ProjectPath $sourceRoot -ManifestPath $manifestPath -Check
@@ -181,7 +182,10 @@ try {
     if ($publish.success -ne $true) { throw "fgui-agent publish did not report success for '$PackageName'." }
     $after = Get-ArtifactSnapshot $artifact
     if (-not $after.exists -or $after.size -le 0) { throw "Published artifact is missing or empty: $artifact" }
-    [System.IO.File]::WriteAllBytes($runtimeManifest, [System.IO.File]::ReadAllBytes($manifestPath))
+    $null = & $runtimeManifestGenerator `
+        -SourceManifestPath $manifestPath `
+        -OutputPath $resolvedOutput `
+        -ManifestPath $runtimeManifest
     $runtimeManifestAfter = Get-ArtifactSnapshot $runtimeManifest
     if (-not $runtimeManifestAfter.exists -or $runtimeManifestAfter.size -le 0) {
         throw "Runtime FairyGUI manifest is missing or empty: $runtimeManifest"

@@ -22,7 +22,9 @@
     "08-20-fairygui-cli-publish",
     "08-20-fairygui-source-generation",
     "08-21-fairygui-mcp-integration",
-    "08-21-fairygui-psd-asset-reuse"
+    "08-21-fairygui-psd-asset-reuse",
+    "08-24-fairygui-gf-ui-host",
+    "08-27-fairygui-final-integration"
   ],
   "parent": null,
   "relatedFiles": [],

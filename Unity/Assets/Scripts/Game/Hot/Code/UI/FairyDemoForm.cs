@@ -1,51 +1,80 @@
 using System;
 using FairyGUI;
-using GameFramework;
+using Game.Hot.FairyGUI.Package1;
 using UnityGameFramework.Runtime;
 
 namespace Game.Hot
 {
-    public sealed class FairyDemoForm : AFairyUIForm
+    public sealed class FairyDemoForm : IFairyUIPresenter
     {
-        private GButton m_RefreshButton;
-        private GTextField m_StatusText;
-        private GTextField m_CheckCountText;
         private int m_CheckCount;
+        private UIMainView m_View;
 
-        protected override string fairyPackageName => "Package1";
+        public int PauseCount { get; private set; }
+        public int ResumeCount { get; private set; }
+        public int CoverCount { get; private set; }
+        public int RevealCount { get; private set; }
+        public int RefocusCount { get; private set; }
+        public object LastOpenUserData { get; private set; }
+        public object LastRefocusUserData { get; private set; }
 
-        protected override string fairyComponentName => "MainView";
-
-        protected override void OnFairyViewReady()
+        public void OnViewReady(GComponent view)
         {
-            m_RefreshButton = GetRequiredChild<GButton>("refreshButton");
-            m_StatusText = GetRequiredChild<GTextField>("statusText");
-            m_CheckCountText = GetRequiredChild<GTextField>("checkCountText");
-
-            m_CheckCount = 0;
-            m_RefreshButton.onClick.Add(OnRefreshButtonClick);
-            UpdateStatus("FairyGUI 资源包已就绪");
-            Log.Info("FairyGUI demo view opened through UGF UIForm.");
-        }
-
-        protected override void OnFairyViewClosing()
-        {
-            m_RefreshButton?.onClick.Remove(OnRefreshButtonClick);
-            m_RefreshButton = null;
-            m_StatusText = null;
-            m_CheckCountText = null;
-        }
-
-        private T GetRequiredChild<T>(string childName) where T : GObject
-        {
-            T child = fairyView.GetChild(childName) as T;
-            if (child == null)
+            m_View = view as UIMainView;
+            if (m_View == null)
             {
-                throw new GameFrameworkException(
-                    $"FairyGUI child '{childName}' is missing or is not a {typeof(T).Name}.");
+                throw new InvalidOperationException(
+                    $"FairyGUI demo requires '{typeof(UIMainView).FullName}', found '{view?.GetType().FullName}'.");
             }
 
-            return child;
+            m_CheckCount = 0;
+            m_View.RefreshButton.onClick.Add(OnRefreshButtonClick);
+            UpdateStatus("FairyGUI 资源包已就绪");
+        }
+
+        public void OnOpen(object userData)
+        {
+            LastOpenUserData = userData;
+            Log.Info("FairyGUI demo presenter opened through the unified GF UIForm host.");
+        }
+
+        public void OnClose(bool isShutdown, object userData)
+        {
+            if (m_View != null)
+            {
+                m_View.RefreshButton.onClick.Remove(OnRefreshButtonClick);
+                m_View = null;
+            }
+        }
+
+        public void OnPause()
+        {
+            ++PauseCount;
+        }
+
+        public void OnResume()
+        {
+            ++ResumeCount;
+        }
+
+        public void OnCover()
+        {
+            ++CoverCount;
+        }
+
+        public void OnReveal()
+        {
+            ++RevealCount;
+        }
+
+        public void OnRefocus(object userData)
+        {
+            ++RefocusCount;
+            LastRefocusUserData = userData;
+        }
+
+        public void OnUpdate(float elapseSeconds, float realElapseSeconds)
+        {
         }
 
         private void OnRefreshButtonClick()
@@ -57,8 +86,8 @@ namespace Game.Hot
 
         private void UpdateStatus(string status)
         {
-            m_StatusText.text = status;
-            m_CheckCountText.text = m_CheckCount.ToString();
+            m_View.StatusText.text = status;
+            m_View.CheckCountText.text = m_CheckCount.ToString();
         }
     }
 }

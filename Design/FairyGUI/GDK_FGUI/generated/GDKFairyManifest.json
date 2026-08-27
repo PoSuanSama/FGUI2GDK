@@ -5,14 +5,14 @@
     "type": "Unity",
     "version": "5.0"
   },
-  "sourceHash": "6f18c98beb792a97fdcdecd46d6e0212fd2b03eba019d9a2f341a85285b44c57",
-  "contractHash": "ba6794173335c8b7164aa1dbf97511f400730b0110816fc5e0cad5e6deb17fa1",
+  "sourceHash": "419580e3c5696c88c45ad248819abfc430951e055cb70727d30374a18f9719e7",
+  "contractHash": "5bd0208ba0a5fbf6bc29b72a48808fa3886b0208a48b0eac5839580e3605c842",
   "packages": [
     {
       "id": "oozeu71h",
       "name": "Package1",
       "file": "assets/Package1/package.xml",
-      "hash": "60bedeed78ed8476dbaad4b59b3680c94a9bd0ce9485bdcea7529a5db5784f76",
+      "hash": "397abbf141b6d436086b940e0df3f8ee776e0a6836933e4afeaf02426e0abd63",
       "dependencies": [],
       "resources": [
         {

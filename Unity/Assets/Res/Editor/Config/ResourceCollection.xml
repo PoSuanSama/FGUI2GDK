@@ -2,15 +2,58 @@
 <UnityGameFramework>
   <ResourceCollection>
     <Resources>
-      <Resource Name="Auto/Combine/6274e2cf" LoadType="0" Packed="False" />
+      <Resource Name="Auto/Combine/0a91126d" LoadType="0" Packed="False" />
+      <Resource Name="Auto/Combine/887714db" LoadType="0" Packed="False" />
       <Resource Name="Auto/Launcher" LoadType="0" Packed="True" ResourceGroups="Launcher" />
-      <Resource Name="Entity" LoadType="0" Packed="False" />
-      <Resource Name="ET.ClientServer" FileSystem="GameData" LoadType="0" Packed="False" />
-      <Resource Name="ET.Code" FileSystem="GameData" LoadType="0" Packed="False" />
-      <Resource Name="GameHot" FileSystem="GameData" LoadType="0" Packed="False" />
-      <Resource Name="HybridCLR" LoadType="0" Packed="False" />
+      <Resource Name="GameHot.Luban" FileSystem="GameData" LoadType="0" Packed="False" />
       <Resource Name="Luban" FileSystem="GameData" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/Asteroid01" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/Asteroid02" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/Asteroid03" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/AsteroidExplosion" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/DefaultArmor" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/DefaultWeapon" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/EnemyBolt" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/EnemyEngine" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/EnemyExplosion" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/EnemyShip" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/PlayerBolt" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/PlayerEngine" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/PlayerExplosion" LoadType="0" Packed="False" />
+      <Resource Name="Res/Entity/PlayerShip" LoadType="0" Packed="False" />
+      <Resource Name="Res/Font/Default" LoadType="0" Packed="False" />
       <Resource Name="Res/Localization/ChineseSimplified/Localization" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/done_fx_bolt_cyan_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/done_fx_bolt_orange_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/done_tile_nebula_green_dff" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/fx_enemyShip_engines_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/part_blast_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/part_glow_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/part_jet_core_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/part_jet_flare_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/part_shockwave_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/part_spark_blue_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/part_spark_large_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/part_spark_white_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/part_spark_yellow_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/part_star_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/prop_asteroid_01_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/prop_asteroid_02_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/prop_asteroid_03_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/Urp" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/vehicle_enemyShip_glow_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/vehicle_enemyShip_metal_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/vehicle_playerShip_glass_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Material/vehicle_playerShip_metal_mat" LoadType="0" Packed="False" />
+      <Resource Name="Res/Mesh/player_ship_collider" LoadType="0" Packed="False" />
+      <Resource Name="Res/Mesh/prop_asteroid_01" LoadType="0" Packed="False" />
+      <Resource Name="Res/Mesh/prop_asteroid_02" LoadType="0" Packed="False" />
+      <Resource Name="Res/Mesh/prop_asteroid_03" LoadType="0" Packed="False" />
+      <Resource Name="Res/Mesh/vehicle_enemyShip" LoadType="0" Packed="False" />
+      <Resource Name="Res/Mesh/vehicle_playerShip" LoadType="0" Packed="False" />
+      <Resource Name="Res/Music/music_about" LoadType="0" Packed="False" />
+      <Resource Name="Res/Music/music_background" LoadType="0" Packed="False" />
+      <Resource Name="Res/Music/music_menu" LoadType="0" Packed="False" />
       <Resource Name="Res/Prefab/Skeleton/Materials/skeleton_D" LoadType="0" Packed="False" />
       <Resource Name="Res/Prefab/Skeleton/Skeleton" LoadType="0" Packed="False" />
       <Resource Name="Res/Prefab/Skeleton/SkeletonController" LoadType="0" Packed="False" />
@@ -19,295 +62,293 @@
       <Resource Name="Res/Scene/Map1" LoadType="0" Packed="False" />
       <Resource Name="Res/Scene/Map2" LoadType="0" Packed="False" />
       <Resource Name="Res/Scene/Menu" LoadType="0" Packed="False" />
-      <Resource Name="Res/UI/UIPrefab/Button" LoadType="0" Packed="False" />
+      <Resource Name="Res/Sound/explosion_asteroid" LoadType="0" Packed="False" />
+      <Resource Name="Res/Sound/explosion_enemy" LoadType="0" Packed="False" />
+      <Resource Name="Res/Sound/explosion_player" LoadType="0" Packed="False" />
+      <Resource Name="Res/Sound/weapon_enemy" LoadType="0" Packed="False" />
+      <Resource Name="Res/Sound/weapon_player" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UIForm/Hot/AboutForm" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UIForm/Hot/DialogForm" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UIForm/Hot/MenuForm" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UIForm/Hot/SettingForm" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UIPrefab/Button/Preset_Button_CommonBack" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UIPrefab/Button/Preset_Button_CommonClose" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UIPrefab/Button/Preset_Button_CommonCurrency" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UIPrefab/Button/Preset_Button_CommonHome" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UIPrefab/Button/Preset_Button_FirstStrong" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UIPrefab/Button/Preset_Button_FirstWeak" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UIPrefab/HPBarInstances" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UIPrefab/HPBarItem" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UISound/click" LoadType="0" Packed="False" />
+      <Resource Name="Res/UI/UISound/select" LoadType="0" Packed="False" />
       <Resource Name="Res/UI/UISprite/Common" LoadType="0" Packed="False" />
       <Resource Name="Res/UI/UISprite/Icon" LoadType="0" Packed="False" />
       <Resource Name="Res/UI/UISprite/Logo" LoadType="0" Packed="False" />
+      <Resource Name="UI.FairyGUI" LoadType="0" Packed="False" />
       <Resource Name="UI.RuntimeInspector" LoadType="0" Packed="False" />
-      <Resource Name="UI.UIForm.LockStep" LoadType="0" Packed="False" />
-      <Resource Name="UI.UISound" LoadType="0" Packed="False" />
       <Resource Name="UI.UXTool" LoadType="0" Packed="False" />
     </Resources>
     <Assets>
-      <Asset Guid="0067c369e1d6c3f4e9ec4d20df4b4e61" ResourceName="UI.UXTool" />
+      <Asset Guid="0067c369e1d6c3f4e9ec4d20df4b4e61" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="00cf0597250ef1d49b7946f79b3796dc" ResourceName="UI.UXTool" />
       <Asset Guid="0179316b5fc7c2946a67c5877c02fc30" ResourceName="Res/UI/UISprite/Common" />
-      <Asset Guid="01b87da0f9ab1aa4da5b0804825be083" ResourceName="UI.UXTool" />
-      <Asset Guid="021a7cf71538dce478cc6c7d045f693d" ResourceName="UI.UXTool" />
+      <Asset Guid="01b87da0f9ab1aa4da5b0804825be083" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="021a7cf71538dce478cc6c7d045f693d" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="022955a1cd3806c42a0dd8276a685c53" ResourceName="UI.UXTool" />
       <Asset Guid="022ca0278bad06c44bdb83acae8ff0bc" ResourceName="UI.UXTool" />
       <Asset Guid="0240f7f08e046d04e9c3086a48e58ecf" ResourceName="UI.UXTool" />
-      <Asset Guid="024a8b91804d621429847a81ef4eeeef" ResourceName="ET.Code" />
-      <Asset Guid="02f7c91eb3902ae40a86fda557478f4d" ResourceName="UI.UXTool" />
-      <Asset Guid="02ff034b615fcb4498787e6c6d9a134f" ResourceName="HybridCLR" />
-      <Asset Guid="03b0038fb3e26ca4fbd5a9ab04f935a2" ResourceName="UI.UXTool" />
-      <Asset Guid="047c406e53e7b5948ae4bf585ca68b79" ResourceName="UI.UXTool" />
+      <Asset Guid="02f7c91eb3902ae40a86fda557478f4d" ResourceName="Auto/Combine/887714db" />
+      <Asset Guid="03b0038fb3e26ca4fbd5a9ab04f935a2" ResourceName="Auto/Combine/887714db" />
+      <Asset Guid="047c406e53e7b5948ae4bf585ca68b79" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="04a51275db702354395ae5b64b914973" ResourceName="UI.UXTool" />
-      <Asset Guid="05d7cab03fc14d745a1d5f85e51aa7a7" ResourceName="HybridCLR" />
+      <Asset Guid="04d7dde7615d71b4db1a0c8d67a62e95" ResourceName="Res/UI/UIForm/Hot/DialogForm" />
       <Asset Guid="064123f1e5067b249a9fd8967ddbde09" ResourceName="Res/Scene/Map2" />
-      <Asset Guid="06a99c17c10a02d4193e2507171eabf9" ResourceName="HybridCLR" />
-      <Asset Guid="07357b3d413da0c47b3fb28619106e9d" ResourceName="UI.UXTool" />
-      <Asset Guid="08b1969f82430784f915a659ed9d66d5" ResourceName="ET.ClientServer" />
-      <Asset Guid="0992f89f84d762f478fd32f8225168b0" ResourceName="Entity" />
+      <Asset Guid="07357b3d413da0c47b3fb28619106e9d" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="093f8873cfe371d41b854ed9fb6bff69" ResourceName="Res/Music/music_about" />
+      <Asset Guid="0992f89f84d762f478fd32f8225168b0" ResourceName="Res/Entity/DefaultArmor" />
+      <Asset Guid="09966b19e546cc94aa84d0743cb2a83d" ResourceName="Res/UI/UIForm/Hot/MenuForm" />
       <Asset Guid="09e587528c6da27469a8017d23136a0f" ResourceName="Luban" />
       <Asset Guid="0a65a68c01a76ea4b8b574827a6467aa" ResourceName="Res/UI/UISprite/Common" />
       <Asset Guid="0bf95b0cbca885c4cad5d9babd2c03a2" ResourceName="UI.UXTool" />
-      <Asset Guid="1009ccebe686bd549829ad70ae054eba" ResourceName="UI.UXTool" />
-      <Asset Guid="114d57cbe6103c24ba03dd555f31d2bf" ResourceName="UI.UXTool" />
-      <Asset Guid="11e27c26ac87b40f0a62ec40d7261989" ResourceName="Entity" />
-      <Asset Guid="1253f56e46557bf43ab518af1bc81395" ResourceName="UI.UXTool" />
-      <Asset Guid="13964d4419bb22b44b109b44b495377a" ResourceName="HybridCLR" />
+      <Asset Guid="0ed73dc47f4cb38489020d05e9f02c99" ResourceName="Res/Material/part_glow_mat" />
+      <Asset Guid="0f995b3145e0e7247a42da6cef1dbf23" ResourceName="Res/Material/part_spark_white_mat" />
+      <Asset Guid="1009ccebe686bd549829ad70ae054eba" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="114d57cbe6103c24ba03dd555f31d2bf" ResourceName="Auto/Combine/887714db" />
+      <Asset Guid="11e27c26ac87b40f0a62ec40d7261989" ResourceName="Res/Entity/EnemyBolt" />
+      <Asset Guid="1253f56e46557bf43ab518af1bc81395" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="148d249999a2d6e4ea7c73b2a8d490a0" ResourceName="UI.UXTool" />
       <Asset Guid="14961014bd33abd4a818582f9c84ba81" ResourceName="UI.UXTool" />
       <Asset Guid="156d241f796508c4da4fc354a7fbf5a8" ResourceName="Res/UI/UISprite/Common" />
-      <Asset Guid="15a7f6938a8c4334eb01d3717c6b088f" ResourceName="HybridCLR" />
-      <Asset Guid="160925a6fe2664f2a978566b819f0af0" ResourceName="Entity" />
-      <Asset Guid="16468be14555e6b49815741930dacef1" ResourceName="UI.UXTool" />
-      <Asset Guid="16884f9829d30424781c300f04db702a" ResourceName="HybridCLR" />
+      <Asset Guid="160925a6fe2664f2a978566b819f0af0" ResourceName="Res/Entity/EnemyExplosion" />
+      <Asset Guid="16468be14555e6b49815741930dacef1" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="172ab742804613d4f99fee07a3878843" ResourceName="Luban" />
       <Asset Guid="177dc17b7f73fd24ca0c51ef7d96734f" ResourceName="Luban" />
-      <Asset Guid="17b111fc72de6d34c8b80b10929c86eb" ResourceName="UI.UXTool" />
+      <Asset Guid="17b111fc72de6d34c8b80b10929c86eb" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="17b49211d0e52484799b51df4364e6e8" ResourceName="Res/Mesh/vehicle_playerShip" />
       <Asset Guid="17b4b96214cae7a469bef91b74a00a4f" ResourceName="UI.UXTool" />
-      <Asset Guid="17fe8e89dccbc164bb2aad7895be004d" ResourceName="UI.UXTool" />
-      <Asset Guid="1a97c12f1645f0145846651d1f28a710" ResourceName="HybridCLR" />
+      <Asset Guid="17fe8e89dccbc164bb2aad7895be004d" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="185f97f18bd603a478461ce9c08bd039" ResourceName="Res/Material/part_star_mat" />
+      <Asset Guid="1ab4013f822a3e649ba2f77830ffa153" ResourceName="Res/Mesh/prop_asteroid_01" />
       <Asset Guid="1abfbe65a6e3c034cb43df1cff7317cb" ResourceName="Luban" />
+      <Asset Guid="1b4bad6cea5a94611b21f9757fe41444" ResourceName="Res/Material/fx_enemyShip_engines_mat" />
+      <Asset Guid="1be4472894949437694aead55c6da60f" ResourceName="Res/Sound/weapon_enemy" />
+      <Asset Guid="1cfe02ffd0b74854ea5bcd1a3c63ac3c" ResourceName="Res/Material/part_blast_mat" />
+      <Asset Guid="1d46a17a95a444c08830612bc1146d1d" ResourceName="Res/Material/part_shockwave_mat" />
+      <Asset Guid="1e0350b97c61bfb4a91c62d756d01727" ResourceName="Res/Material/vehicle_enemyShip_glow_mat" />
       <Asset Guid="1eada7f8ac95f194c9b326abfb153080" ResourceName="UI.UXTool" />
       <Asset Guid="1f9dea015ca3a64498326b23e91f8cf6" ResourceName="UI.UXTool" />
       <Asset Guid="236433a27ce40a7429b87d14d8fa3035" ResourceName="Res/UI/UISprite/Common" />
       <Asset Guid="237bd69835dcdba469d42326c4f3813f" ResourceName="UI.UXTool" />
       <Asset Guid="24ca310f92a6796408f1db7647ec4e55" ResourceName="Res/UI/UISprite/Common" />
-      <Asset Guid="24ceddd13de2037439f8f856dd8d2811" ResourceName="UI.UXTool" />
+      <Asset Guid="24ceddd13de2037439f8f856dd8d2811" ResourceName="Auto/Combine/887714db" />
       <Asset Guid="2a2ffdccc4fac024e94d5fe57c2b78c4" ResourceName="UI.UXTool" />
-      <Asset Guid="2b85caab422d3b44698e732df0d97c4b" ResourceName="UI.UXTool" />
-      <Asset Guid="2be2915609f5656438eea96db8b37793" ResourceName="UI.UXTool" />
-      <Asset Guid="2e25b09d3937c014a8e1f59f5a87c5b6" ResourceName="Res/UI/UIPrefab/Button" />
-      <Asset Guid="2e9a3904c0f8c444a8756f9e97e09151" ResourceName="UI.UXTool" />
-      <Asset Guid="3109894aebd4d2f4cb1a579a5500cf5a" ResourceName="UI.UXTool" />
-      <Asset Guid="31f8f9898401e5240b6a19c03c0c046d" ResourceName="UI.UXTool" />
-      <Asset Guid="32e8b48a1483fa942bab9a697c15d118" ResourceName="HybridCLR" />
-      <Asset Guid="33110c7836ae8234590f866c1afba45c" ResourceName="HybridCLR" />
-      <Asset Guid="3455fe69f7ddc4604b95bf9b0a1e88d7" ResourceName="Entity" />
-      <Asset Guid="350877d497c139d46be852cf635a4c33" ResourceName="UI.UXTool" />
+      <Asset Guid="2b85caab422d3b44698e732df0d97c4b" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="2be2915609f5656438eea96db8b37793" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="2c32c3855b65de2438f11fec6578b808" ResourceName="Res/Mesh/player_ship_collider" />
+      <Asset Guid="2e25b09d3937c014a8e1f59f5a87c5b6" ResourceName="Res/UI/UIPrefab/Button/Preset_Button_CommonClose" />
+      <Asset Guid="2e9a3904c0f8c444a8756f9e97e09151" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="3109894aebd4d2f4cb1a579a5500cf5a" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="31f8f9898401e5240b6a19c03c0c046d" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="3455fe69f7ddc4604b95bf9b0a1e88d7" ResourceName="Res/Entity/PlayerExplosion" />
+      <Asset Guid="350877d497c139d46be852cf635a4c33" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="35415cf1cfcf76348b7610861935cc33" ResourceName="UI.UXTool" />
-      <Asset Guid="375b66080af62fd40ae443f01b729af2" ResourceName="UI.UXTool" />
+      <Asset Guid="375b66080af62fd40ae443f01b729af2" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="38f6322242a881141bfc1a69a80a65c5" ResourceName="UI.UXTool" />
-      <Asset Guid="3b7910331870913419f6e73a758d246e" ResourceName="UI.UXTool" />
+      <Asset Guid="3aa539b1e46111d4299a83c73ebe762c" ResourceName="Res/UI/UIForm/Hot/AboutForm" />
+      <Asset Guid="3b7910331870913419f6e73a758d246e" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="3be3fac3611f4584695662c4889f722d" ResourceName="Res/UI/UISprite/Common" />
-      <Asset Guid="3c8054a5f21c46043bf34c492484cc6c" ResourceName="HybridCLR" />
-      <Asset Guid="3d35d566fece421448c5f52a6f72cce7" ResourceName="UI.UXTool" />
-      <Asset Guid="3dfc56ac974e73f4c960abf1fe503a07" ResourceName="Res/UI/UIPrefab/Button" />
-      <Asset Guid="3e9ef7dd787132643bb3be71dc2120bd" ResourceName="UI.UXTool" />
+      <Asset Guid="3d35d566fece421448c5f52a6f72cce7" ResourceName="Auto/Combine/887714db" />
+      <Asset Guid="3dc7455402dfa462b89a4bbd513955e9" ResourceName="Res/Sound/explosion_asteroid" />
+      <Asset Guid="3dfc56ac974e73f4c960abf1fe503a07" ResourceName="Res/UI/UIPrefab/Button/Preset_Button_FirstWeak" />
+      <Asset Guid="3e9ef7dd787132643bb3be71dc2120bd" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="3ec74aa98d7b1ba4599726fc79459c3c" ResourceName="Luban" />
       <Asset Guid="3f54fcfdac53aec42ae18a6a1c6d8cb1" ResourceName="Res/UI/UISprite/Common" />
-      <Asset Guid="40ce6803183529f4f8cb189d4c09c141" ResourceName="UI.UXTool" />
-      <Asset Guid="43abc460915104a4fa96202073a376b0" ResourceName="ET.Code" />
+      <Asset Guid="40ce6803183529f4f8cb189d4c09c141" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="4473d81b14ddb0143addf0e6050d8491" ResourceName="Res/Scene/Main" />
-      <Asset Guid="457a2709b87f0d94fbc97b41cfa89fae" ResourceName="UI.UXTool" />
+      <Asset Guid="457a2709b87f0d94fbc97b41cfa89fae" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="477cf74b16d89a94291cf1ff97f0dfa8" ResourceName="UI.UXTool" />
-      <Asset Guid="4b2b53802b3d4f94d855ab26f2ff22af" ResourceName="GameHot" />
-      <Asset Guid="4e2080ec5b2634249afd0ee4e2310eff" ResourceName="UI.UXTool" />
-      <Asset Guid="4eb028c2d41731848b73b8784a0ec0f1" ResourceName="ET.ClientServer" />
-      <Asset Guid="4f272325ab7fc91408b7b77b4cae932c" ResourceName="UI.UXTool" />
-      <Asset Guid="50a0f4e00afa49845832e78e71e8bf73" ResourceName="HybridCLR" />
+      <Asset Guid="4b2b53802b3d4f94d855ab26f2ff22af" ResourceName="GameHot.Luban" />
+      <Asset Guid="4c3865b2ac420cd46a9cde6ab468d016" ResourceName="Res/Material/prop_asteroid_03_mat" />
+      <Asset Guid="4e2080ec5b2634249afd0ee4e2310eff" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="4f272325ab7fc91408b7b77b4cae932c" ResourceName="Auto/Combine/887714db" />
+      <Asset Guid="5088b546138e5804e889f7ac7b20e3b7" ResourceName="Res/Mesh/prop_asteroid_02" />
       <Asset Guid="5322de890c0399a41af975436009b7d7" ResourceName="UI.UXTool" />
       <Asset Guid="54e50a6ecae1b70438e1c50bdbf55e39" ResourceName="UI.UXTool" />
-      <Asset Guid="5564ceda6f96abf439a97240fd7abb4a" ResourceName="UI.UXTool" />
-      <Asset Guid="5586627f71c5495479611e0d5666da73" ResourceName="UI.UXTool" />
+      <Asset Guid="5564ceda6f96abf439a97240fd7abb4a" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="5586627f71c5495479611e0d5666da73" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="56b8df63bbad60749a69e38bc687fadf" ResourceName="Res/UI/UISprite/Common" />
+      <Asset Guid="578af1667322bab45b652b79a40bb4fb" ResourceName="Res/Material/prop_asteroid_02_mat" />
+      <Asset Guid="583ff7026dac91849b7c7b2468ba456b" ResourceName="Res/Material/prop_asteroid_01_mat" />
       <Asset Guid="595f7cae6f82a6146b20ca287fe7c859" ResourceName="Res/Prefab/Skeleton/SkeletonController" />
-      <Asset Guid="59bcba3d41de4874fa62f5951fe3e502" ResourceName="HybridCLR" />
-      <Asset Guid="59e4b6242a4df364b95b4f00426a8eab" ResourceName="UI.UXTool" />
+      <Asset Guid="59e4b6242a4df364b95b4f00426a8eab" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="5b4ce86811f14bb41978e323934a08a7" ResourceName="UI.UXTool" />
       <Asset Guid="5c1e9879b9467eb4c8d04581c5bdff55" ResourceName="UI.UXTool" />
-      <Asset Guid="5f95d0df2dbdbf94bbd07f691207616b" ResourceName="GameHot" />
+      <Asset Guid="5f95d0df2dbdbf94bbd07f691207616b" ResourceName="GameHot.Luban" />
       <Asset Guid="5f9b1b4c0a9ccfc44b08f56ccf6cf66c" ResourceName="UI.UXTool" />
-      <Asset Guid="6106eb6712a665645b9a56a46caaf53e" ResourceName="HybridCLR" />
-      <Asset Guid="61f1ec53f624bdc47b0733a4e28743c0" ResourceName="UI.UXTool" />
+      <Asset Guid="61f1ec53f624bdc47b0733a4e28743c0" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="62622811396e3d645b24aecdc2aec75c" ResourceName="UI.UXTool" />
       <Asset Guid="62af9e5c8f39cfa49af9e10ccf42f1da" ResourceName="Res/UI/UISprite/Common" />
-      <Asset Guid="63f1652d458177346b601aa5d17d524e" ResourceName="UI.UXTool" />
-      <Asset Guid="64b80197e084f7f46808b4dcf481049b" ResourceName="ET.ClientServer" />
-      <Asset Guid="65290819348a03848a0e89e12fb6c9c4" ResourceName="HybridCLR" />
-      <Asset Guid="663e8d9c4af162a42b0291d124f08e23" ResourceName="UI.UXTool" />
-      <Asset Guid="66a09a917bcca6640a2dca30eb1779f8" ResourceName="HybridCLR" />
-      <Asset Guid="6708990c4408fcd4f932581f9c40eb3d" ResourceName="HybridCLR" />
-      <Asset Guid="680a31309f745294296e60c8c2f38e73" ResourceName="HybridCLR" />
-      <Asset Guid="6887965437e6cdd4994b29405da0cf20" ResourceName="ET.ClientServer" />
+      <Asset Guid="638ff8ae4a0d15047839cd265d3bc296" ResourceName="Res/Music/music_background" />
+      <Asset Guid="63f1652d458177346b601aa5d17d524e" ResourceName="Auto/Combine/887714db" />
+      <Asset Guid="63fe6ff9ab9e1433f8db4ebd940f2442" ResourceName="Res/Material/done_fx_bolt_cyan_mat" />
+      <Asset Guid="654c33b0a4496454481a16682b4046ac" ResourceName="Res/UI/UIPrefab/HPBarInstances" />
+      <Asset Guid="663e8d9c4af162a42b0291d124f08e23" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="69535882c3a640945a975f2a4438825d" ResourceName="UI.UXTool" />
-      <Asset Guid="6a20488bc1db41d47bf65a05117a877d" ResourceName="UI.UXTool" />
-      <Asset Guid="6bb61da7c155dbe4c8ea5214984f07c6" ResourceName="UI.UXTool" />
+      <Asset Guid="6a20488bc1db41d47bf65a05117a877d" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="6bb61da7c155dbe4c8ea5214984f07c6" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="6bc106e2e539dda44af3453fe97cd0d0" ResourceName="UI.UXTool" />
       <Asset Guid="6bd5badd6531c384082aa69d2524bb95" ResourceName="UI.UXTool" />
       <Asset Guid="6cbc2c323b77f804fb958fa4eca33998" ResourceName="Res/UI/UISprite/Common" />
       <Asset Guid="6d51a7bff799de24eaf771981bc6127d" ResourceName="UI.UXTool" />
-      <Asset Guid="6dcf0f5a63935f44f92c5c4c7c20cb24" ResourceName="HybridCLR" />
-      <Asset Guid="6f172df29b5d45b4d97a2ceb63274064" ResourceName="HybridCLR" />
-      <Asset Guid="6f4f01fb0f74a674196c817368818daf" ResourceName="ET.ClientServer" />
-      <Asset Guid="6fc0da2a4efae454ba85d25d8aa13740" ResourceName="UI.UXTool" />
-      <Asset Guid="70253711d0c59c941bcd50f929b1c04c" ResourceName="UI.UXTool" />
-      <Asset Guid="72148cd09c2371c47adf33359c0925b7" ResourceName="UI.UXTool" />
-      <Asset Guid="738bdf56857a65f479c367c7b62c4ad7" ResourceName="Entity" />
-      <Asset Guid="73942e845134fc5409424517650e5a0d" ResourceName="HybridCLR" />
-      <Asset Guid="7b9593e016b7dfd4ca40a2c961bd7883" ResourceName="HybridCLR" />
+      <Asset Guid="6d5adfb995cb79c438d8b1e6b5e5de91" ResourceName="Res/Material/Urp" />
+      <Asset Guid="6fc0da2a4efae454ba85d25d8aa13740" ResourceName="Auto/Combine/887714db" />
+      <Asset Guid="70253711d0c59c941bcd50f929b1c04c" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="72148cd09c2371c47adf33359c0925b7" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="72e76810224064300b7d32e8322a5d12" ResourceName="Res/Sound/explosion_enemy" />
+      <Asset Guid="738bdf56857a65f479c367c7b62c4ad7" ResourceName="Res/Entity/PlayerShip" />
+      <Asset Guid="76f3e1b5882c4b248ba06929f89bf2de" ResourceName="UI.FairyGUI" />
       <Asset Guid="7c257456f05a75841b93e90bdd63bbf9" ResourceName="Res/Localization/ChineseSimplified/Localization" />
-      <Asset Guid="7c4bd903827c81443b0bee2fa408efcd" ResourceName="ET.ClientServer" />
-      <Asset Guid="7ca3b64aa69c9244d9f90d2b7dd613b4" ResourceName="UI.UXTool" />
-      <Asset Guid="7d5f7699d6d1d48e485ac71126e12061" ResourceName="Entity" />
+      <Asset Guid="7ca3b64aa69c9244d9f90d2b7dd613b4" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="7d5f7699d6d1d48e485ac71126e12061" ResourceName="Res/Entity/Asteroid01" />
       <Asset Guid="7d7519d6f12d2ee42ace9b3f15502ce8" ResourceName="UI.UXTool" />
       <Asset Guid="7e2d9312c5afda3438f3e420470bf02d" ResourceName="UI.UXTool" />
+      <Asset Guid="7f3f95fb5e45471e9a9e6e1b5d2b0b7c" ResourceName="UI.FairyGUI" />
       <Asset Guid="7f5aee8da226edf4991598327cb32ce0" ResourceName="Res/UI/UISprite/Logo" />
-      <Asset Guid="7fb8fcae9b6bfbf49a097924290f0ce6" ResourceName="HybridCLR" />
-      <Asset Guid="8132ea8fface6ca4eb0224667a2aa887" ResourceName="Res/UI/UIPrefab/Button" />
+      <Asset Guid="8132ea8fface6ca4eb0224667a2aa887" ResourceName="Res/UI/UIPrefab/Button/Preset_Button_CommonCurrency" />
       <Asset Guid="81523fb22b1b6ca43bd34af552ed6f82" ResourceName="UI.UXTool" />
-      <Asset Guid="822d44e3e4c29b24b8f0c5ad4dc4e7f2" ResourceName="UI.UXTool" />
-      <Asset Guid="8310fdcd0a33c11499ae784ea3571f0b" ResourceName="UI.UXTool" />
-      <Asset Guid="834bfaee90a9d4e04b1e8c1ca22cc88e" ResourceName="Entity" />
-      <Asset Guid="839e2641e990cad4e8bfdfdac37c5b79" ResourceName="UI.UXTool" />
-      <Asset Guid="8448bbcd845e47145b7b356a66793970" ResourceName="ET.Code" />
-      <Asset Guid="84b7805ef4c5343ce920ff2c6e71c7f1" ResourceName="GameHot" />
+      <Asset Guid="822d44e3e4c29b24b8f0c5ad4dc4e7f2" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="8310fdcd0a33c11499ae784ea3571f0b" ResourceName="Auto/Combine/887714db" />
+      <Asset Guid="834bfaee90a9d4e04b1e8c1ca22cc88e" ResourceName="Res/Entity/Asteroid03" />
+      <Asset Guid="839e2641e990cad4e8bfdfdac37c5b79" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="84b7805ef4c5343ce920ff2c6e71c7f1" ResourceName="GameHot.Luban" />
       <Asset Guid="84f01b41076e54f429838619462e9a37" ResourceName="UI.UXTool" />
-      <Asset Guid="8522461e56b6b9747af8e1a33f3af608" ResourceName="GameHot" />
+      <Asset Guid="8522461e56b6b9747af8e1a33f3af608" ResourceName="GameHot.Luban" />
       <Asset Guid="85bf385d20f84094e8640d446e72f03a" ResourceName="UI.UXTool" />
       <Asset Guid="8606e6199e167534bb7a3ad3ed615c2d" ResourceName="UI.UXTool" />
-      <Asset Guid="86178d21ee98d23439869d0223e99541" ResourceName="UI.UXTool" />
-      <Asset Guid="8777d02fab43d2b418a28320b701d898" ResourceName="UI.UXTool" />
-      <Asset Guid="8793898f1608f2f4992ee0e781721039" ResourceName="HybridCLR" />
-      <Asset Guid="8a93490fcc960d3448b484c619fd55ac" ResourceName="UI.UXTool" />
-      <Asset Guid="8b6866f234d6eee4f8a35cec279d6109" ResourceName="UI.UXTool" />
-      <Asset Guid="8be6035f3e8a8cd428b6248241c9524d" ResourceName="Res/UI/UIPrefab/Button" />
+      <Asset Guid="86178d21ee98d23439869d0223e99541" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="8777d02fab43d2b418a28320b701d898" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="8940b037a9b441c4cbd3d2b446838424" ResourceName="Res/Material/vehicle_playerShip_metal_mat" />
+      <Asset Guid="8a93490fcc960d3448b484c619fd55ac" ResourceName="Auto/Combine/887714db" />
+      <Asset Guid="8b6866f234d6eee4f8a35cec279d6109" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="8be6035f3e8a8cd428b6248241c9524d" ResourceName="Res/UI/UIPrefab/Button/Preset_Button_CommonHome" />
       <Asset Guid="8cbf73a62f872e741af7cceda911c264" ResourceName="UI.UXTool" />
-      <Asset Guid="8cf749fdfa5edc3478d16893efeaa0eb" ResourceName="Entity" />
+      <Asset Guid="8cf749fdfa5edc3478d16893efeaa0eb" ResourceName="Res/Entity/PlayerEngine" />
       <Asset Guid="8d42b919fb94e5f4f998957f2ac1ff81" ResourceName="UI.UXTool" />
-      <Asset Guid="8f0857f85ecc988498c47eece7afdccd" ResourceName="Res/UI/UIPrefab/Button" />
+      <Asset Guid="8e27380ee68aa4a219b4db9018e7da31" ResourceName="Res/Material/done_fx_bolt_orange_mat" />
+      <Asset Guid="8f0857f85ecc988498c47eece7afdccd" ResourceName="Res/UI/UIPrefab/Button/Preset_Button_CommonBack" />
       <Asset Guid="90bbee64859e4e14f8f5eec8db43b621" ResourceName="UI.UXTool" />
-      <Asset Guid="9143e2b62ad50488482f9b73672fc331" ResourceName="Entity" />
-      <Asset Guid="919546e3dacf13c4c9e26b7393c796fc" ResourceName="UI.UXTool" />
-      <Asset Guid="91ddddbb4ac95e144b11eec367d27826" ResourceName="Auto/Combine/6274e2cf" />
+      <Asset Guid="9143e2b62ad50488482f9b73672fc331" ResourceName="Res/Entity/Asteroid02" />
+      <Asset Guid="919546e3dacf13c4c9e26b7393c796fc" ResourceName="Auto/Combine/887714db" />
+      <Asset Guid="91ddddbb4ac95e144b11eec367d27826" ResourceName="Res/Font/Default" />
       <Asset Guid="927853b6f24bb6c49ae06752fad056be" ResourceName="UI.UXTool" />
       <Asset Guid="943f3c476130c4f4f8ae55ef3ccd38ba" ResourceName="Res/Prefab/Skeleton/Texture/Skeleton_D" />
-      <Asset Guid="94d28398aaf1dad4c8c2b147cba2ecb1" ResourceName="UI.UXTool" />
-      <Asset Guid="951b3cc61016a524a851ac857f80de71" ResourceName="HybridCLR" />
+      <Asset Guid="94d28398aaf1dad4c8c2b147cba2ecb1" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="955000b4d1441470e8cbf94f483228b5" ResourceName="Res/Material/done_tile_nebula_green_dff" />
       <Asset Guid="96b34642febcb6c4f88d68e6cbfa331b" ResourceName="UI.UXTool" />
-      <Asset Guid="96d83c7380035564ba399a83d77e7f91" ResourceName="ET.ClientServer" />
-      <Asset Guid="9991b46b99751664f801fa2ca5f8bdef" ResourceName="UI.UXTool" />
-      <Asset Guid="99fa76e835e091e45a9f5b1ac032451e" ResourceName="HybridCLR" />
+      <Asset Guid="96d2e77dd9853514da336717bd5627c0" ResourceName="Res/UI/UIPrefab/HPBarItem" />
+      <Asset Guid="97b1f8b25cca2bc458cb9d6127c8d186" ResourceName="Res/Material/part_spark_large_mat" />
+      <Asset Guid="9991b46b99751664f801fa2ca5f8bdef" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="9a7e5f9d69f95dc4593996b20425e542" ResourceName="UI.UXTool" />
-      <Asset Guid="9a7e9d1191a29a849bfba3a4a106784a" ResourceName="HybridCLR" />
-      <Asset Guid="9ae493a32dae67e4ab45dd0fbb4824ac" ResourceName="UI.UXTool" />
-      <Asset Guid="9b105248f33c7a34e8d6e9f5f209bf10" ResourceName="UI.UXTool" />
+      <Asset Guid="9ae493a32dae67e4ab45dd0fbb4824ac" ResourceName="Auto/Combine/887714db" />
+      <Asset Guid="9b105248f33c7a34e8d6e9f5f209bf10" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="9e27b0bdab1ad7242a009899d15c0e67" ResourceName="Res/Prefab/Skeleton/Skeleton" />
-      <Asset Guid="9ebd8488557a229498419fe251336d05" ResourceName="UI.UXTool" />
-      <Asset Guid="9ef39b1d990f66b41ba4e5bdf5741b1b" ResourceName="UI.UXTool" />
-      <Asset Guid="9f6d9adc6f537764fa0fea29671e77bf" ResourceName="UI.UIForm.LockStep" />
+      <Asset Guid="9ebd8488557a229498419fe251336d05" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="9ef39b1d990f66b41ba4e5bdf5741b1b" ResourceName="Auto/Combine/887714db" />
       <Asset Guid="9f847ec5e66e03e4ead1d3c5f7b510e8" ResourceName="Res/UI/UISprite/Common" />
-      <Asset Guid="a1b1cbe9529996f448fe8a1ede090f09" ResourceName="ET.Code" />
-      <Asset Guid="a4068226bdf6afe4da72b1ef1594de28" ResourceName="ET.Code" />
+      <Asset Guid="a019ae3af8e864616b85773c509f5285" ResourceName="Res/Sound/explosion_player" />
+      <Asset Guid="a23eef5e20ff8cb46adf33491fc443fb" ResourceName="Res/Material/part_spark_yellow_mat" />
       <Asset Guid="a5294483f20f40d449699101bb428cda" ResourceName="Res/Scene/Map1" />
-      <Asset Guid="a57e4a78fa2c235448cc55f4f05671a2" ResourceName="UI.UXTool" />
-      <Asset Guid="a5d9d0e22ef24e54f889295f42c5fc22" ResourceName="UI.UXTool" />
-      <Asset Guid="a6d58f54ce5934781962a4f887e834f3" ResourceName="Entity" />
-      <Asset Guid="a77314322cf5d214f8f11d034a0e5dfa" ResourceName="UI.UXTool" />
-      <Asset Guid="a84ea0710b923de4da480057bb57cd72" ResourceName="UI.UXTool" />
+      <Asset Guid="a57e4a78fa2c235448cc55f4f05671a2" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="a5d9d0e22ef24e54f889295f42c5fc22" ResourceName="Auto/Combine/887714db" />
+      <Asset Guid="a6d58f54ce5934781962a4f887e834f3" ResourceName="Res/Entity/AsteroidExplosion" />
+      <Asset Guid="a77314322cf5d214f8f11d034a0e5dfa" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="a7b030cffa2dc44478c14e49a22771c2" ResourceName="Res/Material/part_jet_flare_mat" />
+      <Asset Guid="a84ea0710b923de4da480057bb57cd72" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="a8c07bbe04fdaf04b80e27f651a8edd6" ResourceName="Res/UI/UISprite/Common" />
-      <Asset Guid="a906eb08b1cc5ca49880de53793c4117" ResourceName="HybridCLR" />
-      <Asset Guid="a9508ea260cabea4bb6e5ff71ccc508f" ResourceName="HybridCLR" />
-      <Asset Guid="ab0e7d449081c5840b6ecbc53b9a60e4" ResourceName="ET.ClientServer" />
       <Asset Guid="ab45c3f613f388d43bbf43ec05eb92e2" ResourceName="Res/UI/UISprite/Common" />
-      <Asset Guid="abd1565e9e268f04cac3631d022b4ace" ResourceName="Entity" />
+      <Asset Guid="abd1565e9e268f04cac3631d022b4ace" ResourceName="Res/Entity/DefaultWeapon" />
       <Asset Guid="ae1d5970989b0a849ada21f113c42f99" ResourceName="UI.UXTool" />
-      <Asset Guid="aed5b0806dfc5804c83c52f0c0d7f2b8" ResourceName="UI.UXTool" />
-      <Asset Guid="afc18fc39ade3744397c0c993b57be53" ResourceName="Entity" />
+      <Asset Guid="aed5b0806dfc5804c83c52f0c0d7f2b8" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="afc18fc39ade3744397c0c993b57be53" ResourceName="Res/Entity/EnemyShip" />
       <Asset Guid="b031b4f2980561542a7f7ba41391edc3" ResourceName="Res/Scene/Menu" />
-      <Asset Guid="b124cd64fafb18b4880a1461b91bf3c1" ResourceName="GameHot" />
+      <Asset Guid="b0c7cf51d3fecb446ab93bf854419715" ResourceName="Res/Material/part_spark_blue_mat" />
+      <Asset Guid="b124cd64fafb18b4880a1461b91bf3c1" ResourceName="GameHot.Luban" />
       <Asset Guid="b1494958bf9856a479bec1767c02878e" ResourceName="Res/Prefab/Skeleton/Materials/skeleton_D" />
-      <Asset Guid="b2dfc0e8a8c638d4fbde378e24215db9" ResourceName="UI.UXTool" />
-      <Asset Guid="b420ab0d7cecc4691b5ccbe3a60049de" ResourceName="ET.ClientServer" />
+      <Asset Guid="b2dfc0e8a8c638d4fbde378e24215db9" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="b44b5ab44e24caa4b80290b9fd405077" ResourceName="UI.UXTool" />
-      <Asset Guid="b54d6e05f56c5e242af6389c2f517b2e" ResourceName="HybridCLR" />
-      <Asset Guid="b63abefc0bba2af40963ceaa717f87fc" ResourceName="HybridCLR" />
       <Asset Guid="b72699bc57b54324a8b4332251139803" ResourceName="UI.UXTool" />
       <Asset Guid="b9975f2be09eab4449a3f00368f0da41" ResourceName="UI.UXTool" />
-      <Asset Guid="ba6a7efaa30b4ed478cdd6c14656df32" ResourceName="UI.UXTool" />
-      <Asset Guid="ba7bedebaa6c676469b3705842554cf6" ResourceName="UI.UXTool" />
-      <Asset Guid="bc9fefb614e56324b9a0371b5853c649" ResourceName="HybridCLR" />
+      <Asset Guid="ba6a7efaa30b4ed478cdd6c14656df32" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="ba7bedebaa6c676469b3705842554cf6" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="bbfd75fe6fe00e1448fe988173ede7f9" ResourceName="Res/UI/UIForm/Hot/SettingForm" />
       <Asset Guid="bd0ff81d6e973b440bb774bce2054b04" ResourceName="UI.RuntimeInspector" />
-      <Asset Guid="bdc796c2818186842aa38896cd86514a" ResourceName="UI.UXTool" />
+      <Asset Guid="bdc796c2818186842aa38896cd86514a" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="bdf7d870b31097a418a22687c9dd808e" ResourceName="UI.UXTool" />
-      <Asset Guid="bec48efaf177d5941a2d396b0663c20a" ResourceName="HybridCLR" />
-      <Asset Guid="bf4f76576f8c34f48ac9e5d3295db6da" ResourceName="UI.UXTool" />
-      <Asset Guid="c04a43e354d20344caeb357e8a131ed6" ResourceName="UI.UXTool" />
+      <Asset Guid="bf4f76576f8c34f48ac9e5d3295db6da" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="bf75b984df8a84987bcf3a8bf6e2862d" ResourceName="Res/Sound/weapon_player" />
+      <Asset Guid="c04a43e354d20344caeb357e8a131ed6" ResourceName="Auto/Combine/887714db" />
       <Asset Guid="c0a75707a93b25649a46b20ecf25667c" ResourceName="UI.UXTool" />
       <Asset Guid="c191c1fcf2d859f4db51f61449931949" ResourceName="UI.UXTool" />
-      <Asset Guid="c1bf5d88e5d4ff247abb4e9e25996132" ResourceName="UI.UXTool" />
-      <Asset Guid="c2bc38357a60b454dabab66d850b2d98" ResourceName="UI.UXTool" />
+      <Asset Guid="c1bf5d88e5d4ff247abb4e9e25996132" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="c2bc38357a60b454dabab66d850b2d98" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="c361bae2493f73c48b63e97b9ec064b4" ResourceName="Auto/Launcher" />
-      <Asset Guid="c534ae0cab839b246b214aef20574059" ResourceName="UI.UXTool" />
-      <Asset Guid="c54e8d9624286b24fa23519e5df2ed0a" ResourceName="UI.UIForm.LockStep" />
+      <Asset Guid="c534ae0cab839b246b214aef20574059" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="c547624e174de984882f0a14b4bb32e1" ResourceName="Res/Material/vehicle_enemyShip_metal_mat" />
+      <Asset Guid="c58c9afddbd36d14d837fa218d772996" ResourceName="Res/Material/part_jet_core_mat" />
       <Asset Guid="c6e5d00057c459640b5d6d14026d13f6" ResourceName="UI.UXTool" />
-      <Asset Guid="c7d1e11dd37634b48a9dd4012b8e4306" ResourceName="UI.UISound" />
-      <Asset Guid="c8238e53d1fac8b4cb254f4d6eef087b" ResourceName="UI.UXTool" />
+      <Asset Guid="c7d1e11dd37634b48a9dd4012b8e4306" ResourceName="Res/UI/UISound/click" />
+      <Asset Guid="c8238e53d1fac8b4cb254f4d6eef087b" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="c9813d46d59b6fc488d2df43cec8e152" ResourceName="UI.UXTool" />
-      <Asset Guid="ca9eca684ec84504a955194cb34433a7" ResourceName="GameHot" />
+      <Asset Guid="ca9eca684ec84504a955194cb34433a7" ResourceName="GameHot.Luban" />
+      <Asset Guid="caa829ab2ffc71340a69253afdf58365" ResourceName="Res/Music/music_menu" />
       <Asset Guid="cadd0764941c8b646ae79b51d0ea8285" ResourceName="Res/UI/UISprite/Common" />
       <Asset Guid="cb9dc182bed8c52428dfa0309bd9ccc1" ResourceName="UI.UXTool" />
-      <Asset Guid="cdcbb709d3b4b8e488cbe42262cef930" ResourceName="ET.Code" />
-      <Asset Guid="d0ef5b9be64e67b489d5eaa6bb69b98a" ResourceName="HybridCLR" />
-      <Asset Guid="d2f2e5ce2a6eb6242a0378d368a023d1" ResourceName="UI.UXTool" />
-      <Asset Guid="d31ae9b768b6ea942a5c638e16f4c240" ResourceName="HybridCLR" />
-      <Asset Guid="d339ecdfaaab7004f8f057a91e014080" ResourceName="UI.UXTool" />
-      <Asset Guid="d38322eec41f42741b106e1dd0474651" ResourceName="HybridCLR" />
+      <Asset Guid="ce1f1ecfb90b7fd43a0028dce96933bf" ResourceName="Res/Mesh/vehicle_enemyShip" />
+      <Asset Guid="d2f2e5ce2a6eb6242a0378d368a023d1" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="d339ecdfaaab7004f8f057a91e014080" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="d43bb19cd6eb0fa42b8151fe89431b80" ResourceName="UI.UXTool" />
       <Asset Guid="d45af112b406ea749953c385dfdb7245" ResourceName="UI.UXTool" />
-      <Asset Guid="d4c4df527d8b7184b94a679bdec19898" ResourceName="UI.UXTool" />
-      <Asset Guid="d6d2a8e7150a19c4a9aec43c56f70ed1" ResourceName="ET.ClientServer" />
-      <Asset Guid="d71461c8a67b23043b8da2b34c19d316" ResourceName="UI.UXTool" />
+      <Asset Guid="d4c4df527d8b7184b94a679bdec19898" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="d71461c8a67b23043b8da2b34c19d316" ResourceName="Auto/Combine/887714db" />
       <Asset Guid="d89500895cb2dd34fb68b0590b7339aa" ResourceName="UI.UXTool" />
-      <Asset Guid="d8bfc3b26cdcefb4bb1fdc6f132da8b3" ResourceName="HybridCLR" />
-      <Asset Guid="d8d87e53d93e234448658c9a801a9967" ResourceName="UI.UIForm.LockStep" />
       <Asset Guid="d8f4bf1fcba31e242a3e35991ef53ed0" ResourceName="UI.UXTool" />
       <Asset Guid="d9548529e4fff6c4ebd2150fdedcc237" ResourceName="UI.UXTool" />
+      <Asset Guid="da243c3e77fcbdd4bb9c7c6e3fbfd8b9" ResourceName="UI.FairyGUI" />
       <Asset Guid="db58965402f12ed47b4dad61a9e48c9d" ResourceName="Res/UI/UISprite/Icon" />
-      <Asset Guid="dd132f3c9fe16eb45b5aa4bbe7bae597" ResourceName="HybridCLR" />
+      <Asset Guid="df04e921a317167459233ce6732bd0f1" ResourceName="Res/Mesh/prop_asteroid_03" />
       <Asset Guid="dfc4233acbbd1c44fa552f08e23cd89c" ResourceName="Luban" />
-      <Asset Guid="dff598a90c710a24683413c5d9e4b7c8" ResourceName="GameHot" />
-      <Asset Guid="e1c2baec53ec3994aa4550e3ddd8df23" ResourceName="HybridCLR" />
-      <Asset Guid="e25621b19292d4e4294eb547271042da" ResourceName="ET.Code" />
       <Asset Guid="e3cc6d6e2b1013745958915ce2f0d0a4" ResourceName="UI.UXTool" />
       <Asset Guid="e3e153d6a5950c946b86ea8b7887eb73" ResourceName="UI.UXTool" />
       <Asset Guid="e49b337fff7724145b8baf823e6da1fa" ResourceName="UI.UXTool" />
       <Asset Guid="e4e4e84c4dc3870418a08777475cf6b5" ResourceName="UI.UXTool" />
       <Asset Guid="e5ca26c53b6ab8a46b52817008d7c7fa" ResourceName="Res/UI/UISprite/Icon" />
-      <Asset Guid="e6a8850b6499a1f4cbed64b4e5ddae46" ResourceName="UI.UXTool" />
-      <Asset Guid="e6c8d6e6694015d4d8dac8c72319bef1" ResourceName="UI.UXTool" />
-      <Asset Guid="e819383de8407be41994bfd010084173" ResourceName="Res/UI/UIPrefab/Button" />
+      <Asset Guid="e6a8850b6499a1f4cbed64b4e5ddae46" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="e6c8d6e6694015d4d8dac8c72319bef1" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="e819383de8407be41994bfd010084173" ResourceName="Res/UI/UIPrefab/Button/Preset_Button_FirstStrong" />
       <Asset Guid="e82837c9099f69a48b48fc44eb8d119d" ResourceName="Res/UI/UISprite/Common" />
-      <Asset Guid="e830964cdb85ff3429bca484c16bab44" ResourceName="UI.UISound" />
+      <Asset Guid="e830964cdb85ff3429bca484c16bab44" ResourceName="Res/UI/UISound/select" />
       <Asset Guid="e85864330b68dde498dcb6e8711815d3" ResourceName="Res/UI/UISprite/Common" />
-      <Asset Guid="e94a05065db18fe428057500ab8f574b" ResourceName="UI.UXTool" />
+      <Asset Guid="e94a05065db18fe428057500ab8f574b" ResourceName="Auto/Combine/887714db" />
       <Asset Guid="ea52d03e4ad273945844b8c7eae6a8c4" ResourceName="UI.UXTool" />
-      <Asset Guid="eae0b604e4ad6934baa5493c90980a57" ResourceName="ET.Code" />
       <Asset Guid="edca3104d046db9439c1f4594ad5e602" ResourceName="UI.UXTool" />
-      <Asset Guid="ee27a57b3c2516c4dbf2d5f67ad9a8ab" ResourceName="UI.UXTool" />
-      <Asset Guid="ee3aae79703f46248a0b9b10bd42ccdc" ResourceName="UI.UXTool" />
-      <Asset Guid="ef17659f7e6a1af49b4030e0ae1d89e2" ResourceName="UI.UXTool" />
+      <Asset Guid="ee27a57b3c2516c4dbf2d5f67ad9a8ab" ResourceName="Auto/Combine/887714db" />
+      <Asset Guid="ee3aae79703f46248a0b9b10bd42ccdc" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="ef17659f7e6a1af49b4030e0ae1d89e2" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="ef43a0db1f649274590f3d130c1f0ff3" ResourceName="UI.UXTool" />
-      <Asset Guid="f01edee366b9828498ed5166df654a8d" ResourceName="HybridCLR" />
       <Asset Guid="f1833b4cd407d8e408a62b46185431ff" ResourceName="Luban" />
-      <Asset Guid="f1ab0c6644abf7d42b39a554ed99028b" ResourceName="HybridCLR" />
       <Asset Guid="f1ce3d78eca75ac4585a48e26a1c9e54" ResourceName="UI.UXTool" />
-      <Asset Guid="f2c93d6aa560477479438fcc0bd606a7" ResourceName="UI.UXTool" />
+      <Asset Guid="f2c93d6aa560477479438fcc0bd606a7" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="f2f4df0b7211e4c42a5638273525d8ee" ResourceName="Res/UI/UISprite/Common" />
-      <Asset Guid="f42e655327facdd4dad6dcfb4bc6c093" ResourceName="UI.UXTool" />
+      <Asset Guid="f36c72c738c55f741afcd674a0b1245f" ResourceName="Res/Material/vehicle_playerShip_glass_mat" />
+      <Asset Guid="f42e655327facdd4dad6dcfb4bc6c093" ResourceName="Auto/Combine/887714db" />
       <Asset Guid="f438a72a91e1c3c4a9ced40888ffec96" ResourceName="Res/UI/UISprite/Icon" />
-      <Asset Guid="f4ec271e525e14ca9927a07e6a2e153d" ResourceName="Entity" />
-      <Asset Guid="f51ce754799783c41836961b0a098a38" ResourceName="HybridCLR" />
+      <Asset Guid="f4ec271e525e14ca9927a07e6a2e153d" ResourceName="Res/Entity/PlayerBolt" />
       <Asset Guid="f5a85bf9d9006a44e9aae59c2350c247" ResourceName="UI.UXTool" />
-      <Asset Guid="f7389a115b7e48a4f917e080a4c4273c" ResourceName="HybridCLR" />
       <Asset Guid="f7a0edd8631d02a4482c8ccc87322d35" ResourceName="UI.UXTool" />
       <Asset Guid="fb1f428dbf5a5a647b1b69e59ee6ebdf" ResourceName="UI.UXTool" />
       <Asset Guid="fbd12d1b2c9fb0945a8a9e4ff9775374" ResourceName="UI.UXTool" />
-      <Asset Guid="fe9b056115b6ee64aaafc8b8a9385855" ResourceName="UI.UXTool" />
-      <Asset Guid="fedd25a3c60e7ae499fc6efab9ee180b" ResourceName="Entity" />
+      <Asset Guid="fe9b056115b6ee64aaafc8b8a9385855" ResourceName="Auto/Combine/0a91126d" />
+      <Asset Guid="fedd25a3c60e7ae499fc6efab9ee180b" ResourceName="Res/Entity/EnemyEngine" />
       <Asset Guid="fef68d1dd70201b4bb76246e05dbcf8d" ResourceName="UI.UXTool" />
     </Assets>
   </ResourceCollection>

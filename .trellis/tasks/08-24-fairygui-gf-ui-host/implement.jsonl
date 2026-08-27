@@ -1,0 +1,7 @@
+{"file":".trellis/spec/frontend/index.md","reason":"统一宿主涉及 Unity UI、生命周期、异步、程序集和资源边界。"}
+{"file":".trellis/spec/tools/fairygui-source-generation.md","reason":"UIForm descriptor 与官方绑定必须从 FairyGUI 唯一事实来源确定性生成。"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"复用 GF helper、现有异步打开和包管理扩展点，避免新建重复框架。"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"变更跨 FairyGUI XML、生成、Unity 资源、GF UI 和 GameHot 演示。"}
+{"file":".trellis/tasks/08-20-fairygui-gdk-ai-ui-integration/prd.md","reason":"继承父任务唯一 FairyGUI 后端与 AC04-AC11 契约。"}
+{"file":".trellis/tasks/08-20-fairygui-gdk-ai-ui-integration/design.md","reason":"继承已批准的 GF 具体 UIForm、单一 GRoot/UIGroup、打开时序和包租约设计。"}
+{"file":".trellis/tasks/08-20-fairygui-gdk-ai-ui-integration/research/current-state-and-risk-inventory.md","reason":"保留当前 UGUI 宿主、GF 强制类型、资源构建和配套设施风险证据。"}

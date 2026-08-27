@@ -5,7 +5,9 @@
 // Feedback: mailto:ellan@gameframework.cn
 //------------------------------------------------------------
 
-using GameFramework.Event;
+using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using GameFramework.Fsm;
 using UnityGameFramework.Runtime;
 
@@ -14,7 +16,8 @@ namespace Game.Hot
     public class ProcedureMenu : ProcedureBase
     {
         private bool m_StartGame = false;
-        private FairyDemoForm m_FairyDemoForm = null;
+        private CancellationTokenSource m_FairyOpenCancellation;
+        private UIForm m_FairyDemoUIForm;
 
         public void StartGame()
         {
@@ -25,23 +28,26 @@ namespace Game.Hot
         {
             base.OnEnter(procedureOwner);
 
-            GameEntry.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnOpenUIFormSuccess);
-
             m_StartGame = false;
-            GameEntry.UI.OpenUIForm(UIFormId.FairyDemoForm, this);
+            m_FairyOpenCancellation = new CancellationTokenSource();
+            OpenFairyDemoAsync(m_FairyOpenCancellation.Token).Forget();
         }
 
         protected override void OnLeave(IFsm<ProcedureComponent> procedureOwner, bool isShutdown)
         {
-            if (!isShutdown)
-            {
-                GameEntry.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnOpenUIFormSuccess);
+            CancellationTokenSource cancellation = m_FairyOpenCancellation;
+            m_FairyOpenCancellation = null;
+            cancellation?.Cancel();
+            cancellation?.Dispose();
 
-                if (m_FairyDemoForm != null)
+            if (!isShutdown && m_FairyDemoUIForm != null)
+            {
+                if (GameEntry.UI.HasUIForm(m_FairyDemoUIForm.SerialId))
                 {
-                    m_FairyDemoForm.Close();
-                    m_FairyDemoForm = null;
+                    GameEntry.UI.CloseUIForm(m_FairyDemoUIForm.SerialId);
                 }
+
+                m_FairyDemoUIForm = null;
             }
 
             base.OnLeave(procedureOwner, isShutdown);
@@ -59,15 +65,22 @@ namespace Game.Hot
             }
         }
 
-        private void OnOpenUIFormSuccess(object sender, GameEventArgs e)
+        private async UniTaskVoid OpenFairyDemoAsync(CancellationToken cancellationToken)
         {
-            OpenUIFormSuccessEventArgs ne = (OpenUIFormSuccessEventArgs)e;
-            if (ne.UserData != this)
+            try
             {
-                return;
+                m_FairyDemoUIForm = await FairyUIFormService.OpenFairyUIFormAsync(
+                    UIFormId.FairyDemoForm,
+                    this,
+                    cancellationToken);
             }
-
-            m_FairyDemoForm = (FairyDemoForm)ne.UIForm.Logic;
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+            }
+            catch (Exception exception)
+            {
+                Log.Error("Failed to open the FairyGUI demo form: {0}", exception);
+            }
         }
     }
 }

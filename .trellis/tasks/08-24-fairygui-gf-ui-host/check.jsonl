@@ -1,0 +1,6 @@
+{"file":".trellis/spec/frontend/index.md","reason":"检查 UI 生命周期、异步取消、程序集边界、Unity 资源和运行证据。"}
+{"file":".trellis/spec/tools/fairygui-source-generation.md","reason":"检查 descriptor/绑定的事实来源、过期与确定性门禁。"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"逐层检查 UI ID、描述符、资源规则、运行时宿主与业务绑定数据流。"}
+{"file":".trellis/tasks/08-24-fairygui-gf-ui-host/prd.md","reason":"逐项核对 AC01-AC10 和明确非目标。"}
+{"file":".trellis/tasks/08-24-fairygui-gf-ui-host/design.md","reason":"检查实现是否保持原始 userData、同步失败边界和独立包租约。"}
+{"file":".trellis/tasks/08-20-fairygui-gdk-ai-ui-integration/prd.md","reason":"防止局部宿主实现偏离父任务 GF/GameHot/ET 与最终零 UGUI 约束。"}

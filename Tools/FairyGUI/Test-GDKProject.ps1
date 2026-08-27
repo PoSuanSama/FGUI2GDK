@@ -516,7 +516,7 @@ catch {
 }
 $expectedCodeSettings = [ordered]@{
     allowGenCode = $true
-    classNamePrefix = 'UI_'
+    classNamePrefix = 'UI'
     codeType = ''
     getMemberByName = $true
     ignoreNoname = $true

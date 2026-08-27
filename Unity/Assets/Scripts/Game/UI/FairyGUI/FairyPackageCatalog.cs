@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using GameFramework;
 using Newtonsoft.Json;
 
@@ -7,7 +8,7 @@ namespace Game
 {
     internal sealed class FairyPackageCatalog
     {
-        internal const int SupportedSchemaVersion = 1;
+        internal const int SupportedSchemaVersion = 2;
 
         private readonly Dictionary<string, PackageDefinition> m_PackagesByName;
 
@@ -62,7 +63,16 @@ namespace Game
                         $"FairyGUI runtime manifest package '{packageData.Id}' has no name.");
                 }
 
-                PackageDefinition definition = new PackageDefinition(packageData.Id, packageData.Name);
+                if (string.IsNullOrWhiteSpace(packageData.DescriptorAsset))
+                {
+                    throw new GameFrameworkException(
+                        $"FairyGUI runtime manifest package '{packageData.Name}' has no descriptorAsset.");
+                }
+
+                PackageDefinition definition = new PackageDefinition(
+                    packageData.Id,
+                    packageData.Name,
+                    packageData.DescriptorAsset);
                 if (!packagesById.TryAdd(definition.Id, definition))
                 {
                     throw new GameFrameworkException(
@@ -73,6 +83,23 @@ namespace Game
                 {
                     throw new GameFrameworkException(
                         $"FairyGUI runtime manifest contains duplicate package name '{definition.Name}'.");
+                }
+
+                foreach (RuntimeAssetData runtimeAsset in packageData.RuntimeAssets ?? Array.Empty<RuntimeAssetData>())
+                {
+                    if (runtimeAsset == null || string.IsNullOrWhiteSpace(runtimeAsset.Path))
+                    {
+                        throw new GameFrameworkException(
+                            $"FairyGUI package '{definition.Name}' contains an empty runtime asset path.");
+                    }
+
+                    string fileName = Path.GetFileName(runtimeAsset.Path.Replace('\\', '/'));
+                    if (string.IsNullOrWhiteSpace(fileName) ||
+                        !definition.RuntimeAssetsByFileName.TryAdd(fileName, runtimeAsset.Path))
+                    {
+                        throw new GameFrameworkException(
+                            $"FairyGUI package '{definition.Name}' contains duplicate runtime asset basename '{fileName}'.");
+                    }
                 }
             }
 
@@ -121,6 +148,27 @@ namespace Game
             HashSet<string> visited = new HashSet<string>(StringComparer.Ordinal);
             AppendLoadOrder(root, visited, loadOrder);
             return loadOrder;
+        }
+
+        internal string ResolveRuntimeAsset(string packageName, string loaderName, string extension)
+        {
+            if (!m_PackagesByName.TryGetValue(packageName, out PackageDefinition package))
+            {
+                throw new GameFrameworkException(
+                    $"FairyGUI package '{packageName}' is not declared in the runtime manifest.");
+            }
+
+            string fileName = Utility.Text.Format(
+                "{0}{1}",
+                Path.GetFileName(loaderName.Replace('\\', '/')),
+                extension);
+            if (!package.RuntimeAssetsByFileName.TryGetValue(fileName, out string assetPath))
+            {
+                throw new GameFrameworkException(
+                    $"FairyGUI package '{packageName}' requested undeclared runtime asset '{fileName}'.");
+            }
+
+            return assetPath;
         }
 
         private void ValidateAcyclic()
@@ -192,12 +240,16 @@ namespace Game
         {
             internal readonly string Id;
             internal readonly string Name;
+            internal readonly string DescriptorAsset;
             internal readonly List<PackageDefinition> Dependencies = new List<PackageDefinition>();
+            internal readonly Dictionary<string, string> RuntimeAssetsByFileName =
+                new Dictionary<string, string>(StringComparer.Ordinal);
 
-            internal PackageDefinition(string id, string name)
+            internal PackageDefinition(string id, string name, string descriptorAsset)
             {
                 Id = id;
                 Name = name;
+                DescriptorAsset = descriptorAsset;
             }
         }
 
@@ -227,6 +279,18 @@ namespace Game
 
             [JsonProperty("dependencies")]
             public string[] Dependencies;
+
+            [JsonProperty("descriptorAsset")]
+            public string DescriptorAsset;
+
+            [JsonProperty("runtimeAssets")]
+            public RuntimeAssetData[] RuntimeAssets;
+        }
+
+        private sealed class RuntimeAssetData
+        {
+            [JsonProperty("path")]
+            public string Path;
         }
     }
 }

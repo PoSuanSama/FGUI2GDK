@@ -10,7 +10,7 @@
   "branchPath": "",
   "codeGeneration": {
     "allowGenCode": true,
-    "classNamePrefix": "UI_",
+    "classNamePrefix": "UI",
     "codePath": "../../../Unity/Assets/Scripts/Game/Hot/Code/Generate/FairyGUI",
     "codeType": "",
     "getMemberByName": true,

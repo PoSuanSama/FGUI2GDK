@@ -8,6 +8,9 @@ $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 $syncScript = Join-Path $PSScriptRoot 'Sync-GDKDemoToEditor.ps1'
 $lintScript = Join-Path $PSScriptRoot 'Test-GDKProject.ps1'
 $publishScript = Join-Path $PSScriptRoot 'Publish-GDKDemo.ps1'
+$descriptorScript = Join-Path $PSScriptRoot 'Generate-FairyUIFormDescriptors.ps1'
+$runtimeManifestScript = Join-Path $PSScriptRoot 'Generate-FairyRuntimeManifest.ps1'
+$lubanUiFormData = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../../Unity/Assets/Res/Editor/Luban/dtuiform.json')).Path
 $sourceProject = (Resolve-Path -LiteralPath $ProjectPath).Path
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('gdk-fairygui-tools-' + [Guid]::NewGuid().ToString('N'))
 $script:assertionCount = 0
@@ -381,7 +384,7 @@ try {
 
     $publishRepository = New-ProjectCopy 'publish-repository'
     $publishEditor = New-ProjectCopy 'publish-editor'
-    $publishOutput = Join-Path $testRoot 'publish-output'
+    $publishOutput = Join-Path $testRoot 'Assets'
     $fakeAgent = Join-Path $testRoot 'fake-agent.cmd'
     $fakeLog = Join-Path $testRoot 'fake-agent.log'
     $fakeScript = @'
@@ -418,6 +421,7 @@ exit /b 0
 if /I "%FGUI_FAKE_MODE%"=="no-artifact" (echo {"ok":true,"result":{"success":true,"packages":[{"name":"Package1"}]}} & exit /b 0)
 if not exist "%FGUI_FAKE_OUTPUT%" mkdir "%FGUI_FAKE_OUTPUT%"
 echo bytes>"%FGUI_FAKE_OUTPUT%\Package1_fui.bytes"
+echo atlas>"%FGUI_FAKE_OUTPUT%\Package1_atlas0.png"
 echo {"ok":true,"result":{"success":true,"packages":[{"name":"Package1"}]}}
 exit /b 0
 '@
@@ -447,9 +451,18 @@ exit /b 0
         Assert-True ($publishJson.artifactAfter.exists -and $publishJson.artifactAfter.size -gt 0) 'Fake Wilson publish artifact evidence is invalid.'
         Assert-True ($publishJson.runtimeManifest.exists -and $publishJson.runtimeManifest.size -gt 0) 'Runtime manifest evidence is invalid.'
         $publishedManifest = Join-Path $publishOutput 'GDKFairyManifest.json'
-        Assert-Equal (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $publishRepository 'generated/GDKFairyManifest.json')).Hash `
-            (Get-FileHash -Algorithm SHA256 -LiteralPath $publishedManifest).Hash `
-            'Published runtime manifest does not match the generated source manifest.'
+        $publishedManifestJson = Get-Content -Raw -LiteralPath $publishedManifest | ConvertFrom-Json
+        Assert-Equal 2 $publishedManifestJson.schemaVersion 'Published runtime manifest schema is wrong.'
+        Assert-Equal 'Assets/Package1_fui.bytes' $publishedManifestJson.packages[0].descriptorAsset 'Runtime package descriptor path is not explicit.'
+        Assert-Equal 1 @($publishedManifestJson.packages[0].runtimeAssets).Count 'Runtime external asset list is wrong.'
+        Assert-Equal 'Assets/Package1_atlas0.png' $publishedManifestJson.packages[0].runtimeAssets[0].path 'Runtime external asset path is wrong.'
+        $runtimeCheck = Invoke-Tool $runtimeManifestScript @{
+            SourceManifestPath = (Join-Path $publishRepository 'generated/GDKFairyManifest.json')
+            OutputPath = $publishOutput
+            ManifestPath = $publishedManifest
+            Check = $true
+        }
+        Assert-True $runtimeCheck.Success "Runtime manifest -Check failed: $($runtimeCheck.Output)"
         $loggedArgs = [System.IO.File]::ReadAllText($fakeLog)
         Assert-True $loggedArgs.Contains('publish --scope packages --package Package1 --publish-timeout 10') 'Publish arguments were not exact.'
 
@@ -571,6 +584,224 @@ exit /b 0
     }
     Assert-True (-not $pathEscape.Success -and $pathEscape.Output.Contains('escapes output root')) 'Artifact path escape was not rejected.'
 
+    # Descriptor generation tests
+    $descriptorSourceRows = Get-Content -Raw -LiteralPath $lubanUiFormData | ConvertFrom-Json -NoEnumerate
+
+    function New-DescriptorMapping {
+        param(
+            [string]$PackageName = 'Package1',
+            [string]$ComponentName = 'MainView',
+            [string]$BindingType = 'Game.Hot.FairyGUI.Package1.UIMainView'
+        )
+
+        return [pscustomobject][ordered]@{
+            packageName = $PackageName
+            componentName = $ComponentName
+            bindingType = $BindingType
+            presenterType = 'Game.Hot.FairyDemoForm'
+            bootstrap = $false
+            preload = 'onOpen'
+        }
+    }
+
+    function New-DescriptorFixture {
+        param([Parameter(Mandatory)][string]$Name)
+
+        $project = New-ProjectCopy $Name
+        $lubanPath = Join-Path $testRoot ($Name + '-dtuiform.json')
+        $rows = @($descriptorSourceRows | Where-Object { [string]$_.CSName -cne 'FairyDemoForm' })
+        $rows += [pscustomobject][ordered]@{
+            Id = 103
+            CSName = 'FairyDemoForm'
+            Desc = 'FairyGUI descriptor fixture'
+            AssetName = 'Hot/FairyDemoForm'
+            UIGroupName = 'Default'
+            AllowMultiInstance = $false
+            PauseCoveredUIForm = $true
+        }
+        [System.IO.File]::WriteAllText(
+            $lubanPath,
+            (($rows | ConvertTo-Json -Depth 100) + "`n"),
+            $utf8NoBom)
+
+        return [pscustomobject]@{
+            Project = $project
+            Manifest = Join-Path $project 'generated/GDKFairyManifest.json'
+            Luban = $lubanPath
+            Output = Join-Path $testRoot ($Name + '-output')
+        }
+    }
+
+    function Get-DescriptorRows {
+        param([Parameter(Mandatory)]$Fixture)
+        return Get-Content -Raw -LiteralPath $Fixture.Luban | ConvertFrom-Json -NoEnumerate
+    }
+
+    function Set-DescriptorRows {
+        param(
+            [Parameter(Mandatory)]$Fixture,
+            [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Rows
+        )
+        [System.IO.File]::WriteAllText(
+            $Fixture.Luban,
+            (($Rows | ConvertTo-Json -Depth 100) + "`n"),
+            $utf8NoBom)
+    }
+
+    function Set-DescriptorMappings {
+        param(
+            [Parameter(Mandatory)]$Fixture,
+            [Parameter(Mandatory)]$Mappings
+        )
+
+        $contractPath = Join-Path $Fixture.Project 'settings/GDK.json'
+        $contract = Get-Content -Raw -LiteralPath $contractPath | ConvertFrom-Json
+        $contract.uiForms = $Mappings
+        [System.IO.File]::WriteAllText(
+            $contractPath,
+            (($contract | ConvertTo-Json -Depth 100) + "`n"),
+            $utf8NoBom)
+    }
+
+    function Invoke-Descriptor {
+        param(
+            [Parameter(Mandatory)]$Fixture,
+            [switch]$Check
+        )
+
+        return Invoke-Tool $descriptorScript @{
+            SourceProjectPath = $Fixture.Project
+            ManifestPath = $Fixture.Manifest
+            LubanUIFormPath = $Fixture.Luban
+            OutputPath = $Fixture.Output
+            Check = $Check
+        }
+    }
+
+    function Assert-DescriptorFailure {
+        param(
+            [Parameter(Mandatory)][string]$Name,
+            [Parameter(Mandatory)][scriptblock]$Mutate,
+            [Parameter(Mandatory)][string]$ExpectedMessage
+        )
+
+        $fixture = New-DescriptorFixture $Name
+        & $Mutate $fixture
+        $result = Invoke-Descriptor $fixture
+        Assert-True (-not $result.Success) "$Name should fail descriptor generation."
+        Assert-True $result.Output.Contains($ExpectedMessage) "$Name did not report '$ExpectedMessage': $($result.Output)"
+    }
+
+    $sourceContract = Get-Content -Raw -LiteralPath (Join-Path $sourceProject 'settings/GDK.json') | ConvertFrom-Json
+    Assert-Equal 1 @($sourceContract.uiForms.PSObject.Properties).Count 'GDK uiForms must be keyed by CSName.'
+    Assert-True (-not ($sourceContract.uiForms.FairyDemoForm.PSObject.Properties.Name -contains 'uiId')) 'GDK uiForms duplicated the Luban UI Id.'
+    Assert-True (-not ($sourceContract.uiForms.FairyDemoForm.PSObject.Properties.Name -contains 'uiAssetName')) 'GDK uiForms duplicated the Luban AssetName.'
+
+    $descriptorFixture = New-DescriptorFixture 'descriptor-good'
+    $descriptorResult = Invoke-Descriptor $descriptorFixture
+    Assert-True $descriptorResult.Success "Valid descriptor generation failed: $($descriptorResult.Output)"
+    $descriptorFile = Join-Path $descriptorFixture.Output 'FairyDemoForm.json'
+    Assert-True (Test-Path -LiteralPath $descriptorFile -PathType Leaf) 'Descriptor file was not written.'
+    $descriptorJson = Get-Content -Raw -LiteralPath $descriptorFile | ConvertFrom-Json
+    Assert-Equal 103 $descriptorJson.uiId 'Descriptor uiId is not sourced from Luban.'
+    Assert-Equal 'FairyDemoForm' $descriptorJson.csName 'Descriptor CSName is not sourced from Luban.'
+    Assert-Equal 'Hot/FairyDemoForm' $descriptorJson.uiAssetName 'Descriptor AssetName is not sourced from Luban.'
+    Assert-Equal 'Default' $descriptorJson.uiGroupName 'Descriptor UIGroupName is not sourced from Luban.'
+    Assert-Equal $false $descriptorJson.allowMultiInstance 'Descriptor AllowMultiInstance is not sourced from Luban.'
+    Assert-Equal $true $descriptorJson.pauseCoveredUIForm 'Descriptor PauseCoveredUIForm is not sourced from Luban.'
+    Assert-Equal 'oozeu71h' $descriptorJson.packageId 'Descriptor packageId is wrong.'
+    Assert-Equal '7xe70' $descriptorJson.componentId 'Descriptor componentId is wrong.'
+    Assert-Equal 'Game.Hot.FairyGUI.Package1.UIMainView' $descriptorJson.bindingType 'Descriptor bindingType is wrong.'
+
+    $firstDescriptorBytes = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($descriptorFile))
+    $descriptorResult = Invoke-Descriptor $descriptorFixture
+    Assert-True $descriptorResult.Success 'Second descriptor generation failed.'
+    $secondDescriptorBytes = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($descriptorFile))
+    Assert-Equal $firstDescriptorBytes $secondDescriptorBytes 'Second descriptor generation was not byte equivalent.'
+    $descriptorResult = Invoke-Descriptor $descriptorFixture -Check
+    Assert-True $descriptorResult.Success "Descriptor -Check failed: $($descriptorResult.Output)"
+
+    $descriptorText = [System.IO.File]::ReadAllText($descriptorFile).Replace("`n", "`r`n")
+    [System.IO.File]::WriteAllText($descriptorFile, $descriptorText, $utf8NoBom)
+    $descriptorResult = Invoke-Descriptor $descriptorFixture -Check
+    Assert-True (-not $descriptorResult.Success -and $descriptorResult.Output.Contains('Descriptor is stale')) 'Descriptor -Check accepted non-canonical line endings.'
+
+    $obsoleteFixture = New-DescriptorFixture 'descriptor-obsolete'
+    $null = Invoke-Descriptor $obsoleteFixture
+    [System.IO.File]::WriteAllText((Join-Path $obsoleteFixture.Output 'Obsolete.json'), "{}`n", $utf8NoBom)
+    $obsoleteResult = Invoke-Descriptor $obsoleteFixture -Check
+    Assert-True (-not $obsoleteResult.Success -and $obsoleteResult.Output.Contains('Obsolete descriptor file')) 'Descriptor -Check accepted an obsolete descriptor file.'
+
+    $identityFixture = New-DescriptorFixture 'descriptor-identity-drift'
+    $null = Invoke-Descriptor $identityFixture
+    $identityRows = Get-DescriptorRows $identityFixture
+    ($identityRows | Where-Object { $_.CSName -ceq 'FairyDemoForm' }).Id = 104
+    Set-DescriptorRows $identityFixture $identityRows
+    $identityResult = Invoke-Descriptor $identityFixture -Check
+    Assert-True (-not $identityResult.Success -and $identityResult.Output.Contains('Descriptor is stale')) 'Descriptor -Check accepted Luban identity drift.'
+
+    Assert-DescriptorFailure 'descriptor-no-mapping' {
+        param($fixture)
+        Set-DescriptorMappings $fixture ([pscustomobject]@{})
+    } 'has no uiForms mappings'
+    Assert-DescriptorFailure 'descriptor-missing-ui-row' {
+        param($fixture)
+        $mappings = [pscustomobject][ordered]@{ MissingForm = New-DescriptorMapping }
+        Set-DescriptorMappings $fixture $mappings
+    } 'has no Luban UI row'
+    Assert-DescriptorFailure 'descriptor-duplicate-id' {
+        param($fixture)
+        $rows = Get-DescriptorRows $fixture
+        $rows += [pscustomobject]@{ Id = 103; CSName = 'OtherForm'; AssetName = 'Hot/OtherForm'; UIGroupName = 'Default'; AllowMultiInstance = $false; PauseCoveredUIForm = $false }
+        Set-DescriptorRows $fixture $rows
+    } 'Duplicate Luban UI Id'
+    Assert-DescriptorFailure 'descriptor-duplicate-cs-name' {
+        param($fixture)
+        $rows = Get-DescriptorRows $fixture
+        $rows += [pscustomobject]@{ Id = 10003; CSName = 'FairyDemoForm'; AssetName = 'Hot/OtherForm'; UIGroupName = 'Default'; AllowMultiInstance = $false; PauseCoveredUIForm = $false }
+        Set-DescriptorRows $fixture $rows
+    } 'Duplicate Luban UI CSName'
+    Assert-DescriptorFailure 'descriptor-duplicate-asset-name' {
+        param($fixture)
+        $rows = Get-DescriptorRows $fixture
+        $rows += [pscustomobject]@{ Id = 10004; CSName = 'OtherForm'; AssetName = 'Hot/FairyDemoForm'; UIGroupName = 'Default'; AllowMultiInstance = $false; PauseCoveredUIForm = $false }
+        Set-DescriptorRows $fixture $rows
+    } 'Duplicate Luban UI AssetName'
+    Assert-DescriptorFailure 'descriptor-basename-collision' {
+        param($fixture)
+        $rows = Get-DescriptorRows $fixture
+        $rows += [pscustomobject]@{ Id = 10005; CSName = 'OtherFairyForm'; AssetName = 'Other/FairyDemoForm'; UIGroupName = 'Pop'; AllowMultiInstance = $true; PauseCoveredUIForm = $false }
+        Set-DescriptorRows $fixture $rows
+        $mappings = [pscustomobject][ordered]@{
+            FairyDemoForm = New-DescriptorMapping
+            OtherFairyForm = New-DescriptorMapping
+        }
+        Set-DescriptorMappings $fixture $mappings
+    } 'Descriptor output basename collision'
+    Assert-DescriptorFailure 'descriptor-unknown-package' {
+        param($fixture)
+        Set-DescriptorMappings $fixture ([pscustomobject][ordered]@{
+            FairyDemoForm = New-DescriptorMapping -PackageName 'MissingPackage'
+        })
+    } 'unknown package'
+    Assert-DescriptorFailure 'descriptor-unknown-component' {
+        param($fixture)
+        Set-DescriptorMappings $fixture ([pscustomobject][ordered]@{
+            FairyDemoForm = New-DescriptorMapping -ComponentName 'MissingComponent'
+        })
+    } 'unknown component'
+    Assert-DescriptorFailure 'descriptor-unknown-binding' {
+        param($fixture)
+        Set-DescriptorMappings $fixture ([pscustomobject][ordered]@{
+            FairyDemoForm = New-DescriptorMapping -BindingType 'Game.Hot.FairyGUI.Package1.UIMissingView'
+        })
+    } 'unknown binding'
+    Assert-DescriptorFailure 'descriptor-duplicated-source-field' {
+        param($fixture)
+        $mapping = New-DescriptorMapping
+        $mapping | Add-Member -MemberType NoteProperty -Name uiId -Value 103
+        Set-DescriptorMappings $fixture ([pscustomobject][ordered]@{ FairyDemoForm = $mapping })
+    } "unsupported property 'uiId'"
     $summary = [pscustomobject][ordered]@{
         success = $true
         assertions = $script:assertionCount

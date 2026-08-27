@@ -26,6 +26,8 @@ namespace Game
             ? null
             : m_States[m_States.Length - 1].Package;
 
+        internal FairyPackageManager.PackageState[] States => m_States;
+
         public void Dispose()
         {
             FairyPackageManager.PackageState[] states = m_States;
@@ -89,6 +91,23 @@ namespace Game
                 }
 
                 throw;
+            }
+        }
+
+        internal static async UniTask WaitForPendingAssetsAsync(
+            FairyUIFormPreparedState preparedState,
+            CancellationToken cancellationToken)
+        {
+            FairyPackageLease packageLease = preparedState?.PackageLease;
+            PackageState[] states = packageLease?.States;
+            if (states == null)
+            {
+                throw new GameFrameworkException("FairyGUI prepared state has no package lease.");
+            }
+
+            foreach (PackageState state in states)
+            {
+                await WaitForPendingAssetsAsync(state, cancellationToken);
             }
         }
 
@@ -254,7 +273,10 @@ namespace Game
             UniTaskCompletionSource<UIPackage> loading = state.Loading;
             try
             {
-                string descriptorPath = $"{PackageAssetRoot}/{state.Name}_fui.bytes";
+                IReadOnlyList<FairyPackageCatalog.PackageDefinition> definitions =
+                    (await GetCatalogAsync(state.LoadCancellation.Token)).GetLoadOrder(state.Name);
+                FairyPackageCatalog.PackageDefinition definition = definitions[definitions.Count - 1];
+                string descriptorPath = definition.DescriptorAsset;
                 TextAsset descriptor = await GameEntry.Resource.LoadAssetAsync<TextAsset>(
                     descriptorPath,
                     cancellationToken: state.LoadCancellation.Token);
@@ -287,11 +309,19 @@ namespace Game
                 }
 
                 state.Package = package;
+                await WaitForPendingAssetsAsync(state, state.LoadCancellation.Token);
+                if (state.PendingAssetError != null)
+                {
+                    throw new GameFrameworkException(
+                        $"Failed to load an external asset for FairyGUI package '{state.Name}'.",
+                        state.PendingAssetError);
+                }
+
                 state.Status = FairyPackageStatus.Ready;
                 state.LastError = null;
                 s_LastErrors.Remove(state.Name);
                 loading.TrySetResult(package);
-                if (state.ReferenceCount == 0)
+                if (state.ReferenceCount == 0 && state.IsActive)
                 {
                     ReleaseReadyState(state);
                 }
@@ -336,8 +366,9 @@ namespace Game
             RemoveCurrentState(state);
             state.IsActive = false;
             state.Status = FairyPackageStatus.Releasing;
-            state.LoadCancellation.Cancel();
-            state.Loading?.TrySetCanceled(state.LoadCancellation.Token);
+            CancellationToken loadCancellationToken = state.LoadCancellation.Token;
+            CancelLoading(state);
+            state.Loading?.TrySetCanceled(loadCancellationToken);
         }
 
         private static void ReleaseReadyState(PackageState state)
@@ -345,7 +376,7 @@ namespace Game
             RemoveCurrentState(state);
             state.IsActive = false;
             state.Status = FairyPackageStatus.Releasing;
-            state.LoadCancellation.Cancel();
+            CancelLoading(state);
             if (state.Package != null && UIPackage.GetByName(state.Name) == state.Package)
             {
                 UIPackage.RemovePackage(state.Name);
@@ -354,14 +385,14 @@ namespace Game
             state.Package = null;
             ReleaseAssets(state);
             state.Status = FairyPackageStatus.Unloaded;
-            state.LoadCancellation.Dispose();
+            DisposeLoadingCancellation(state);
         }
 
         private static void CleanupFailedState(PackageState state)
         {
             RemoveCurrentState(state);
             state.IsActive = false;
-            state.LoadCancellation.Cancel();
+            CancelLoading(state);
             if (state.Package != null && UIPackage.GetByName(state.Name) == state.Package)
             {
                 UIPackage.RemovePackage(state.Name);
@@ -370,7 +401,26 @@ namespace Game
             state.Package = null;
             ReleaseAssets(state);
             state.Status = FairyPackageStatus.Unloaded;
+            DisposeLoadingCancellation(state);
+        }
+
+        private static void CancelLoading(PackageState state)
+        {
+            if (!state.LoadCancellationDisposed && !state.LoadCancellation.IsCancellationRequested)
+            {
+                state.LoadCancellation.Cancel();
+            }
+        }
+
+        private static void DisposeLoadingCancellation(PackageState state)
+        {
+            if (state.LoadCancellationDisposed)
+            {
+                return;
+            }
+
             state.LoadCancellation.Dispose();
+            state.LoadCancellationDisposed = true;
         }
 
         private static void RemoveCurrentState(PackageState state)
@@ -408,6 +458,18 @@ namespace Game
             Type type,
             PackageItem item)
         {
+            if (!IsCurrent(state))
+            {
+                return;
+            }
+
+            if (state.PendingAssetLoads == 0)
+            {
+                state.PendingAssetsDrained = new UniTaskCompletionSource<bool>();
+                state.PendingAssetError = null;
+            }
+
+            state.PendingAssetLoads++;
             LoadPackageResourceAsyncCore(state, name, extension, type, item).Forget();
         }
 
@@ -418,14 +480,15 @@ namespace Game
             Type type,
             PackageItem item)
         {
-            string assetPath = Utility.Text.Format("{0}{1}", name, extension);
+            string assetPath = null;
             try
             {
+                assetPath = s_Catalog.ResolveRuntimeAsset(state.Name, name, extension);
                 UnityEngine.Object asset = await LoadAssetAsync(
                     assetPath,
                     type,
                     state.LoadCancellation.Token);
-                if (!IsCurrent(state) || state.Status != FairyPackageStatus.Ready || state.Package == null)
+                if (!IsCurrent(state) || state.Package == null)
                 {
                     GameEntry.Resource.UnloadAsset(asset);
                     return;
@@ -442,13 +505,47 @@ namespace Game
                 if (state.IsActive)
                 {
                     state.LastError = exception;
+                    state.PendingAssetError ??= exception;
                     s_LastErrors[state.Name] = exception;
                     Log.Error(
                         "Failed to load FairyGUI package asset '{0}' ({1}): {2}",
-                        assetPath,
+                        assetPath ?? Utility.Text.Format("{0}{1}", name, extension),
                         type.Name,
                         exception);
                 }
+            }
+            finally
+            {
+                state.PendingAssetLoads--;
+                if (state.PendingAssetLoads == 0)
+                {
+                    state.PendingAssetsDrained?.TrySetResult(true);
+                }
+            }
+        }
+
+        private static async UniTask WaitForPendingAssetsAsync(
+            PackageState state,
+            CancellationToken cancellationToken)
+        {
+            while (state.PendingAssetLoads > 0)
+            {
+                UniTask<bool> task = state.PendingAssetsDrained.Task;
+                if (cancellationToken.CanBeCanceled)
+                {
+                    await task.AttachCancellation(cancellationToken);
+                }
+                else
+                {
+                    await task;
+                }
+            }
+
+            if (state.PendingAssetError != null)
+            {
+                throw new GameFrameworkException(
+                    $"Failed to load an external asset for FairyGUI package '{state.Name}'.",
+                    state.PendingAssetError);
             }
         }
 
@@ -499,8 +596,12 @@ namespace Game
             internal TextAsset Descriptor;
             internal UIPackage Package;
             internal UniTaskCompletionSource<UIPackage> Loading = new UniTaskCompletionSource<UIPackage>();
+            internal UniTaskCompletionSource<bool> PendingAssetsDrained = new UniTaskCompletionSource<bool>();
             internal Exception LastError;
+            internal Exception PendingAssetError;
+            internal int PendingAssetLoads;
             internal int ReferenceCount;
+            internal bool LoadCancellationDisposed;
             internal bool IsActive = true;
             internal FairyPackageStatus Status = FairyPackageStatus.Loading;
 

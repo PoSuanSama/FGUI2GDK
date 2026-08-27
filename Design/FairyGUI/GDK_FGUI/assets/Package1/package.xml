@@ -4,5 +4,5 @@
     <component id="7xe70" name="MainView.xml" path="/" exported="true"/>
     <component id="btn01" name="RefreshButton.xml" path="/"/>
   </resources>
-  <publish name="Package1"/>
+  <publish name="Package1" genCode="true"/>
 </packageDescription>

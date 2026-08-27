@@ -27,5 +27,15 @@
         ]
       }
     }
-  ]
+  ],
+  "uiForms": {
+    "FairyDemoForm": {
+      "packageName": "Package1",
+      "componentName": "MainView",
+      "bindingType": "Game.Hot.FairyGUI.Package1.UIMainView",
+      "presenterType": "Game.Hot.FairyDemoForm",
+      "bootstrap": false,
+      "preload": "onOpen"
+    }
+  }
 }

@@ -1,3 +1,5 @@
+using Game.Hot.FairyGUI.Package1;
+using GameFramework;
 using UnityEngine;
 using UnityGameFramework.Runtime;
 
@@ -14,6 +16,7 @@ namespace Game.Hot
             Log.Info("Game.Hot.Code Start!");
             
             InitComponents();
+            InitializeFairyGUI();
             
             HotComponentEntry.Initialize();
             
@@ -28,6 +31,8 @@ namespace Game.Hot
 
         private void OnDestroy()
         {
+            FairyUIPresenterRegistry.PreparePackage = null;
+            FairyUIPresenterRegistry.CreatePresenter = null;
             HotComponentEntry.Shutdown();
         }
 
@@ -46,6 +51,30 @@ namespace Game.Hot
             #region Custom Components
             HPBar = HotComponentEntry.GetComponent<HPBarComponent>();
             #endregion
+        }
+
+        private static void InitializeFairyGUI()
+        {
+            FairyUIPresenterRegistry.PreparePackage = descriptor =>
+            {
+                if (!string.Equals(descriptor.CsName, nameof(FairyDemoForm), System.StringComparison.Ordinal))
+                {
+                    throw new GameFrameworkException(
+                        $"No FairyGUI package binder is registered for UI '{descriptor.CsName}'.");
+                }
+
+                Package1Binder.BindAll();
+            };
+            FairyUIPresenterRegistry.CreatePresenter = descriptor =>
+            {
+                if (string.Equals(descriptor.CsName, nameof(FairyDemoForm), System.StringComparison.Ordinal))
+                {
+                    return new FairyDemoForm();
+                }
+
+                throw new GameFrameworkException(
+                    $"No FairyGUI presenter is registered for UI '{descriptor.CsName}'.");
+            };
         }
     }
 }

@@ -252,7 +252,7 @@ function Convert-PublishSettings {
 
     $settings.binaryFormat = $true
     $settings.codeGeneration.allowGenCode = $true
-    $settings.codeGeneration.classNamePrefix = 'UI_'
+    $settings.codeGeneration.classNamePrefix = 'UI'
     $settings.codeGeneration.codeType = ''
     $settings.codeGeneration.getMemberByName = $true
     $settings.codeGeneration.ignoreNoname = $true
