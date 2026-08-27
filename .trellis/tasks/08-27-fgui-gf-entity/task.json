@@ -3,7 +3,7 @@
   "name": "fgui-gf-entity",
   "title": "FairyGUI GF Entity 迁移",
   "description": "用 FairyGUI 实体表现层替代旧 UGFEntity/Entity 表现体系",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
