@@ -42,5 +42,16 @@
     "PauseCoveredUIForm": true,
     "PackageName": "Package1",
     "ComponentName": "InventoryOverlayView"
+  },
+  {
+    "Id": 107,
+    "CSName": "FairyRuntimeInspectorForm",
+    "Desc": "运行时调试面板",
+    "AssetName": "FairyGUI/FairyRuntimeInspectorForm",
+    "UIGroupName": "RuntimeInspector",
+    "AllowMultiInstance": false,
+    "PauseCoveredUIForm": true,
+    "PackageName": "Package1",
+    "ComponentName": "RuntimeInspectorView"
   }
 ]

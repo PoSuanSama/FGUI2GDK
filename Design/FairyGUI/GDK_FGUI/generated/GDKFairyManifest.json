@@ -5,14 +5,14 @@
     "type": "Unity",
     "version": "5.0"
   },
-  "sourceHash": "af5d5fc4479c19afaef6885cf7c75d59ce342b1ed9c82f499a0b7ecdf50ce058",
+  "sourceHash": "45add05f404224078fd2a981c8ceef0f8104ec9cc8b3414f7b8e1cb1e21f2a71",
   "contractHash": "ba6794173335c8b7164aa1dbf97511f400730b0110816fc5e0cad5e6deb17fa1",
   "packages": [
     {
       "id": "oozeu71h",
       "name": "Package1",
       "file": "assets/Package1/package.xml",
-      "hash": "d77891d0c23ab468669b7ca002a5d9bfa055fe18bea3d93cc86c767c6a9b0396",
+      "hash": "9f8f05af448b5e355ffda9787cc33dd02936406384f88134b45a665d86002bf0",
       "dependencies": [],
       "resources": [
         {
@@ -805,6 +805,70 @@
               "id": "actiontitle",
               "name": "title",
               "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            }
+          ]
+        },
+        {
+          "type": "component",
+          "id": "q84t8",
+          "name": "RuntimeInspectorView.xml",
+          "path": "/",
+          "exported": true,
+          "file": "assets/Package1/RuntimeInspectorView.xml",
+          "hash": "e07e0e617c0064e829d271ed03471cd6ae7bba052d26060aea47ce6b1057ebe7",
+          "members": [
+            {
+              "id": "n0_std8",
+              "name": "closeButton",
+              "type": "GButton",
+              "src": "std89",
+              "pkg": ""
+            }
+          ]
+        },
+        {
+          "type": "component",
+          "id": "std89",
+          "name": "RuntimeInspectorCloseButton.xml",
+          "path": "/",
+          "exported": false,
+          "file": "assets/Package1/RuntimeInspectorCloseButton.xml",
+          "hash": "a080a3326fef1a49fc82554cb9938d2112c82258ddbf4e4b328cffd202e5b1f3",
+          "members": [
+            {
+              "id": "n0_std8",
+              "name": "n0",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "n1_std8",
+              "name": "n1",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "n2_std8",
+              "name": "n2",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "n3_std8",
+              "name": "title",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "n4_std8",
+              "name": "icon",
+              "type": "GLoader",
               "src": "",
               "pkg": ""
             }

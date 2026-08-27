@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "uiId": 107,
+  "csName": "FairyRuntimeInspectorForm",
+  "uiAssetName": "FairyGUI/FairyRuntimeInspectorForm",
+  "uiGroupName": "RuntimeInspector",
+  "allowMultiInstance": false,
+  "pauseCoveredUIForm": true,
+  "packageId": "oozeu71h",
+  "packageName": "Package1",
+  "componentId": "q84t8",
+  "componentName": "RuntimeInspectorView",
+  "bindingType": "Game.FairyGUI.Package1.UIRuntimeInspectorView",
+  "dependencies": []
+}

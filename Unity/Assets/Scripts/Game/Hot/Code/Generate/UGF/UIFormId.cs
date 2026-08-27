@@ -28,5 +28,10 @@ namespace Game.Hot
         /// FairyGUI背包遮罩界面
         /// </summary>
         public const int FairyInventoryOverlayForm = 106;
+
+        /// <summary>
+        /// 运行时调试面板
+        /// </summary>
+        public const int FairyRuntimeInspectorForm = 107;
     }
 }

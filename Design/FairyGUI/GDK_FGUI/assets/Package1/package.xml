@@ -9,6 +9,8 @@
     <component id="i20a5" name="InventoryItem.xml" path="/" exported="true"/>
     <component id="i20a6" name="CategoryTabButton.xml" path="/" exported="true"/>
     <component id="i20a7" name="ActionButton.xml" path="/" exported="true"/>
+    <component id="q84t8" name="RuntimeInspectorView.xml" path="/" exported="true"/>
+    <component id="std89" name="RuntimeInspectorCloseButton.xml" path="/"/>
   </resources>
   <publish name="Package1" genCode="true"/>
 </packageDescription>
