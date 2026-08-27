@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace ET.Client
 {
-    [ComponentOf(typeof(GFEntityComponent))]
+    [ComponentOf(typeof(Scene))]
     public class FairyEntityComponent : Entity, IAwake<Game.FairyEntity>, IDestroy
     {
         [BsonIgnore]

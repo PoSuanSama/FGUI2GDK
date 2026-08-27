@@ -84,17 +84,5 @@ namespace ET
             await UniTask.WhenAll(unloadTasks);
             unloadTasks.Dispose();
         }
-
-        public async UniTask<Transform> ShowEntityAsync(int entityTypeId, CancellationToken cancellationToken = default)
-        {
-            UnityGameFramework.Runtime.Entity ugfEntity = await GameEntry.Entity.ShowEntityAsync<ETMonoUGFEntity>(entityTypeId, cancellationToken: cancellationToken);
-            return ugfEntity.Logic.CachedTransform;
-        }
-
-        public async UniTask<Transform> ShowEntityAsync(string entityAssetName, string entityGroupName, CancellationToken cancellationToken = default, int priority = 0)
-        {
-            UnityGameFramework.Runtime.Entity ugfEntity = await GameEntry.Entity.ShowEntityAsync(GameEntry.Entity.GenerateSerialId(), typeof(ETMonoUGFEntity), entityAssetName, entityGroupName, priority, cancellationToken: cancellationToken);
-            return ugfEntity.Logic.CachedTransform;
-        }
     }
 }
