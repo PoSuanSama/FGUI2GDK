@@ -58,6 +58,12 @@ namespace Game
             m_UIFormHelper = new FairyUIFormHelper(ReleaseAsset);
             m_UIManager.SetUIFormHelper(m_UIFormHelper);
 
+            GRoot root = GRoot.inst;
+            root.SetContentScaleFactor(
+                DesignResolutionX,
+                DesignResolutionY,
+                UIContentScaler.ScreenMatchMode.MatchWidthOrHeight);
+
         }
 
         public bool AddUIGroup(string name, int depth)
