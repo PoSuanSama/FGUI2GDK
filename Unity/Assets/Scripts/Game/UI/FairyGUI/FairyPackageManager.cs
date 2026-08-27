@@ -111,6 +111,22 @@ namespace Game
             }
         }
 
+        internal static async UniTask WaitForPendingAssetsAsync(
+            FairyPackageLease packageLease,
+            CancellationToken cancellationToken)
+        {
+            PackageState[] states = packageLease?.States;
+            if (states == null)
+            {
+                throw new GameFrameworkException("FairyGUI package lease has no states.");
+            }
+
+            foreach (PackageState state in states)
+            {
+                await WaitForPendingAssetsAsync(state, cancellationToken);
+            }
+        }
+
         internal static IReadOnlyList<FairyPackageDiagnostic> GetDiagnostics()
         {
             List<FairyPackageDiagnostic> diagnostics = new List<FairyPackageDiagnostic>(s_States.Count);
