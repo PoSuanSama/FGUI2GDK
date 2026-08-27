@@ -1,8 +1,8 @@
 {
-  "id": "fgui-et-full-integration-remove-ugui",
-  "name": "fgui-et-full-integration-remove-ugui",
-  "title": "FGUI ET 完整接入并移除 UGUI 栈",
-  "description": "",
+  "id": "fgui-runtime-inspector",
+  "name": "fgui-runtime-inspector",
+  "title": "FairyGUI RuntimeInspector 迁移",
+  "description": "用 FairyGUI 实现运行时调试面板，替代旧 RuntimeInspectorForm",
   "status": "in_progress",
   "dev_type": null,
   "scope": null,
@@ -18,13 +18,8 @@
   "commit": null,
   "pr_url": null,
   "subtasks": [],
-  "children": [
-    "08-27-fgui-runtime-inspector",
-    "08-27-fgui-ui-widget",
-    "08-27-fgui-beginner-guide",
-    "08-27-fgui-gf-entity"
-  ],
-  "parent": null,
+  "children": [],
+  "parent": "08-27-fgui-et-full-integration-remove-ugui",
   "relatedFiles": [],
   "notes": "",
   "meta": {}

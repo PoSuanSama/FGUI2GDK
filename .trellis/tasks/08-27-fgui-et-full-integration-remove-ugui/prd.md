@@ -42,9 +42,13 @@ GDK 的 UI 分两层，且 `GameFramework.UI` 已是纯语义层：
 - [ ] Presenter 通过编译期可校验的方式（非纯字符串）与 `CSName` 关联。
 - [ ] 描述符生成与 Luban 导出有统一编排，不再需要手工顺序/冷启动环。
 
-## Out of Scope（本次不处理，待定）
+## Out of Scope（本次不处理，后续 FGUI 迁移）
 
-- GF Entity、HPBar、UXTool、RuntimeInspector、UIEntity/Widget：本次不移除，后续单独用 FairyGUI 实现。
+- GF Entity：保留，后续用 FairyGUI 实体表现层实现。
+- RuntimeInspector：保留，后续用 FairyGUI 运行时调试面板实现。
+- UIWidget：保留，后续用 FairyGUI 组件化 Widget 实现。
+- UXTool：保留，后续用 FairyGUI 新手引导系统实现，命名不再沿用 UXTool，可叫 FairyGuide / FairyBeginnerGuide。
+- HPBar：不实现，已从待定清单移除。
 - 遗留问题 1（编辑器工程 ↔ Git 双拷贝同步 + 关编辑器门禁）：本次 defer，单独排期。
 
 ## Open Questions
