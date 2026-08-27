@@ -1,4 +1,5 @@
 using System;
+using Cysharp.Threading.Tasks;
 using FairyGUI;
 using Game.Hot.FairyGUI.Package1;
 using UnityGameFramework.Runtime;
@@ -28,6 +29,7 @@ namespace Game.Hot
             }
 
             m_CheckCount = 0;
+            m_View.OpenInventoryButton.onClick.Add(OnOpenInventoryButtonClick);
             m_View.RefreshButton.onClick.Add(OnRefreshButtonClick);
             UpdateStatus("FairyGUI 资源包已就绪");
         }
@@ -42,6 +44,7 @@ namespace Game.Hot
         {
             if (m_View != null)
             {
+                m_View.OpenInventoryButton.onClick.Remove(OnOpenInventoryButtonClick);
                 m_View.RefreshButton.onClick.Remove(OnRefreshButtonClick);
                 m_View = null;
             }
@@ -82,6 +85,23 @@ namespace Game.Hot
             ++m_CheckCount;
             UpdateStatus($"UGF 生命周期检查通过 {DateTime.Now:HH:mm:ss}");
             Log.Info("FairyGUI refresh interaction handled. Count: {0}.", m_CheckCount);
+        }
+
+        private void OnOpenInventoryButtonClick()
+        {
+            OpenInventoryAsync().Forget();
+        }
+
+        private static async UniTaskVoid OpenInventoryAsync()
+        {
+            try
+            {
+                await FairyInventoryFlow.OpenInventoryAsync();
+            }
+            catch (Exception exception)
+            {
+                Log.Error("Failed to open FairyGUI inventory: {0}", exception);
+            }
         }
 
         private void UpdateStatus(string status)

@@ -36,6 +36,30 @@
       "presenterType": "Game.Hot.FairyDemoForm",
       "bootstrap": false,
       "preload": "onOpen"
+    },
+    "FairyInventoryForm": {
+      "packageName": "Package1",
+      "componentName": "InventoryView",
+      "bindingType": "Game.Hot.FairyGUI.Package1.UIInventoryView",
+      "presenterType": "Game.Hot.FairyInventoryForm",
+      "bootstrap": false,
+      "preload": "onOpen"
+    },
+    "FairyInventoryOverlayForm": {
+      "packageName": "Package1",
+      "componentName": "InventoryOverlayView",
+      "bindingType": "Game.Hot.FairyGUI.Package1.UIInventoryOverlayView",
+      "presenterType": "Game.Hot.FairyInventoryOverlayForm",
+      "bootstrap": false,
+      "preload": "onOpen"
+    },
+    "FairyItemDetailForm": {
+      "packageName": "Package1",
+      "componentName": "ItemDetailWindow",
+      "bindingType": "Game.Hot.FairyGUI.Package1.UIItemDetailWindow",
+      "presenterType": "Game.Hot.FairyItemDetailForm",
+      "bootstrap": false,
+      "preload": "onOpen"
     }
   }
 }

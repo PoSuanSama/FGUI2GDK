@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="1280,720">
+  <displayList>
+    <graph id="overlaybg" name="background" xy="0,0" size="1280,720" type="rect" lineSize="0" fillColor="#cc020617">
+      <relation target="" sidePair="width-width,height-height"/>
+    </graph>
+    <graph id="overlaypanel" name="panel" xy="390,218" size="500,284" touchable="false" type="rect" lineSize="2" lineColor="#fffbbf24" fillColor="#ff171a20"/>
+    <text id="overlaytitle" name="titleText" xy="430,260" size="420,42" fontSize="26" color="#fffbbf24" align="center" autoSize="none" bold="true" singleLine="true" text="GF 覆盖生命周期测试"/>
+    <text id="overlaydetail" name="detailText" xy="430,324" size="420,72" fontSize="14" color="#ffcbd5e1" align="center" leading="8" autoSize="none" text="此 Pop 窗体启用了 PauseCoveredUIForm。&#xA;关闭后，下层 FairyGUI 窗体应恢复显示与交互。"/>
+    <component id="overlayclose" name="closeButton" src="i20a7" fileName="ActionButton.xml" xy="574,426" size="132,40">
+      <Button title="关闭并恢复"/>
+    </component>
+  </displayList>
+</component>

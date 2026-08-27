@@ -17,6 +17,8 @@ namespace Game.Hot.FairyGUI.Package1
         public GTextField Title => this.m_Title;
         private GTextField m_Subtitle;
         public GTextField Subtitle => this.m_Subtitle;
+        private UIActionButton m_OpenInventoryButton;
+        public UIActionButton OpenInventoryButton => this.m_OpenInventoryButton;
         private UIRefreshButton m_RefreshButton;
         public UIRefreshButton RefreshButton => this.m_RefreshButton;
         private GTextField m_SectionTitle;
@@ -113,6 +115,7 @@ namespace Game.Hot.FairyGUI.Package1
             m_Accent = (GGraph)GetChild("accent");
             m_Title = (GTextField)GetChild("title");
             m_Subtitle = (GTextField)GetChild("subtitle");
+            m_OpenInventoryButton = (UIActionButton)GetChild("openInventoryButton");
             m_RefreshButton = (UIRefreshButton)GetChild("refreshButton");
             m_SectionTitle = (GTextField)GetChild("sectionTitle");
             m_StatusPanel = (GGraph)GetChild("statusPanel");

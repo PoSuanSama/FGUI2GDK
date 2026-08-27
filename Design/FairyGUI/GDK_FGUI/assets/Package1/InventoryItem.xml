@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="220,96" extention="Button">
+  <Button title="物品"/>
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <graph id="itembg0" name="up" xy="0,0" size="220,96" touchable="false" type="rect" lineSize="1" lineColor="#ff334155" fillColor="#ff101a27">
+      <gearDisplay controller="button" pages="0"/>
+      <relation target="" sidePair="width-width,height-height"/>
+    </graph>
+    <graph id="itembg1" name="over" xy="0,0" size="220,96" touchable="false" type="rect" lineSize="1" lineColor="#ff22d3ee" fillColor="#ff123044">
+      <gearDisplay controller="button" pages="2"/>
+      <relation target="" sidePair="width-width,height-height"/>
+    </graph>
+    <graph id="itembg2" name="down" xy="0,0" size="220,96" touchable="false" type="rect" lineSize="1" lineColor="#ff34d399" fillColor="#ff0f3b35">
+      <gearDisplay controller="button" pages="1,3"/>
+      <relation target="" sidePair="width-width,height-height"/>
+    </graph>
+    <graph id="rarity" name="rarityBar" xy="0,0" size="6,96" touchable="false" type="rect" lineSize="0" fillColor="#ff22d3ee"/>
+    <text id="itemname" name="itemName" xy="18,14" size="150,28" fontSize="16" color="#fff8fafc" autoSize="none" bold="true" singleLine="true" text="物品名称"/>
+    <text id="itemtype" name="itemType" xy="18,50" size="150,22" fontSize="12" color="#ff94a3b8" autoSize="none" singleLine="true" text="类型"/>
+    <text id="itemcount" name="itemCount" xy="166,55" size="40,22" fontSize="13" color="#fffbbf24" align="right" autoSize="none" bold="true" singleLine="true" text="x1"/>
+  </displayList>
+</component>

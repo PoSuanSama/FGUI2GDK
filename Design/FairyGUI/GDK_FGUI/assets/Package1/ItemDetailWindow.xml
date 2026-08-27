@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="1280,720" opaque="false">
+  <displayList>
+    <graph id="windowframe" name="windowFrame" xy="438,166" size="404,388" type="rect" lineSize="2" lineColor="#ff22d3ee" fillColor="#ff111827"/>
+    <graph id="windowtop" name="windowTopbar" xy="440,168" size="400,58" touchable="false" type="rect" lineSize="0" fillColor="#ff123044"/>
+    <text id="detailtitle" name="titleText" xy="462,183" size="260,30" fontSize="20" color="#fff8fafc" autoSize="none" bold="true" singleLine="true" text="物品详情"/>
+    <text id="focustoken" name="focusTokenText" xy="704,188" size="112,22" fontSize="11" color="#ff67e8f9" align="right" autoSize="none" singleLine="true" text="窗口 #1"/>
+    <text id="detailname" name="itemNameText" xy="470,256" size="340,34" fontSize="24" color="#fffbbf24" autoSize="none" bold="true" singleLine="true" text="物品名称"/>
+    <text id="detailtype" name="itemTypeText" xy="470,300" size="340,22" fontSize="13" color="#ff94a3b8" autoSize="none" singleLine="true" text="类型 / 数量"/>
+    <graph id="detailline" name="detailLine" xy="470,336" size="340,1" touchable="false" type="rect" lineSize="0" fillColor="#ff334155"/>
+    <text id="description" name="descriptionText" xy="470,360" size="340,88" fontSize="14" color="#ffcbd5e1" leading="6" autoSize="none" text="这里显示物品说明。&#xA;点击窗口主体可将此实例提升到最上层。"/>
+    <text id="focusstatus" name="focusStatusText" xy="470,466" size="340,24" fontSize="12" color="#ff34d399" autoSize="none" singleLine="true" text="等待点击聚焦"/>
+    <component id="detailoverlay" name="openOverlayButton" src="i20a7" fileName="ActionButton.xml" xy="470,502" size="156,40">
+      <Button title="覆盖/恢复测试"/>
+    </component>
+    <component id="detailclose" name="closeButton" src="i20a7" fileName="ActionButton.xml" xy="678,502" size="132,40">
+      <Button title="关闭窗口"/>
+    </component>
+  </displayList>
+</component>

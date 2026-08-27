@@ -57,7 +57,7 @@ namespace Game.Hot
         {
             FairyUIPresenterRegistry.PreparePackage = descriptor =>
             {
-                if (!string.Equals(descriptor.CsName, nameof(FairyDemoForm), System.StringComparison.Ordinal))
+                if (!string.Equals(descriptor.PackageName, "Package1", System.StringComparison.Ordinal))
                 {
                     throw new GameFrameworkException(
                         $"No FairyGUI package binder is registered for UI '{descriptor.CsName}'.");
@@ -70,6 +70,18 @@ namespace Game.Hot
                 if (string.Equals(descriptor.CsName, nameof(FairyDemoForm), System.StringComparison.Ordinal))
                 {
                     return new FairyDemoForm();
+                }
+                if (string.Equals(descriptor.CsName, nameof(FairyInventoryForm), System.StringComparison.Ordinal))
+                {
+                    return new FairyInventoryForm();
+                }
+                if (string.Equals(descriptor.CsName, nameof(FairyItemDetailForm), System.StringComparison.Ordinal))
+                {
+                    return new FairyItemDetailForm();
+                }
+                if (string.Equals(descriptor.CsName, nameof(FairyInventoryOverlayForm), System.StringComparison.Ordinal))
+                {
+                    return new FairyInventoryOverlayForm();
                 }
 
                 throw new GameFrameworkException(

@@ -170,7 +170,8 @@ try {
     }
     $packagesResponse = Invoke-AgentJson $agent ($commonArgs + @('packages')) 'packages' $TimeoutSeconds
     $packages = Get-AgentResult $packagesResponse 'packages'
-    $packageList = if ($null -ne $packages.packages) { @($packages.packages) } else { @($packages) }
+    $packagesProperty = if ($null -eq $packages) { $null } else { $packages.PSObject.Properties['packages'] }
+    $packageList = if ($null -ne $packagesProperty) { @($packagesProperty.Value) } else { @($packages) }
     if (@($packageList | Where-Object { [string]$_.name -ceq $PackageName }).Count -ne 1) {
         throw "fgui-agent project does not contain exactly one package named '$PackageName'."
     }

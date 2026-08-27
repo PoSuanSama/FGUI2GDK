@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "uiId": 103,
   "csName": "FairyDemoForm",
-  "uiAssetName": "Hot/FairyDemoForm",
+  "uiAssetName": "FairyGUI/FairyDemoForm",
   "uiGroupName": "Default",
   "allowMultiInstance": false,
   "pauseCoveredUIForm": true,

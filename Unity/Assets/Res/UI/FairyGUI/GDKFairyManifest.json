@@ -5,15 +5,15 @@
     "type": "Unity",
     "version": "5.0"
   },
-  "sourceHash": "419580e3c5696c88c45ad248819abfc430951e055cb70727d30374a18f9719e7",
-  "contractHash": "5bd0208ba0a5fbf6bc29b72a48808fa3886b0208a48b0eac5839580e3605c842",
+  "sourceHash": "af5d5fc4479c19afaef6885cf7c75d59ce342b1ed9c82f499a0b7ecdf50ce058",
+  "contractHash": "91c16db9cba7a8fb6ab53a5e6ba1d63fcccef53a269ca0ff9e1135ca1b3f34e5",
   "packages": [
     {
       "id": "oozeu71h",
       "name": "Package1",
       "dependencies": [],
       "descriptorAsset": "Assets/Res/UI/FairyGUI/Package1_fui.bytes",
-      "descriptorSha256": "9ba273a5d109018cf625615680d4f5b691ebaed708dd2056d5590be9d89896f2",
+      "descriptorSha256": "b098f3c5dead58f7ac5315a6161b9baaba23c391bccc0c191b0c724fab600564",
       "runtimeAssets": []
     }
   ]

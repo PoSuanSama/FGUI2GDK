@@ -1,1 +1,6 @@
-{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"检查 Unity 编译、资源/.meta、GameView、输入、重复生命周期和 Error 日志证据。"}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"核对多实例隔离、覆盖/恢复、取消、回收和 shutdown 的对称清理。"}
+{"file":".trellis/spec/frontend/state-management.md","reason":"核对 Controller 页面、列表过滤、详情实例和窗口置顶状态没有跨实例污染。"}
+{"file":".trellis/spec/tools/fairygui-cli-publish.md","reason":"核对外部工具所有权、状态检查、精确 Package1 发布和产物证明。"}
+{"file":".trellis/spec/tools/fairygui-source-generation.md","reason":"核对事实源同步、稳定契约、manifest/descriptor/绑定生成和无漂移。"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"逐层核对 103–106 从源表和 XML 到运行时消费者的数据流。"}

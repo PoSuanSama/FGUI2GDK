@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "uiId": 106,
+  "csName": "FairyInventoryOverlayForm",
+  "uiAssetName": "FairyGUI/FairyInventoryOverlayForm",
+  "uiGroupName": "Pop",
+  "allowMultiInstance": false,
+  "pauseCoveredUIForm": true,
+  "packageId": "oozeu71h",
+  "packageName": "Package1",
+  "componentId": "i20a4",
+  "componentName": "InventoryOverlayView",
+  "bindingType": "Game.Hot.FairyGUI.Package1.UIInventoryOverlayView",
+  "presenterType": "Game.Hot.FairyInventoryOverlayForm",
+  "dependencies": [],
+  "bootstrap": false,
+  "preload": "onOpen"
+}

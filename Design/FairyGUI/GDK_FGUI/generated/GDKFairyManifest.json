@@ -5,14 +5,14 @@
     "type": "Unity",
     "version": "5.0"
   },
-  "sourceHash": "419580e3c5696c88c45ad248819abfc430951e055cb70727d30374a18f9719e7",
-  "contractHash": "5bd0208ba0a5fbf6bc29b72a48808fa3886b0208a48b0eac5839580e3605c842",
+  "sourceHash": "af5d5fc4479c19afaef6885cf7c75d59ce342b1ed9c82f499a0b7ecdf50ce058",
+  "contractHash": "91c16db9cba7a8fb6ab53a5e6ba1d63fcccef53a269ca0ff9e1135ca1b3f34e5",
   "packages": [
     {
       "id": "oozeu71h",
       "name": "Package1",
       "file": "assets/Package1/package.xml",
-      "hash": "397abbf141b6d436086b940e0df3f8ee776e0a6836933e4afeaf02426e0abd63",
+      "hash": "d77891d0c23ab468669b7ca002a5d9bfa055fe18bea3d93cc86c767c6a9b0396",
       "dependencies": [],
       "resources": [
         {
@@ -22,7 +22,7 @@
           "path": "/",
           "exported": true,
           "file": "assets/Package1/MainView.xml",
-          "hash": "59c39aaaf8be3ccab721579a570444aa513dae172b5c6e743b2a8bcf9e73433e",
+          "hash": "fd6101285e94b800ecd0c7cb8e5400816b06a8beab5059676fbe0c4f0f6c9469",
           "members": [
             {
               "id": "accent",
@@ -99,6 +99,13 @@
               "name": "footer",
               "type": "GTextField",
               "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "inventory",
+              "name": "openInventoryButton",
+              "type": "GButton",
+              "src": "i20a7",
               "pkg": ""
             },
             {
@@ -373,6 +380,429 @@
             },
             {
               "id": "btntitle",
+              "name": "title",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            }
+          ]
+        },
+        {
+          "type": "component",
+          "id": "i20a2",
+          "name": "InventoryView.xml",
+          "path": "/",
+          "exported": true,
+          "file": "assets/Package1/InventoryView.xml",
+          "hash": "8bcef7b721cf537da29aa6d2fd26070e427d530834708582d04cfb84077544b6",
+          "members": [
+            {
+              "id": "categorytitle",
+              "name": "categoryTitle",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "closebtn",
+              "name": "closeButton",
+              "type": "GButton",
+              "src": "i20a7",
+              "pkg": ""
+            },
+            {
+              "id": "contentpanel",
+              "name": "contentPanel",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "controllerlabel",
+              "name": "controllerLabel",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "controllerpage",
+              "name": "controllerPageText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "hint",
+              "name": "hintText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "hintline",
+              "name": "hintLine",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "invbg",
+              "name": "background",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "invsubtitle",
+              "name": "subtitle",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "invtitle",
+              "name": "title",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "invtop",
+              "name": "topbar",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "itemlist",
+              "name": "itemList",
+              "type": "GList",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "liststatus",
+              "name": "statusText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "listtitle",
+              "name": "listTitle",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "overlaybtn",
+              "name": "openOverlayButton",
+              "type": "GButton",
+              "src": "i20a7",
+              "pkg": ""
+            },
+            {
+              "id": "sidepanel",
+              "name": "categoryPanel",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "taball",
+              "name": "allButton",
+              "type": "GButton",
+              "src": "i20a6",
+              "pkg": ""
+            },
+            {
+              "id": "tabconsumable",
+              "name": "consumableButton",
+              "type": "GButton",
+              "src": "i20a6",
+              "pkg": ""
+            },
+            {
+              "id": "tabequipment",
+              "name": "equipmentButton",
+              "type": "GButton",
+              "src": "i20a6",
+              "pkg": ""
+            },
+            {
+              "id": "tabquest",
+              "name": "questButton",
+              "type": "GButton",
+              "src": "i20a6",
+              "pkg": ""
+            }
+          ]
+        },
+        {
+          "type": "component",
+          "id": "i20a3",
+          "name": "ItemDetailWindow.xml",
+          "path": "/",
+          "exported": true,
+          "file": "assets/Package1/ItemDetailWindow.xml",
+          "hash": "7d5dbc5ce1b98127bc54fe93ef4b5a3d32f66ffba250dd03beab31cec443814d",
+          "members": [
+            {
+              "id": "description",
+              "name": "descriptionText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "detailclose",
+              "name": "closeButton",
+              "type": "GButton",
+              "src": "i20a7",
+              "pkg": ""
+            },
+            {
+              "id": "detailline",
+              "name": "detailLine",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "detailname",
+              "name": "itemNameText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "detailoverlay",
+              "name": "openOverlayButton",
+              "type": "GButton",
+              "src": "i20a7",
+              "pkg": ""
+            },
+            {
+              "id": "detailtitle",
+              "name": "titleText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "detailtype",
+              "name": "itemTypeText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "focusstatus",
+              "name": "focusStatusText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "focustoken",
+              "name": "focusTokenText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "windowframe",
+              "name": "windowFrame",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "windowtop",
+              "name": "windowTopbar",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            }
+          ]
+        },
+        {
+          "type": "component",
+          "id": "i20a4",
+          "name": "InventoryOverlayView.xml",
+          "path": "/",
+          "exported": true,
+          "file": "assets/Package1/InventoryOverlayView.xml",
+          "hash": "6e101b4c5495758895438cbb492c50a84305c08bc70ad949159e518d79d0ac50",
+          "members": [
+            {
+              "id": "overlaybg",
+              "name": "background",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "overlayclose",
+              "name": "closeButton",
+              "type": "GButton",
+              "src": "i20a7",
+              "pkg": ""
+            },
+            {
+              "id": "overlaydetail",
+              "name": "detailText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "overlaypanel",
+              "name": "panel",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "overlaytitle",
+              "name": "titleText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            }
+          ]
+        },
+        {
+          "type": "component",
+          "id": "i20a5",
+          "name": "InventoryItem.xml",
+          "path": "/",
+          "exported": true,
+          "file": "assets/Package1/InventoryItem.xml",
+          "hash": "5dab0ea76ad98e5feca8c424f498655ff3b61ae41cce69a97e1ee7ff19ad9d91",
+          "members": [
+            {
+              "id": "itembg0",
+              "name": "up",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "itembg1",
+              "name": "over",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "itembg2",
+              "name": "down",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "itemcount",
+              "name": "itemCount",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "itemname",
+              "name": "itemName",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "itemtype",
+              "name": "itemType",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "rarity",
+              "name": "rarityBar",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            }
+          ]
+        },
+        {
+          "type": "component",
+          "id": "i20a6",
+          "name": "CategoryTabButton.xml",
+          "path": "/",
+          "exported": true,
+          "file": "assets/Package1/CategoryTabButton.xml",
+          "hash": "3f9ea10e979480cb4a3dcb1681b068a2b94e60f439c50c559cbe3a354d37dae7",
+          "members": [
+            {
+              "id": "tabbg0",
+              "name": "up",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "tabbg1",
+              "name": "over",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "tabbg2",
+              "name": "selected",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "tabtitle",
+              "name": "title",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            }
+          ]
+        },
+        {
+          "type": "component",
+          "id": "i20a7",
+          "name": "ActionButton.xml",
+          "path": "/",
+          "exported": true,
+          "file": "assets/Package1/ActionButton.xml",
+          "hash": "f115fce8844a3dc116204e35c22b691564d37734460658fdbb75eae16c7bb492",
+          "members": [
+            {
+              "id": "actionbg0",
+              "name": "up",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "actionbg1",
+              "name": "over",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "actionbg2",
+              "name": "down",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "actiontitle",
               "name": "title",
               "type": "GTextField",
               "src": "",

@@ -4,7 +4,12 @@
     "references": [
         "LubanLib",
         "LubanLib.Editor",
-        "Game.Hot.Code"
+        "Game.Hot.Code",
+        "Game",
+        "UnityGameFramework.Runtime",
+        "FairyGUI",
+        "UniTask",
+        "AgentBridge.Editor"
     ],
     "includePlatforms": [
         "Editor"

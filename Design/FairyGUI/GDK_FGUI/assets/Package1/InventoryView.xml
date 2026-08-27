@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="1280,720">
+  <controller name="category" pages="0,all,1,equipment,2,consumable,3,quest" selected="0"/>
+  <displayList>
+    <graph id="invbg" name="background" xy="0,0" size="1280,720" touchable="false" type="rect" lineSize="0" fillColor="#ff080f18">
+      <relation target="" sidePair="width-width,height-height"/>
+    </graph>
+    <graph id="invtop" name="topbar" xy="0,0" size="1280,82" touchable="false" type="rect" lineSize="0" fillColor="#ff111c2b">
+      <relation target="" sidePair="width-width"/>
+    </graph>
+    <text id="invtitle" name="title" xy="42,21" size="360,34" fontSize="26" color="#fff8fafc" autoSize="none" bold="true" singleLine="true" text="冒险者背包"/>
+    <text id="invsubtitle" name="subtitle" xy="42,53" size="440,20" fontSize="12" color="#ff94a3b8" autoSize="none" singleLine="true" text="Controller 分类 / GList 条目 / 多实例详情窗口"/>
+    <component id="overlaybtn" name="openOverlayButton" src="i20a7" fileName="ActionButton.xml" xy="972,22" size="132,40">
+      <Button title="覆盖测试"/>
+    </component>
+    <component id="closebtn" name="closeButton" src="i20a7" fileName="ActionButton.xml" xy="1116,22" size="120,40">
+      <Button title="关闭背包"/>
+    </component>
+    <graph id="sidepanel" name="categoryPanel" xy="32,106" size="180,566" touchable="false" type="rect" lineSize="1" lineColor="#ff243447" fillColor="#ff0d1622"/>
+    <text id="categorytitle" name="categoryTitle" xy="48,126" size="150,24" fontSize="13" color="#ff67e8f9" autoSize="none" bold="true" singleLine="true" text="物品分类"/>
+    <component id="taball" name="allButton" src="i20a6" fileName="CategoryTabButton.xml" xy="48,166" size="148,44">
+      <Button title="全部" selected="true"/>
+    </component>
+    <component id="tabequipment" name="equipmentButton" src="i20a6" fileName="CategoryTabButton.xml" xy="48,222" size="148,44">
+      <Button title="装备"/>
+    </component>
+    <component id="tabconsumable" name="consumableButton" src="i20a6" fileName="CategoryTabButton.xml" xy="48,278" size="148,44">
+      <Button title="消耗品"/>
+    </component>
+    <component id="tabquest" name="questButton" src="i20a6" fileName="CategoryTabButton.xml" xy="48,334" size="148,44">
+      <Button title="任务物品"/>
+    </component>
+    <text id="controllerlabel" name="controllerLabel" xy="48,414" size="148,22" fontSize="11" color="#ff64748b" autoSize="none" singleLine="true" text="当前 Controller 页"/>
+    <text id="controllerpage" name="controllerPageText" xy="48,440" size="148,28" fontSize="16" color="#ff34d399" autoSize="none" bold="true" singleLine="true" text="all"/>
+    <graph id="contentpanel" name="contentPanel" xy="232,106" size="1016,566" touchable="false" type="rect" lineSize="1" lineColor="#ff243447" fillColor="#ff101a27"/>
+    <text id="listtitle" name="listTitle" xy="256,126" size="420,26" fontSize="16" color="#fff8fafc" autoSize="none" bold="true" singleLine="true" text="物品列表（点击可重复打开详情）"/>
+    <text id="liststatus" name="statusText" xy="804,128" size="412,22" fontSize="12" color="#fffbbf24" align="right" autoSize="none" singleLine="true" text="0 个详情窗口"/>
+    <list id="itemlist" name="itemList" xy="256,170" size="936,406" layout="flow_hz" lineGap="14" colGap="14" defaultItem="ui://oozeu71hi20a5"/>
+    <graph id="hintline" name="hintLine" xy="256,594" size="936,1" touchable="false" type="rect" lineSize="0" fillColor="#ff334155"/>
+    <text id="hint" name="hintText" xy="256,612" size="936,32" fontSize="12" color="#ff94a3b8" autoSize="none" align="center" singleLine="true" text="连续点击多个物品打开多个窗口；点击任一详情窗口会将其提升到最上层。"/>
+  </displayList>
+</component>

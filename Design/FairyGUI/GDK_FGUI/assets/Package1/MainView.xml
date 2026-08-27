@@ -10,6 +10,9 @@
     <graph id="accent" name="accent" xy="48,28" size="4,36" touchable="false" type="rect" lineSize="0" fillColor="#ff22d3ee"/>
     <text id="title" name="title" xy="68,25" size="470,30" fontSize="24" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="GDK UI 自动化流程"/>
     <text id="subtitle" name="subtitle" xy="68,56" size="520,20" fontSize="12" color="#94a3b8" autoSize="none" singleLine="true" text="FAIRYGUI XML  /  GDK 资源组件  /  UGF 生命周期"/>
+    <component id="inventory" name="openInventoryButton" src="i20a7" fileName="ActionButton.xml" xy="884,26" size="132,40">
+      <Button title="打开背包"/>
+    </component>
     <component id="refresh" name="refreshButton" src="btn01" fileName="RefreshButton.xml" xy="1036,22" size="196,48"/>
     <text id="section1" name="sectionTitle" xy="48,122" size="420,24" fontSize="13" color="#67e8f9" autoSize="none" bold="true" singleLine="true" text="实时接入状态"/>
     <graph id="statuspanel" name="statusPanel" xy="48,156" size="788,218" touchable="false" type="rect" lineColor="#ff243447" fillColor="#ff101a27"/>

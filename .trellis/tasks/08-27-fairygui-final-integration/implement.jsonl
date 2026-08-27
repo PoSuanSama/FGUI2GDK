@@ -1,1 +1,8 @@
-{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file":".trellis/spec/tools/fairygui-cli-publish.md","reason":"通过官方外部 CLI 驱动已打开的 FairyGUI Editor，并保持版本、精确单包和产物门禁。"}
+{"file":".trellis/spec/tools/fairygui-source-generation.md","reason":"维护仓库事实来源、Editor 同步、manifest、官方绑定和确定性生成契约。"}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"实现多实例、覆盖栈、原始 userData、取消、回收和 shutdown 生命周期。"}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"使用 Luban 生成 ID、官方绑定和程序集边界，避免硬编码与反射业务绑定。"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"新 Presenter 与 GameHot/UGF UI 归属必须复用现有组件模式。"}
+{"file":".trellis/spec/frontend/state-management.md","reason":"背包 Controller、物品数据、详情实例和 refocus 状态必须由既有 UIForm/userData 所有者管理。"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"变更跨 Excel、Luban、FairyGUI XML、生成物、资源规则、GameHot 和 Unity 验证。"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"复用共享宿主、包租约、Presenter 注册和现有生成器，不扩张公共 API。"}

@@ -10,6 +10,12 @@ namespace Game.Hot.FairyGUI.Package1
         {
             UIObjectFactory.SetPackageItemExtension(UIMainView.URL, typeof(UIMainView));
             UIObjectFactory.SetPackageItemExtension(UIRefreshButton.URL, typeof(UIRefreshButton));
+            UIObjectFactory.SetPackageItemExtension(UIInventoryView.URL, typeof(UIInventoryView));
+            UIObjectFactory.SetPackageItemExtension(UIItemDetailWindow.URL, typeof(UIItemDetailWindow));
+            UIObjectFactory.SetPackageItemExtension(UIInventoryOverlayView.URL, typeof(UIInventoryOverlayView));
+            UIObjectFactory.SetPackageItemExtension(UIInventoryItem.URL, typeof(UIInventoryItem));
+            UIObjectFactory.SetPackageItemExtension(UICategoryTabButton.URL, typeof(UICategoryTabButton));
+            UIObjectFactory.SetPackageItemExtension(UIActionButton.URL, typeof(UIActionButton));
         }
     }
 }
