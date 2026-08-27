@@ -152,15 +152,6 @@ namespace Game
         }
 
         /// <summary>
-        /// 获取界面组件。
-        /// </summary>
-        public static UIComponent UI
-        {
-            get;
-            private set;
-        }
-
-        /// <summary>
         /// 获取网络组件。
         /// </summary>
         public static WebRequestComponent WebRequest
@@ -187,7 +178,6 @@ namespace Game
             Scene = UnityGameFramework.Runtime.GameEntry.GetComponent<SceneComponent>();
             Setting = UnityGameFramework.Runtime.GameEntry.GetComponent<SettingComponent>();
             Sound = UnityGameFramework.Runtime.GameEntry.GetComponent<SoundComponent>();
-            UI = UnityGameFramework.Runtime.GameEntry.GetComponent<UIComponent>();
             WebRequest = UnityGameFramework.Runtime.GameEntry.GetComponent<WebRequestComponent>();
         }
     }

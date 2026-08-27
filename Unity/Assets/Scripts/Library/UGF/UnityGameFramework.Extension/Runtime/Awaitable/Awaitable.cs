@@ -15,15 +15,12 @@ namespace UnityGameFramework.Extension
         /// </summary>
         public static void SubscribeEvent()
         {
-            if (s_OpenUIFormEventDataDict.Count > 0 || s_ShowEntityEventDataDict.Count > 0)
+            if (s_ShowEntityEventDataDict.Count > 0)
             {
                 throw new GameFrameworkException("Awaitable Task is not clean!");
             }
             
             EventComponent eventComponent = GameEntry.GetComponent<EventComponent>();
-            eventComponent.Subscribe(OpenUIFormUpdateEventArgs.EventId, OnOpenUIFormUpdate);
-            eventComponent.Subscribe(OpenUIFormDependencyAssetEventArgs.EventId, OnOpenUIFormDependencyAsset);
-
             eventComponent.Subscribe(ShowEntityUpdateEventArgs.EventId, OnShowEntityUpdate);
             eventComponent.Subscribe(ShowEntityDependencyAssetEventArgs.EventId, OnShowEntityDependencyAsset);
 

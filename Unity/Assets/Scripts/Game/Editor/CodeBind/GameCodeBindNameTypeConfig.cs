@@ -10,7 +10,6 @@ namespace Game
 
         public IReadOnlyDictionary<string, Type> TargetTypesByToken { get; } = new Dictionary<string, Type>()
         {
-            { "UIWidget", typeof(AUIWidget) },
             // TMP
             { "TMPText", typeof(TMPro.TMP_Text) },
             { "TMPInputField", typeof(TMPro.TMP_InputField) },
