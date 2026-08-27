@@ -3,7 +3,7 @@
   "name": "fgui-beginner-guide",
   "title": "FairyGUI 新手引导系统",
   "description": "用 FairyGUI 实现新手引导系统，替代 UXTool 引导能力",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
