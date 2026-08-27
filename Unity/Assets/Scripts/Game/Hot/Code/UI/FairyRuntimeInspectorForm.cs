@@ -9,6 +9,7 @@ namespace Game.Hot
     public sealed class FairyRuntimeInspectorForm : IFairyUIPresenter
     {
         private UIRuntimeInspectorView m_View;
+        private GTextField m_InfoText;
 
         public void OnViewReady(GComponent view)
         {
@@ -19,11 +20,19 @@ namespace Game.Hot
                     $"FairyGUI RuntimeInspector requires '{typeof(UIRuntimeInspectorView).FullName}', found '{view?.GetType().FullName}'.");
             }
 
+            m_InfoText = new GTextField();
+            m_InfoText.name = "runtimeInfo";
+            m_InfoText.SetXY(40, 72);
+            m_InfoText.SetSize(720, 470);
+            m_View.AddChild(m_InfoText);
+
             m_View.CloseButton.onClick.Add(OnCloseClick);
+            RefreshRuntimeInfo();
         }
 
         public void OnOpen(object userData)
         {
+            RefreshRuntimeInfo();
         }
 
         public void OnClose(bool isShutdown, object userData)
@@ -33,6 +42,8 @@ namespace Game.Hot
                 m_View.CloseButton.onClick.Remove(OnCloseClick);
                 m_View = null;
             }
+
+            m_InfoText = null;
         }
 
         public void OnPause()
@@ -57,6 +68,36 @@ namespace Game.Hot
 
         public void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
+            RefreshRuntimeInfo();
+        }
+
+        private void RefreshRuntimeInfo()
+        {
+            if (m_InfoText == null)
+            {
+                return;
+            }
+
+            FairyUIManager uiManager = FairyUIManager.Instance;
+            int loadedForms = uiManager.GetAllLoadedUIForms().Length;
+            int loadingForms = uiManager.GetAllLoadingUIFormSerialIds().Length;
+            int tableCount = 0;
+            if (HotEntry.Tables != null && HotEntry.Tables.DataTables != null)
+            {
+                foreach (var _ in HotEntry.Tables.DataTables)
+                {
+                    tableCount++;
+                }
+            }
+
+            m_InfoText.text = string.Join(
+                Environment.NewLine,
+                "FairyGUI RuntimeInspector",
+                $"Loaded UIForms: {loadedForms}",
+                $"Loading UIForms: {loadingForms}",
+                $"GameHot Luban Tables: {tableCount}",
+                "Package: Package1",
+                "Component: RuntimeInspectorView");
         }
 
         private void OnCloseClick()
