@@ -13,6 +13,10 @@ namespace Game
             View = view;
         }
 
+        public virtual void OnInit(object userData)
+        {
+        }
+
         public virtual void OnOpen(object userData)
         {
             Opened = true;
@@ -25,6 +29,16 @@ namespace Game
         public virtual void OnClose(bool isShutdown, object userData)
         {
             Opened = false;
+        }
+
+        public virtual void OnRecycle()
+        {
+            Opened = false;
+            if (View != null)
+            {
+                View.Dispose();
+                View = null;
+            }
         }
 
         public virtual void OnPause()
@@ -48,6 +62,10 @@ namespace Game
         }
 
         public virtual void OnUpdate(float elapseSeconds, float realElapseSeconds)
+        {
+        }
+
+        public virtual void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
         {
         }
     }

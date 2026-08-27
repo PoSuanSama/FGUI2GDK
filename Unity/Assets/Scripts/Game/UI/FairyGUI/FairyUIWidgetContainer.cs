@@ -1,22 +1,32 @@
 using System;
 using System.Collections.Generic;
 using FairyGUI;
+using GameFramework;
 
 namespace Game
 {
-    public sealed class FairyUIWidgetContainer
+    public sealed class FairyUIWidgetContainer : IReference
     {
         private readonly List<IFairyUIWidget> m_Widgets = new List<IFairyUIWidget>();
-        private readonly GComponent m_Owner;
 
-        public FairyUIWidgetContainer(GComponent owner)
-        {
-            m_Owner = owner ?? throw new ArgumentNullException(nameof(owner));
-        }
+        public GComponent Owner { get; private set; }
 
         public int Count => m_Widgets.Count;
 
-        public void AddWidget(IFairyUIWidget widget)
+        public static FairyUIWidgetContainer Create(GComponent owner)
+        {
+            FairyUIWidgetContainer container = ReferencePool.Acquire<FairyUIWidgetContainer>();
+            container.Owner = owner ?? throw new ArgumentNullException(nameof(owner));
+            return container;
+        }
+
+        public void Clear()
+        {
+            m_Widgets.Clear();
+            Owner = null;
+        }
+
+        public void AddWidget(IFairyUIWidget widget, object userData = null)
         {
             if (widget == null)
             {
@@ -29,7 +39,10 @@ namespace Game
             }
 
             m_Widgets.Add(widget);
+            widget.OnInit(userData);
         }
+
+        public bool HasWidget(IFairyUIWidget widget) => m_Widgets.Contains(widget);
 
         public void OpenWidget(IFairyUIWidget widget, object userData = null)
         {
@@ -38,9 +51,14 @@ namespace Game
                 throw new InvalidOperationException("FairyGUI widget is not in this container.");
             }
 
-            if (widget.View != null && widget.View.parent != m_Owner)
+            if (widget.Opened)
             {
-                m_Owner.AddChild(widget.View);
+                throw new InvalidOperationException("FairyGUI widget is already opened.");
+            }
+
+            if (widget.View != null && widget.View.parent != Owner)
+            {
+                Owner.AddChild(widget.View);
             }
 
             widget.OnOpen(userData);
@@ -48,7 +66,7 @@ namespace Game
 
         public void CloseWidget(IFairyUIWidget widget, bool isShutdown = false, object userData = null)
         {
-            if (widget == null || !m_Widgets.Contains(widget))
+            if (widget == null || !m_Widgets.Contains(widget) || !widget.Opened)
             {
                 return;
             }
@@ -60,7 +78,18 @@ namespace Game
         {
             for (int i = m_Widgets.Count - 1; i >= 0; i--)
             {
-                m_Widgets[i].OnClose(isShutdown, userData);
+                if (m_Widgets[i].Opened)
+                {
+                    m_Widgets[i].OnClose(isShutdown, userData);
+                }
+            }
+        }
+
+        public void RecycleAllWidgets()
+        {
+            for (int i = m_Widgets.Count - 1; i >= 0; i--)
+            {
+                m_Widgets[i].OnRecycle();
             }
         }
 
@@ -68,7 +97,10 @@ namespace Game
         {
             foreach (IFairyUIWidget widget in m_Widgets)
             {
-                widget.OnPause();
+                if (widget.Opened)
+                {
+                    widget.OnPause();
+                }
             }
         }
 
@@ -76,7 +108,10 @@ namespace Game
         {
             foreach (IFairyUIWidget widget in m_Widgets)
             {
-                widget.OnResume();
+                if (widget.Opened)
+                {
+                    widget.OnResume();
+                }
             }
         }
 
@@ -84,7 +119,10 @@ namespace Game
         {
             foreach (IFairyUIWidget widget in m_Widgets)
             {
-                widget.OnCover();
+                if (widget.Opened)
+                {
+                    widget.OnCover();
+                }
             }
         }
 
@@ -92,7 +130,10 @@ namespace Game
         {
             foreach (IFairyUIWidget widget in m_Widgets)
             {
-                widget.OnReveal();
+                if (widget.Opened)
+                {
+                    widget.OnReveal();
+                }
             }
         }
 
@@ -100,7 +141,10 @@ namespace Game
         {
             foreach (IFairyUIWidget widget in m_Widgets)
             {
-                widget.OnRefocus(userData);
+                if (widget.Opened)
+                {
+                    widget.OnRefocus(userData);
+                }
             }
         }
 
@@ -108,8 +152,27 @@ namespace Game
         {
             foreach (IFairyUIWidget widget in m_Widgets)
             {
-                widget.OnUpdate(elapseSeconds, realElapseSeconds);
+                if (widget.Opened)
+                {
+                    widget.OnUpdate(elapseSeconds, realElapseSeconds);
+                }
             }
+        }
+
+        public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
+        {
+            foreach (IFairyUIWidget widget in m_Widgets)
+            {
+                if (widget.Opened)
+                {
+                    widget.OnDepthChanged(uiGroupDepth, depthInUIGroup);
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            ReferencePool.Release(this);
         }
     }
 }
