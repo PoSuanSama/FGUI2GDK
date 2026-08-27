@@ -10,6 +10,8 @@ namespace Game
 
         bool Visible { get; set; }
 
+        void OnInit(object userData);
+
         void OnShow(object userData);
 
         void OnHide(bool isShutdown, object userData);

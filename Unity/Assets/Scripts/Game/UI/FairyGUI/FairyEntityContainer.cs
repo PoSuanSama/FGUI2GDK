@@ -1,15 +1,31 @@
 using System;
 using System.Collections.Generic;
+using GameFramework;
 
 namespace Game
 {
-    public sealed class FairyEntityContainer
+    public sealed class FairyEntityContainer : IReference
     {
         private readonly List<IFairyEntity> m_Entities = new List<IFairyEntity>();
 
+        public IFairyEntity Owner { get; private set; }
+
         public int Count => m_Entities.Count;
 
-        public void AddEntity(IFairyEntity entity)
+        public static FairyEntityContainer Create(IFairyEntity owner)
+        {
+            FairyEntityContainer container = ReferencePool.Acquire<FairyEntityContainer>();
+            container.Owner = owner ?? throw new ArgumentNullException(nameof(owner));
+            return container;
+        }
+
+        public void Clear()
+        {
+            m_Entities.Clear();
+            Owner = null;
+        }
+
+        public void AddEntity(IFairyEntity entity, object userData = null)
         {
             if (entity == null)
             {
@@ -22,7 +38,10 @@ namespace Game
             }
 
             m_Entities.Add(entity);
+            entity.OnInit(userData);
         }
+
+        public bool HasEntity(IFairyEntity entity) => m_Entities.Contains(entity);
 
         public void ShowEntity(IFairyEntity entity, object userData = null)
         {
@@ -36,7 +55,7 @@ namespace Game
 
         public void HideEntity(IFairyEntity entity, bool isShutdown = false, object userData = null)
         {
-            if (entity == null || !m_Entities.Contains(entity))
+            if (entity == null || !m_Entities.Contains(entity) || !entity.Available)
             {
                 return;
             }
@@ -48,7 +67,10 @@ namespace Game
         {
             for (int i = m_Entities.Count - 1; i >= 0; i--)
             {
-                m_Entities[i].OnHide(isShutdown, userData);
+                if (m_Entities[i].Available)
+                {
+                    m_Entities[i].OnHide(isShutdown, userData);
+                }
             }
         }
 
@@ -64,8 +86,16 @@ namespace Game
         {
             foreach (IFairyEntity entity in m_Entities)
             {
-                entity.OnUpdate(elapseSeconds, realElapseSeconds);
+                if (entity.Available)
+                {
+                    entity.OnUpdate(elapseSeconds, realElapseSeconds);
+                }
             }
+        }
+
+        public void Dispose()
+        {
+            ReferencePool.Release(this);
         }
     }
 }
