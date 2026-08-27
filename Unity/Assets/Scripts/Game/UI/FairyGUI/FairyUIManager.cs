@@ -58,7 +58,6 @@ namespace Game
             m_UIFormHelper = new FairyUIFormHelper(ReleaseAsset);
             m_UIManager.SetUIFormHelper(m_UIFormHelper);
 
-            FairyUIRootService.Instance.EnsureInitialized(DesignResolutionX, DesignResolutionY);
         }
 
         public bool AddUIGroup(string name, int depth)
@@ -205,7 +204,6 @@ namespace Game
                 await FairyPackageManager.WaitForPendingAssetsAsync(pendingState.PackageLease, ownerToken);
                 ownerToken.ThrowIfCancellationRequested();
 
-                FairyUIRootService.Instance.EnsureInitialized(DesignResolutionX, DesignResolutionY);
                 if (!m_UIManager.HasUIGroup(uiForm.UIGroupName))
                 {
                     throw new GameFrameworkException(

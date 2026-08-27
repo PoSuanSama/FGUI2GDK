@@ -18,7 +18,6 @@ namespace ET.Client
                 room.AddComponent<LSOperaComponent>();
             }
             
-            clientScene.GetComponent<UIComponent>().RemoveComponent<UIFormLSLobbyComponent>();
         }
     }
 }

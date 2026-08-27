@@ -15,7 +15,6 @@ namespace ET.Client
             
             
             // 创建房间UI
-            await room.GetComponent<UIComponent>().AddUIFormComponentAsync<UIFormLSRoomComponent>(UGFUIFormId.UILSRoom);
             
             // 加载场景资源
             await clientScene.Root().GetComponent<UGFComponent>().LoadSceneAsync(AssetUtility.GetSceneAsset(room.Name));

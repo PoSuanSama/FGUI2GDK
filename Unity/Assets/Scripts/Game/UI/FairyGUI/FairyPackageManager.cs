@@ -95,23 +95,6 @@ namespace Game
         }
 
         internal static async UniTask WaitForPendingAssetsAsync(
-            FairyUIFormPreparedState preparedState,
-            CancellationToken cancellationToken)
-        {
-            FairyPackageLease packageLease = preparedState?.PackageLease;
-            PackageState[] states = packageLease?.States;
-            if (states == null)
-            {
-                throw new GameFrameworkException("FairyGUI prepared state has no package lease.");
-            }
-
-            foreach (PackageState state in states)
-            {
-                await WaitForPendingAssetsAsync(state, cancellationToken);
-            }
-        }
-
-        internal static async UniTask WaitForPendingAssetsAsync(
             FairyPackageLease packageLease,
             CancellationToken cancellationToken)
         {
