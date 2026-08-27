@@ -11,8 +11,5 @@
   "componentId": "7xe70",
   "componentName": "MainView",
   "bindingType": "Game.Hot.FairyGUI.Package1.UIMainView",
-  "presenterType": "Game.Hot.FairyDemoForm",
-  "dependencies": [],
-  "bootstrap": false,
-  "preload": "onOpen"
+  "dependencies": []
 }

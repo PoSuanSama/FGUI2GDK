@@ -22,6 +22,8 @@ public sealed class DRUIForm :  Luban.EditorBeanBase
             Desc = "";
             AssetName = "";
             UIGroupName = "";
+            PackageName = "";
+            ComponentName = "";
     }
 
     public override void LoadJson(JSONObject _json)
@@ -82,6 +84,22 @@ public sealed class DRUIForm :  Luban.EditorBeanBase
             }
         }
         
+        { 
+            var _fieldJson = _json["PackageName"];
+            if (_fieldJson != null)
+            {
+                if(!_fieldJson.IsString) { throw new SerializationException(); }  PackageName = _fieldJson;
+            }
+        }
+        
+        { 
+            var _fieldJson = _json["ComponentName"];
+            if (_fieldJson != null)
+            {
+                if(!_fieldJson.IsString) { throw new SerializationException(); }  ComponentName = _fieldJson;
+            }
+        }
+        
     }
 
     public override void SaveJson(JSONObject _json)
@@ -114,6 +132,16 @@ public sealed class DRUIForm :  Luban.EditorBeanBase
         }
         {
             _json["PauseCoveredUIForm"] = new JSONBool(PauseCoveredUIForm);
+        }
+        {
+
+            if (PackageName == null) { throw new System.ArgumentNullException(); }
+            _json["PackageName"] = new JSONString(PackageName);
+        }
+        {
+
+            if (ComponentName == null) { throw new System.ArgumentNullException(); }
+            _json["ComponentName"] = new JSONString(ComponentName);
         }
     }
 
@@ -163,6 +191,16 @@ public sealed class DRUIForm :  Luban.EditorBeanBase
     /// 是否暂停被其覆盖的界面
     /// </summary>
     public bool PauseCoveredUIForm;
+
+    /// <summary>
+    /// 包名
+    /// </summary>
+    public string PackageName;
+
+    /// <summary>
+    /// 组件名
+    /// </summary>
+    public string ComponentName;
 
 }
 }

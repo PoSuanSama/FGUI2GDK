@@ -82,15 +82,12 @@ namespace Game
                 }
 
                 IFairyUIPresenter presenter = createPresenter(descriptor);
-                if (presenter == null ||
-                    !string.Equals(presenter.GetType().FullName, descriptor.PresenterType, StringComparison.Ordinal))
+                if (presenter == null)
                 {
                     throw new GameFrameworkException(
                         Utility.Text.Format(
-                            "FairyGUI presenter type mismatch for UI '{0}': expected '{1}', found '{2}'.",
-                            uiId,
-                            descriptor.PresenterType,
-                            presenter?.GetType().FullName ?? "null"));
+                            "FairyGUI presenter is not registered for UI '{0}'.",
+                            uiId));
                 }
 
                 string descriptorKey = Path.GetFileNameWithoutExtension(descriptorAssetName);

@@ -4,6 +4,7 @@ using Game.Hot.FairyGUI.Package1;
 
 namespace Game.Hot
 {
+        [FairyUIPresenter("FairyInventoryOverlayForm")]
     public sealed class FairyInventoryOverlayForm : IFairyUIPresenter
     {
         private FairyInventoryOverlayOpenData m_OpenData;

@@ -6,6 +6,7 @@ using UnityEngine;
 
 namespace Game.Hot
 {
+        [FairyUIPresenter("FairyItemDetailForm")]
     public sealed class FairyItemDetailForm : IFairyUIPresenter
     {
         private readonly List<GObject> m_WindowParts = new List<GObject>();

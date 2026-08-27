@@ -24,10 +24,7 @@ namespace Game
         public string ComponentId { get; private set; }
         public string ComponentName { get; private set; }
         public string BindingType { get; private set; }
-        public string PresenterType { get; private set; }
         public IReadOnlyList<string> Dependencies { get; private set; }
-        public bool Bootstrap { get; private set; }
-        public string Preload { get; private set; }
 
         public static FairyUIFormDescriptor Parse(string json)
         {
@@ -67,8 +64,7 @@ namespace Game
                 string.IsNullOrWhiteSpace(data.UiGroupName) ||
                 string.IsNullOrWhiteSpace(data.PackageName) ||
                 string.IsNullOrWhiteSpace(data.ComponentName) ||
-                string.IsNullOrWhiteSpace(data.BindingType) ||
-                string.IsNullOrWhiteSpace(data.PresenterType))
+                string.IsNullOrWhiteSpace(data.BindingType))
             {
                 throw new GameFrameworkException(
                     "FairyGUI UI form descriptor is missing a required field.");
@@ -88,10 +84,7 @@ namespace Game
                 ComponentId = data.ComponentId ?? string.Empty,
                 ComponentName = data.ComponentName,
                 BindingType = data.BindingType,
-                PresenterType = data.PresenterType ?? string.Empty,
                 Dependencies = data.Dependencies ?? new List<string>(),
-                Bootstrap = data.Bootstrap,
-                Preload = data.Preload ?? "onOpen"
             };
         }
 
@@ -109,10 +102,7 @@ namespace Game
             [JsonProperty("componentId")] public string ComponentId;
             [JsonProperty("componentName")] public string ComponentName;
             [JsonProperty("bindingType")] public string BindingType;
-            [JsonProperty("presenterType")] public string PresenterType;
             [JsonProperty("dependencies")] public List<string> Dependencies;
-            [JsonProperty("bootstrap")] public bool Bootstrap;
-            [JsonProperty("preload")] public string Preload;
         }
     }
 }

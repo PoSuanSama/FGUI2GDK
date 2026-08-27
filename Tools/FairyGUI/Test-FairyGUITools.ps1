@@ -587,23 +587,6 @@ exit /b 0
     # Descriptor generation tests
     $descriptorSourceRows = Get-Content -Raw -LiteralPath $lubanUiFormData | ConvertFrom-Json -NoEnumerate
 
-    function New-DescriptorMapping {
-        param(
-            [string]$PackageName = 'Package1',
-            [string]$ComponentName = 'MainView',
-            [string]$BindingType = 'Game.Hot.FairyGUI.Package1.UIMainView'
-        )
-
-        return [pscustomobject][ordered]@{
-            packageName = $PackageName
-            componentName = $ComponentName
-            bindingType = $BindingType
-            presenterType = 'Game.Hot.FairyDemoForm'
-            bootstrap = $false
-            preload = 'onOpen'
-        }
-    }
-
     function New-DescriptorFixture {
         param([Parameter(Mandatory)][string]$Name)
 
@@ -618,6 +601,8 @@ exit /b 0
             UIGroupName = 'Default'
             AllowMultiInstance = $false
             PauseCoveredUIForm = $true
+            PackageName = 'Package1'
+            ComponentName = 'MainView'
         }
         [System.IO.File]::WriteAllText(
             $lubanPath,
@@ -645,21 +630,6 @@ exit /b 0
         [System.IO.File]::WriteAllText(
             $Fixture.Luban,
             (($Rows | ConvertTo-Json -Depth 100) + "`n"),
-            $utf8NoBom)
-    }
-
-    function Set-DescriptorMappings {
-        param(
-            [Parameter(Mandatory)]$Fixture,
-            [Parameter(Mandatory)]$Mappings
-        )
-
-        $contractPath = Join-Path $Fixture.Project 'settings/GDK.json'
-        $contract = Get-Content -Raw -LiteralPath $contractPath | ConvertFrom-Json
-        $contract.uiForms = $Mappings
-        [System.IO.File]::WriteAllText(
-            $contractPath,
-            (($contract | ConvertTo-Json -Depth 100) + "`n"),
             $utf8NoBom)
     }
 
@@ -692,11 +662,6 @@ exit /b 0
         Assert-True $result.Output.Contains($ExpectedMessage) "$Name did not report '$ExpectedMessage': $($result.Output)"
     }
 
-    $sourceContract = Get-Content -Raw -LiteralPath (Join-Path $sourceProject 'settings/GDK.json') | ConvertFrom-Json
-    Assert-Equal 1 @($sourceContract.uiForms.PSObject.Properties).Count 'GDK uiForms must be keyed by CSName.'
-    Assert-True (-not ($sourceContract.uiForms.FairyDemoForm.PSObject.Properties.Name -contains 'uiId')) 'GDK uiForms duplicated the Luban UI Id.'
-    Assert-True (-not ($sourceContract.uiForms.FairyDemoForm.PSObject.Properties.Name -contains 'uiAssetName')) 'GDK uiForms duplicated the Luban AssetName.'
-
     $descriptorFixture = New-DescriptorFixture 'descriptor-good'
     $descriptorResult = Invoke-Descriptor $descriptorFixture
     Assert-True $descriptorResult.Success "Valid descriptor generation failed: $($descriptorResult.Output)"
@@ -712,6 +677,8 @@ exit /b 0
     Assert-Equal 'oozeu71h' $descriptorJson.packageId 'Descriptor packageId is wrong.'
     Assert-Equal '7xe70' $descriptorJson.componentId 'Descriptor componentId is wrong.'
     Assert-Equal 'Game.Hot.FairyGUI.Package1.UIMainView' $descriptorJson.bindingType 'Descriptor bindingType is wrong.'
+    Assert-Equal 'Package1' $descriptorJson.packageName 'Descriptor packageName is not sourced from Luban.'
+    Assert-Equal 'MainView' $descriptorJson.componentName 'Descriptor componentName is not sourced from Luban.'
 
     $firstDescriptorBytes = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($descriptorFile))
     $descriptorResult = Invoke-Descriptor $descriptorFixture
@@ -735,20 +702,11 @@ exit /b 0
     $identityFixture = New-DescriptorFixture 'descriptor-identity-drift'
     $null = Invoke-Descriptor $identityFixture
     $identityRows = Get-DescriptorRows $identityFixture
-    ($identityRows | Where-Object { $_.CSName -ceq 'FairyDemoForm' }).Id = 104
+    ($identityRows | Where-Object { $_.CSName -ceq 'FairyDemoForm' }).Id = 999
     Set-DescriptorRows $identityFixture $identityRows
     $identityResult = Invoke-Descriptor $identityFixture -Check
     Assert-True (-not $identityResult.Success -and $identityResult.Output.Contains('Descriptor is stale')) 'Descriptor -Check accepted Luban identity drift.'
 
-    Assert-DescriptorFailure 'descriptor-no-mapping' {
-        param($fixture)
-        Set-DescriptorMappings $fixture ([pscustomobject]@{})
-    } 'has no uiForms mappings'
-    Assert-DescriptorFailure 'descriptor-missing-ui-row' {
-        param($fixture)
-        $mappings = [pscustomobject][ordered]@{ MissingForm = New-DescriptorMapping }
-        Set-DescriptorMappings $fixture $mappings
-    } 'has no Luban UI row'
     Assert-DescriptorFailure 'descriptor-duplicate-id' {
         param($fixture)
         $rows = Get-DescriptorRows $fixture
@@ -770,38 +728,27 @@ exit /b 0
     Assert-DescriptorFailure 'descriptor-basename-collision' {
         param($fixture)
         $rows = Get-DescriptorRows $fixture
-        $rows += [pscustomobject]@{ Id = 10005; CSName = 'OtherFairyForm'; AssetName = 'Other/FairyDemoForm'; UIGroupName = 'Pop'; AllowMultiInstance = $true; PauseCoveredUIForm = $false }
+        $rows += [pscustomobject]@{ Id = 10005; CSName = 'OtherFairyForm'; AssetName = 'Other/FairyDemoForm'; UIGroupName = 'Pop'; AllowMultiInstance = $true; PauseCoveredUIForm = $false; PackageName = 'Package1'; ComponentName = 'MainView' }
         Set-DescriptorRows $fixture $rows
-        $mappings = [pscustomobject][ordered]@{
-            FairyDemoForm = New-DescriptorMapping
-            OtherFairyForm = New-DescriptorMapping
-        }
-        Set-DescriptorMappings $fixture $mappings
     } 'Descriptor output basename collision'
     Assert-DescriptorFailure 'descriptor-unknown-package' {
         param($fixture)
-        Set-DescriptorMappings $fixture ([pscustomobject][ordered]@{
-            FairyDemoForm = New-DescriptorMapping -PackageName 'MissingPackage'
-        })
+        $rows = Get-DescriptorRows $fixture
+        ($rows | Where-Object { $_.CSName -ceq 'FairyDemoForm' }).PackageName = 'MissingPackage'
+        Set-DescriptorRows $fixture $rows
     } 'unknown package'
     Assert-DescriptorFailure 'descriptor-unknown-component' {
         param($fixture)
-        Set-DescriptorMappings $fixture ([pscustomobject][ordered]@{
-            FairyDemoForm = New-DescriptorMapping -ComponentName 'MissingComponent'
-        })
+        $rows = Get-DescriptorRows $fixture
+        ($rows | Where-Object { $_.CSName -ceq 'FairyDemoForm' }).ComponentName = 'MissingComponent'
+        Set-DescriptorRows $fixture $rows
     } 'unknown component'
-    Assert-DescriptorFailure 'descriptor-unknown-binding' {
+    Assert-DescriptorFailure 'descriptor-partial-package' {
         param($fixture)
-        Set-DescriptorMappings $fixture ([pscustomobject][ordered]@{
-            FairyDemoForm = New-DescriptorMapping -BindingType 'Game.Hot.FairyGUI.Package1.UIMissingView'
-        })
-    } 'unknown binding'
-    Assert-DescriptorFailure 'descriptor-duplicated-source-field' {
-        param($fixture)
-        $mapping = New-DescriptorMapping
-        $mapping | Add-Member -MemberType NoteProperty -Name uiId -Value 103
-        Set-DescriptorMappings $fixture ([pscustomobject][ordered]@{ FairyDemoForm = $mapping })
-    } "unsupported property 'uiId'"
+        $rows = Get-DescriptorRows $fixture
+        ($rows | Where-Object { $_.CSName -ceq 'FairyDemoForm' }).PackageName = ''
+        Set-DescriptorRows $fixture $rows
+    } 'must provide both PackageName and ComponentName'
     $summary = [pscustomobject][ordered]@{
         success = $true
         assertions = $script:assertionCount

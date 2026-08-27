@@ -6,7 +6,9 @@
     "AssetName": "Demo/UIHelp",
     "UIGroupName": "Pop",
     "AllowMultiInstance": false,
-    "PauseCoveredUIForm": false
+    "PauseCoveredUIForm": false,
+    "PackageName": "",
+    "ComponentName": ""
   },
   {
     "Id": 802,
@@ -15,7 +17,9 @@
     "AssetName": "Demo/UILobby",
     "UIGroupName": "Pop",
     "AllowMultiInstance": false,
-    "PauseCoveredUIForm": false
+    "PauseCoveredUIForm": false,
+    "PackageName": "",
+    "ComponentName": ""
   },
   {
     "Id": 803,
@@ -24,7 +28,9 @@
     "AssetName": "Demo/UILogin",
     "UIGroupName": "Default",
     "AllowMultiInstance": false,
-    "PauseCoveredUIForm": false
+    "PauseCoveredUIForm": false,
+    "PackageName": "",
+    "ComponentName": ""
   },
   {
     "Id": 901,
@@ -33,7 +39,9 @@
     "AssetName": "LockStep/UILSLogin",
     "UIGroupName": "Default",
     "AllowMultiInstance": false,
-    "PauseCoveredUIForm": false
+    "PauseCoveredUIForm": false,
+    "PackageName": "",
+    "ComponentName": ""
   },
   {
     "Id": 902,
@@ -42,7 +50,9 @@
     "AssetName": "LockStep/UILSLobby",
     "UIGroupName": "Pop",
     "AllowMultiInstance": false,
-    "PauseCoveredUIForm": false
+    "PauseCoveredUIForm": false,
+    "PackageName": "",
+    "ComponentName": ""
   },
   {
     "Id": 903,
@@ -51,7 +61,9 @@
     "AssetName": "LockStep/UILSRoom",
     "UIGroupName": "Pop",
     "AllowMultiInstance": false,
-    "PauseCoveredUIForm": false
+    "PauseCoveredUIForm": false,
+    "PackageName": "",
+    "ComponentName": ""
   },
   {
     "Id": 1,
@@ -60,7 +72,9 @@
     "AssetName": "Hot/DialogForm",
     "UIGroupName": "Default",
     "AllowMultiInstance": true,
-    "PauseCoveredUIForm": true
+    "PauseCoveredUIForm": true,
+    "PackageName": "",
+    "ComponentName": ""
   },
   {
     "Id": 100,
@@ -69,7 +83,9 @@
     "AssetName": "Hot/MenuForm",
     "UIGroupName": "Default",
     "AllowMultiInstance": false,
-    "PauseCoveredUIForm": true
+    "PauseCoveredUIForm": true,
+    "PackageName": "",
+    "ComponentName": ""
   },
   {
     "Id": 101,
@@ -78,7 +94,9 @@
     "AssetName": "Hot/SettingForm",
     "UIGroupName": "Default",
     "AllowMultiInstance": false,
-    "PauseCoveredUIForm": true
+    "PauseCoveredUIForm": true,
+    "PackageName": "",
+    "ComponentName": ""
   },
   {
     "Id": 102,
@@ -87,7 +105,9 @@
     "AssetName": "Hot/AboutForm",
     "UIGroupName": "Default",
     "AllowMultiInstance": false,
-    "PauseCoveredUIForm": true
+    "PauseCoveredUIForm": true,
+    "PackageName": "",
+    "ComponentName": ""
   },
   {
     "Id": 103,
@@ -96,7 +116,9 @@
     "AssetName": "FairyGUI/FairyDemoForm",
     "UIGroupName": "Default",
     "AllowMultiInstance": false,
-    "PauseCoveredUIForm": true
+    "PauseCoveredUIForm": true,
+    "PackageName": "Package1",
+    "ComponentName": "MainView"
   },
   {
     "Id": 104,
@@ -105,7 +127,9 @@
     "AssetName": "FairyGUI/FairyInventoryForm",
     "UIGroupName": "Default",
     "AllowMultiInstance": false,
-    "PauseCoveredUIForm": false
+    "PauseCoveredUIForm": false,
+    "PackageName": "Package1",
+    "ComponentName": "InventoryView"
   },
   {
     "Id": 105,
@@ -114,7 +138,9 @@
     "AssetName": "FairyGUI/FairyItemDetailForm",
     "UIGroupName": "Pop",
     "AllowMultiInstance": true,
-    "PauseCoveredUIForm": false
+    "PauseCoveredUIForm": false,
+    "PackageName": "Package1",
+    "ComponentName": "ItemDetailWindow"
   },
   {
     "Id": 106,
@@ -123,6 +149,8 @@
     "AssetName": "FairyGUI/FairyInventoryOverlayForm",
     "UIGroupName": "Pop",
     "AllowMultiInstance": false,
-    "PauseCoveredUIForm": true
+    "PauseCoveredUIForm": true,
+    "PackageName": "Package1",
+    "ComponentName": "InventoryOverlayView"
   }
 ]

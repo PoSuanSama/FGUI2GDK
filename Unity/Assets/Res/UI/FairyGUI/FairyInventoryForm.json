@@ -11,8 +11,5 @@
   "componentId": "i20a2",
   "componentName": "InventoryView",
   "bindingType": "Game.Hot.FairyGUI.Package1.UIInventoryView",
-  "presenterType": "Game.Hot.FairyInventoryForm",
-  "dependencies": [],
-  "bootstrap": false,
-  "preload": "onOpen"
+  "dependencies": []
 }

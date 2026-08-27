@@ -11,8 +11,5 @@
   "componentId": "i20a3",
   "componentName": "ItemDetailWindow",
   "bindingType": "Game.Hot.FairyGUI.Package1.UIItemDetailWindow",
-  "presenterType": "Game.Hot.FairyItemDetailForm",
-  "dependencies": [],
-  "bootstrap": false,
-  "preload": "onOpen"
+  "dependencies": []
 }

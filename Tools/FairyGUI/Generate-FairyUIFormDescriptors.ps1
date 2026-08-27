@@ -91,22 +91,37 @@ function Get-OrdinalSortedStrings {
     [System.Array]::Sort($sorted, [System.StringComparer]::Ordinal)
     return $sorted
 }
+function Get-OptionalString {
+    param(
+        [Parameter(Mandatory)]$InputObject,
+        [Parameter(Mandatory)][string]$Name
+    )
+
+    if (-not (Test-JsonProperty $InputObject $Name)) {
+        return ''
+    }
+
+    $value = $InputObject.PSObject.Properties[$Name].Value
+    if ($null -eq $value) {
+        return ''
+    }
+
+    return [string]$value
+}
 
 $sourceRoot = [System.IO.Path]::GetFullPath($SourceProjectPath)
 $manifestFull = [System.IO.Path]::GetFullPath($ManifestPath)
 $lubanFull = [System.IO.Path]::GetFullPath($LubanUIFormPath)
 $outputRoot = [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::GetFullPath($OutputPath))
 
-$contractPath = Join-Path $sourceRoot 'settings/GDK.json'
 $publishPath = Join-Path $sourceRoot 'settings/Publish.json'
-foreach ($path in @($contractPath, $publishPath, $manifestFull, $lubanFull)) {
+foreach ($path in @($publishPath, $manifestFull, $lubanFull)) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "Required input is missing: $path"
     }
 }
 
 try {
-    $contract = Get-Content -Raw -LiteralPath $contractPath | ConvertFrom-Json
     $publish = Get-Content -Raw -LiteralPath $publishPath | ConvertFrom-Json
     $manifest = Get-Content -Raw -LiteralPath $manifestFull | ConvertFrom-Json
     $lubanRows = Get-Content -Raw -LiteralPath $lubanFull | ConvertFrom-Json -NoEnumerate
@@ -115,16 +130,6 @@ catch {
     throw "Descriptor input JSON is invalid: $($_.Exception.Message)"
 }
 
-if (-not (Test-JsonProperty $contract 'uiForms') -or $null -eq $contract.uiForms) {
-    throw "FairyGUI contract is missing the uiForms mapping: $contractPath"
-}
-if ($contract.uiForms -isnot [System.Management.Automation.PSCustomObject]) {
-    throw "FairyGUI contract uiForms must be an object keyed by Luban CSName: $contractPath"
-}
-$mappingProperties = @($contract.uiForms.PSObject.Properties)
-if ($mappingProperties.Count -eq 0) {
-    throw "FairyGUI contract has no uiForms mappings: $contractPath"
-}
 if ($lubanRows -isnot [System.Array]) {
     throw "Luban UI form data must be a JSON array: $lubanFull"
 }
@@ -149,10 +154,9 @@ foreach ($pkg in @($manifest.packages)) {
     $packageByName.Add($packageName, $pkg)
 }
 
-$rowByCsName = [System.Collections.Generic.Dictionary[string, object]]::new([System.StringComparer]::Ordinal)
+$seenUiIds = [System.Collections.Generic.HashSet[int]]::new()
 $seenCsNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 $seenAssetNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-$seenUiIds = [System.Collections.Generic.HashSet[int]]::new()
 foreach ($row in @($lubanRows)) {
     $rowContext = 'Luban UI row'
     $uiId = Get-RequiredPositiveInt32 $row 'Id' $rowContext
@@ -171,47 +175,29 @@ foreach ($row in @($lubanRows)) {
     if (-not $seenAssetNames.Add($assetName)) {
         throw "Duplicate Luban UI AssetName '$assetName'."
     }
-    $rowByCsName.Add($csName, $row)
 }
 
-$allowedMappingProperties = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
-foreach ($name in @('packageName', 'componentName', 'bindingType', 'presenterType', 'bootstrap', 'preload')) {
-    $null = $allowedMappingProperties.Add($name)
-}
-
-$mappingNames = Get-OrdinalSortedStrings ([string[]]@($mappingProperties.Name))
 $descriptorFiles = [System.Collections.Generic.List[object]]::new()
 $expectedFileNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-foreach ($csName in $mappingNames) {
-    $mapping = $contract.uiForms.PSObject.Properties[$csName].Value
-    $mappingContext = "FairyGUI UI mapping '$csName'"
-    if ($null -eq $mapping -or $mapping -isnot [System.Management.Automation.PSCustomObject]) {
-        throw "$mappingContext must be an object."
-    }
-    foreach ($property in @($mapping.PSObject.Properties)) {
-        if (-not $allowedMappingProperties.Contains([string]$property.Name)) {
-            throw "$mappingContext contains unsupported property '$($property.Name)'."
-        }
-    }
-    if (-not $rowByCsName.ContainsKey($csName)) {
-        throw "$mappingContext has no Luban UI row with CSName '$csName'."
-    }
-
-    $row = $rowByCsName[$csName]
-    $uiId = Get-RequiredPositiveInt32 $row 'Id' "Luban UI row '$csName'"
+foreach ($row in @($lubanRows)) {
+    $uiId = Get-RequiredPositiveInt32 $row 'Id' 'Luban UI row'
+    $csName = Get-RequiredString $row 'CSName' "Luban UI row '$uiId'"
     $uiAssetName = Get-RequiredString $row 'AssetName' "Luban UI row '$csName'"
     $uiGroupName = Get-RequiredString $row 'UIGroupName' "Luban UI row '$csName'"
     $allowMultiInstance = Get-RequiredBoolean $row 'AllowMultiInstance' "Luban UI row '$csName'"
     $pauseCoveredUIForm = Get-RequiredBoolean $row 'PauseCoveredUIForm' "Luban UI row '$csName'"
-    $packageName = Get-RequiredString $mapping 'packageName' $mappingContext
-    $componentName = Get-RequiredString $mapping 'componentName' $mappingContext
-    $bindingType = Get-RequiredString $mapping 'bindingType' $mappingContext
-    $presenterType = Get-RequiredString $mapping 'presenterType' $mappingContext
-    $bootstrap = Get-RequiredBoolean $mapping 'bootstrap' $mappingContext
-    $preload = Get-RequiredString $mapping 'preload' $mappingContext
+
+    $packageName = Get-OptionalString $row 'PackageName'
+    $componentName = Get-OptionalString $row 'ComponentName'
+    if ([string]::IsNullOrWhiteSpace($packageName) -and [string]::IsNullOrWhiteSpace($componentName)) {
+        continue
+    }
+    if ([string]::IsNullOrWhiteSpace($packageName) -or [string]::IsNullOrWhiteSpace($componentName)) {
+        throw "Luban UI row '$csName' must provide both PackageName and ComponentName for a FairyGUI form."
+    }
 
     if (-not $packageByName.ContainsKey($packageName)) {
-        throw "$mappingContext references unknown package '$packageName'."
+        throw "Luban UI row '$csName' references unknown package '$packageName'."
     }
     $pkg = $packageByName[$packageName]
 
@@ -219,15 +205,12 @@ foreach ($csName in $mappingNames) {
         [string]$_.type -ceq 'component' -and [string]$_.name -ceq ($componentName + '.xml')
     })
     if ($components.Count -ne 1) {
-        throw "$mappingContext references unknown component '$componentName' in package '$packageName'."
+        throw "Luban UI row '$csName' references unknown component '$componentName' in package '$packageName'."
     }
     $component = $components[0]
     $componentId = Get-RequiredString $component 'id' "Manifest component '$packageName/$componentName'"
 
-    $expectedBindingType = "$codeNamespace.$packageName.$classNamePrefix$componentName"
-    if ($bindingType -cne $expectedBindingType) {
-        throw "$mappingContext references unknown binding '$bindingType'; expected '$expectedBindingType'."
-    }
+    $bindingType = "$codeNamespace.$packageName.$classNamePrefix$componentName"
 
     $dependencies = @(Get-OrdinalSortedStrings ([string[]]@($pkg.dependencies | ForEach-Object { [string]$_ })))
     $fileBaseName = [System.IO.Path]::GetFileName($uiAssetName)
@@ -252,10 +235,7 @@ foreach ($csName in $mappingNames) {
         componentId         = $componentId
         componentName       = $componentName
         bindingType         = $bindingType
-        presenterType       = $presenterType
         dependencies        = $dependencies
-        bootstrap           = $bootstrap
-        preload             = $preload
     }
 
     $json = Get-NormalizedText ($descriptor | ConvertTo-Json -Depth 100)

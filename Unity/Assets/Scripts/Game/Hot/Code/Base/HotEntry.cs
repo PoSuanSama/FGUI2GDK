@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Game.Hot.FairyGUI.Package1;
 using GameFramework;
 using UnityEngine;
@@ -55,6 +57,9 @@ namespace Game.Hot
 
         private static void InitializeFairyGUI()
         {
+            IReadOnlyDictionary<string, Func<IFairyUIPresenter>> presenterFactories =
+                FairyUIPresenterRegistryBuilder.Build();
+
             FairyUIPresenterRegistry.PreparePackage = descriptor =>
             {
                 if (!string.Equals(descriptor.PackageName, "Package1", System.StringComparison.Ordinal))
@@ -67,21 +72,9 @@ namespace Game.Hot
             };
             FairyUIPresenterRegistry.CreatePresenter = descriptor =>
             {
-                if (string.Equals(descriptor.CsName, nameof(FairyDemoForm), System.StringComparison.Ordinal))
+                if (presenterFactories.TryGetValue(descriptor.CsName, out Func<IFairyUIPresenter> factory))
                 {
-                    return new FairyDemoForm();
-                }
-                if (string.Equals(descriptor.CsName, nameof(FairyInventoryForm), System.StringComparison.Ordinal))
-                {
-                    return new FairyInventoryForm();
-                }
-                if (string.Equals(descriptor.CsName, nameof(FairyItemDetailForm), System.StringComparison.Ordinal))
-                {
-                    return new FairyItemDetailForm();
-                }
-                if (string.Equals(descriptor.CsName, nameof(FairyInventoryOverlayForm), System.StringComparison.Ordinal))
-                {
-                    return new FairyInventoryOverlayForm();
+                    return factory();
                 }
 
                 throw new GameFrameworkException(

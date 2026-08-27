@@ -5,6 +5,7 @@ using UnityGameFramework.Runtime;
 
 namespace Game.Hot
 {
+        [FairyUIPresenter("FairyInventoryForm")]
     public sealed class FairyInventoryForm : IFairyUIPresenter
     {
         private FairyInventoryOpenData m_OpenData;
