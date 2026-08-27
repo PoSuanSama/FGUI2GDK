@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Game;
 
 namespace ET.Client
 {
@@ -13,6 +14,7 @@ namespace ET.Client
             
             GlobalComponent globalComponent = root.AddComponent<GlobalComponent>();
             await FairyGUIBootstrap.InitializeAsync();
+            await FairyUIFormService.OpenFairyUIFormAsync(UGFUIFormId.FairyDemoForm, "et-demo");
             root.AddComponent<UIComponent>();
             root.AddComponent<PlayerComponent>();
             root.AddComponent<CurrentScenesComponent>();
