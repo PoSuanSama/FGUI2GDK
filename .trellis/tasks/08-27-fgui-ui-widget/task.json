@@ -3,7 +3,7 @@
   "name": "fgui-ui-widget",
   "title": "FairyGUI UIWidget 迁移",
   "description": "用 FairyGUI 组件化 Widget 替代旧 UGUI UIWidget 体系",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
