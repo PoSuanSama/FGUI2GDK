@@ -59,6 +59,11 @@ namespace Game.Hot.Editor
                 throw new InvalidOperationException("Inventory controller or list is missing.");
             }
 
+            if (HotEntry.Tables.DTInventory == null || HotEntry.Tables.DTInventory.DataList.Count <= 0)
+            {
+                throw new InvalidOperationException("Inventory Luban table is not loaded.");
+            }
+
             await UniTask.Yield(PlayerLoopTiming.Update);
             if (inventoryView.ItemList.numChildren <= 0)
             {
@@ -90,6 +95,7 @@ namespace Game.Hot.Editor
 
             FairyItemDetailForm targetPresenter = null;
             GGraph targetFrame = null;
+            UIItemDetailWindow targetDetailView = null;
             foreach (UIForm detailForm in detailForms)
             {
                 FairyUIFormLogic detailLogic = detailForm.Logic as FairyUIFormLogic;
@@ -98,13 +104,19 @@ namespace Game.Hot.Editor
                 {
                     targetPresenter = presenter;
                     targetFrame = detailView.WindowFrame;
+                    targetDetailView = detailView;
                     break;
                 }
             }
 
-            if (targetPresenter == null || targetFrame == null)
+            if (targetPresenter == null || targetFrame == null || targetDetailView == null)
             {
                 throw new InvalidOperationException("Could not locate a detail presenter and window frame.");
+            }
+
+            if (!targetDetailView.WindowFrame.draggable || targetDetailView.WindowFrame.dragBounds == null)
+            {
+                throw new InvalidOperationException("Detail window is not draggable.");
             }
 
             int refocusBefore = targetPresenter.RefocusCount;

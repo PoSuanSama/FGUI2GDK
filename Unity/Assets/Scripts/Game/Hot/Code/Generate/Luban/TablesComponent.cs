@@ -19,6 +19,7 @@ public partial class TablesComponent
     public DTAsteroid DTAsteroid { private set; get; }
     public DTThruster DTThruster { private set; get; }
     public DTWeapon DTWeapon { private set; get; }
+    public DTInventory DTInventory { private set; get; }
     private System.Collections.Generic.Dictionary<string, IDataTable> _tables;
     public System.Collections.Generic.IEnumerable<IDataTable> DataTables => _tables.Values;
     public IDataTable GetDataTable(string tableName) => _tables.TryGetValue(tableName, out var v) ? v : null;
@@ -48,6 +49,9 @@ public partial class TablesComponent
         DTWeapon = new DTWeapon(() => loader("dtweapon"));
         loadTasks.Add(DTWeapon.LoadAsync());
         _tables.Add("DTWeapon", DTWeapon);
+        DTInventory = new DTInventory(() => loader("dtinventory"));
+        loadTasks.Add(DTInventory.LoadAsync());
+        _tables.Add("DTInventory", DTInventory);
 
         await Cysharp.Threading.Tasks.UniTask.WhenAll(loadTasks);
 
@@ -64,6 +68,7 @@ public partial class TablesComponent
         DTAsteroid.ResolveRef(this);
         DTThruster.ResolveRef(this);
         DTWeapon.ResolveRef(this);
+        DTInventory.ResolveRef(this);
         PostResolveRef();
     }
 

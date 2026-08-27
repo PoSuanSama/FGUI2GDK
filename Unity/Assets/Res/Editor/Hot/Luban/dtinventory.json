@@ -1,0 +1,58 @@
+[
+  {
+    "Id": 1001,
+    "Name": "星辉长剑",
+    "Category": 1,
+    "Count": 1,
+    "Description": "经过星辉淬炼的长剑，适合验证装备分类。"
+  },
+  {
+    "Id": 1002,
+    "Name": "风行者披风",
+    "Category": 1,
+    "Count": 1,
+    "Description": "轻盈的披风，会在窗口层级变化时保持数据快照。"
+  },
+  {
+    "Id": 1003,
+    "Name": "守护者圆盾",
+    "Category": 1,
+    "Count": 1,
+    "Description": "坚固的圆盾，详情窗口可与其他实例同时存在。"
+  },
+  {
+    "Id": 2001,
+    "Name": "大型生命药剂",
+    "Category": 2,
+    "Count": 8,
+    "Description": "恢复大量生命值，可重复点击打开多个独立详情实例。"
+  },
+  {
+    "Id": 2002,
+    "Name": "清醒药水",
+    "Category": 2,
+    "Count": 3,
+    "Description": "解除异常状态，用于验证列表对象池复用。"
+  },
+  {
+    "Id": 2003,
+    "Name": "迅捷卷轴",
+    "Category": 2,
+    "Count": 5,
+    "Description": "短时间提高移动速度。"
+  },
+  {
+    "Id": 3001,
+    "Name": "古代遗迹钥匙",
+    "Category": 3,
+    "Count": 1,
+    "Description": "主线任务物品，不能丢弃。"
+  },
+  {
+    "Id": 3002,
+    "Name": "褪色航海图",
+    "Category": 3,
+    "Count": 2,
+    "Description": "记录着未知海域坐标的任务道具。"
+  }
+]

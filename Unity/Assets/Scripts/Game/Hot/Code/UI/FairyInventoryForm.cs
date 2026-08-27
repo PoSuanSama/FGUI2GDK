@@ -7,18 +7,6 @@ namespace Game.Hot
 {
     public sealed class FairyInventoryForm : IFairyUIPresenter
     {
-        private static readonly FairyInventoryItemData[] s_Items =
-        {
-            new FairyInventoryItemData(1001, "星辉长剑", FairyInventoryCategory.Equipment, 1, "经过星辉淬炼的长剑，适合验证装备分类。"),
-            new FairyInventoryItemData(1002, "风行者披风", FairyInventoryCategory.Equipment, 1, "轻盈的披风，会在窗口层级变化时保持数据快照。"),
-            new FairyInventoryItemData(2001, "大型生命药剂", FairyInventoryCategory.Consumable, 8, "恢复大量生命值，可重复点击打开多个独立详情实例。"),
-            new FairyInventoryItemData(2002, "清醒药水", FairyInventoryCategory.Consumable, 3, "解除异常状态，用于验证列表对象池复用。"),
-            new FairyInventoryItemData(3001, "古代遗迹钥匙", FairyInventoryCategory.Quest, 1, "主线任务物品，不能丢弃。"),
-            new FairyInventoryItemData(3002, "褪色航海图", FairyInventoryCategory.Quest, 2, "记录着未知海域坐标的任务道具。"),
-            new FairyInventoryItemData(1003, "守护者圆盾", FairyInventoryCategory.Equipment, 1, "坚固的圆盾，详情窗口可与其他实例同时存在。"),
-            new FairyInventoryItemData(2003, "迅捷卷轴", FairyInventoryCategory.Consumable, 5, "短时间提高移动速度。"),
-        };
-
         private FairyInventoryOpenData m_OpenData;
         private UIInventoryView m_View;
 
@@ -157,12 +145,20 @@ namespace Game.Hot
             m_View.QuestButton.selected = category == FairyInventoryCategory.Quest;
 
             m_View.ItemList.RemoveChildrenToPool();
-            foreach (FairyInventoryItemData itemData in s_Items)
+            foreach (DRInventory row in HotEntry.Tables.DTInventory.DataList)
             {
-                if (category != FairyInventoryCategory.All && itemData.Category != category)
+                FairyInventoryCategory itemCategory = (FairyInventoryCategory)row.Category;
+                if (category != FairyInventoryCategory.All && itemCategory != category)
                 {
                     continue;
                 }
+
+                FairyInventoryItemData itemData = new FairyInventoryItemData(
+                    row.Id,
+                    row.Name,
+                    itemCategory,
+                    row.Count,
+                    row.Description);
 
                 UIInventoryItem item = m_View.ItemList.AddItemFromPool() as UIInventoryItem;
                 if (item == null)
