@@ -57,8 +57,8 @@ namespace Game.Hot
 
         private static void InitializeFairyGUI()
         {
-            IReadOnlyDictionary<string, Func<IFairyUIPresenter>> presenterFactories =
-                FairyUIPresenterRegistryBuilder.Build();
+            IReadOnlyDictionary<int, Func<IFairyUIPresenter>> presenterFactories =
+                FairyUIPresenterRegistryBuilder.Build(typeof(HotEntry).Assembly);
 
             FairyUIPresenterRegistry.PreparePackage = descriptor =>
             {
@@ -70,15 +70,23 @@ namespace Game.Hot
 
                 Package1Binder.BindAll();
             };
+            FairyUIManager uiManager = FairyUIManager.Instance;
+            uiManager.Initialize();
+            uiManager.AddUIGroup("Default", 0);
+            uiManager.AddUIGroup("Pop", 100);
+            uiManager.AddUIGroup("Message", 200);
+            uiManager.AddUIGroup("Guide", 300);
+            uiManager.AddUIGroup("RuntimeInspector", 400);
+
             FairyUIPresenterRegistry.CreatePresenter = descriptor =>
             {
-                if (presenterFactories.TryGetValue(descriptor.CsName, out Func<IFairyUIPresenter> factory))
+                if (presenterFactories.TryGetValue(descriptor.UiId, out Func<IFairyUIPresenter> factory))
                 {
                     return factory();
                 }
 
                 throw new GameFrameworkException(
-                    $"No FairyGUI presenter is registered for UI '{descriptor.CsName}'.");
+                    $"No FairyGUI presenter is registered for UI '{descriptor.UiId}'.");
             };
         }
     }

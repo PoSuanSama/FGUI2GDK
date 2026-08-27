@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityGameFramework.Runtime;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
@@ -44,14 +44,6 @@ namespace Game
 #if UNITY_EDITOR
         private void Check()
         {
-            foreach (var drUIForm in GameEntry.Tables.DTUIForm.DataList)
-            {
-                GameFramework.UI.IUIGroup uiGroup = GameEntry.UI.GetUIGroup(drUIForm.UIGroupName);
-                if (uiGroup == null)
-                {
-                    Log.Error(GameFramework.Utility.Text.Format("DRUIForm '{0}' - ui group '{1}' is not exist.", drUIForm.AssetName, drUIForm.UIGroupName));
-                }
-            }
             foreach (var drEntity in GameEntry.Tables.DTEntity.DataList)
             {
                 GameFramework.Entity.IEntityGroup entityGroup = GameEntry.Entity.GetEntityGroup(drEntity.EntityGroupName);

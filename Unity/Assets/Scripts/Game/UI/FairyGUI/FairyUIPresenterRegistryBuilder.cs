@@ -3,20 +3,21 @@ using System.Collections.Generic;
 using System.Reflection;
 using GameFramework;
 
-namespace Game.Hot
+namespace Game
 {
-    /// <summary>
-    /// 通过 FairyUIPresenterAttribute 反射扫描并构建 CSName 到 Presenter 工厂的映射。
-    /// </summary>
     public static class FairyUIPresenterRegistryBuilder
     {
-        public static IReadOnlyDictionary<string, Func<IFairyUIPresenter>> Build()
+        public static IReadOnlyDictionary<int, Func<IFairyUIPresenter>> Build(Assembly assembly)
         {
-            Dictionary<string, Func<IFairyUIPresenter>> factories =
-                new Dictionary<string, Func<IFairyUIPresenter>>(StringComparer.Ordinal);
+            if (assembly == null)
+            {
+                throw new ArgumentNullException(nameof(assembly));
+            }
 
-            Type[] types = typeof(FairyUIPresenterRegistryBuilder).Assembly.GetTypes();
-            foreach (Type type in types)
+            Dictionary<int, Func<IFairyUIPresenter>> factories =
+                new Dictionary<int, Func<IFairyUIPresenter>>();
+
+            foreach (Type type in assembly.GetTypes())
             {
                 FairyUIPresenterAttribute attribute = type.GetCustomAttribute<FairyUIPresenterAttribute>();
                 if (attribute == null)
@@ -37,14 +38,14 @@ namespace Game.Hot
                         $"FairyGUI presenter '{type.FullName}' requires a parameterless constructor.");
                 }
 
-                if (factories.ContainsKey(attribute.CsName))
+                if (factories.ContainsKey(attribute.UiFormId))
                 {
                     throw new GameFrameworkException(
-                        $"Duplicate FairyGUI presenter registered for CSName '{attribute.CsName}'.");
+                        $"Duplicate FairyGUI presenter registered for UIFormId '{attribute.UiFormId}'.");
                 }
 
-                string csName = attribute.CsName;
-                factories.Add(csName, () => (IFairyUIPresenter)constructor.Invoke(null));
+                int uiFormId = attribute.UiFormId;
+                factories.Add(uiFormId, () => (IFairyUIPresenter)constructor.Invoke(null));
             }
 
             return factories;

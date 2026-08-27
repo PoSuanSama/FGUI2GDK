@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using UnityGameFramework.Runtime;
 
 namespace Game.Hot
 {
@@ -10,7 +9,7 @@ namespace Game.Hot
         private const string InventoryDescriptor = "Assets/Res/UI/FairyGUI/FairyInventoryForm.json";
         private const string OverlayDescriptor = "Assets/Res/UI/FairyGUI/FairyInventoryOverlayForm.json";
 
-        private static readonly Dictionary<int, UIForm> s_DetailForms = new Dictionary<int, UIForm>();
+        private static readonly Dictionary<int, FairyUIForm> s_DetailForms = new Dictionary<int, FairyUIForm>();
         private static int s_NextDetailToken;
 
         public static event Action<int> DetailCountChanged;
@@ -20,19 +19,19 @@ namespace Game.Hot
         /// <summary>
         /// 当前仍打开的多实例详情窗体的只读快照，供状态展示与流程冒烟测试观察。
         /// </summary>
-        public static IReadOnlyCollection<UIForm> OpenDetailForms => s_DetailForms.Values;
+        public static IReadOnlyCollection<FairyUIForm> OpenDetailForms => s_DetailForms.Values;
 
         public static async UniTask OpenInventoryAsync()
         {
-            UIForm existing = GameEntry.UI.GetUIForm(InventoryDescriptor);
+            FairyUIForm existing = FairyUIManager.Instance.GetUIForm(InventoryDescriptor);
             if (existing != null)
             {
-                GameEntry.UI.RefocusUIForm(existing);
+                FairyUIManager.Instance.RefocusUIForm(existing);
                 return;
             }
 
             FairyInventoryOpenData openData = new FairyInventoryOpenData();
-            UIForm uiForm = await FairyUIFormService.OpenFairyUIFormAsync(
+            FairyUIForm uiForm = await FairyUIFormService.OpenFairyUIFormAsync(
                 UIFormId.FairyInventoryForm,
                 openData);
             openData.Attach(uiForm);
@@ -42,12 +41,12 @@ namespace Game.Hot
         {
             int token = ++s_NextDetailToken;
             FairyItemDetailOpenData openData = new FairyItemDetailOpenData(item, token);
-            UIForm uiForm = await FairyUIFormService.OpenFairyUIFormAsync(
+            FairyUIForm uiForm = await FairyUIFormService.OpenFairyUIFormAsync(
                 UIFormId.FairyItemDetailForm,
                 openData);
             openData.Attach(uiForm);
 
-            if (!GameEntry.UI.HasUIForm(uiForm.SerialId))
+            if (!FairyUIManager.Instance.HasUIForm(uiForm.SerialId))
             {
                 return;
             }
@@ -58,15 +57,15 @@ namespace Game.Hot
 
         public static async UniTask OpenOverlayAsync()
         {
-            UIForm existing = GameEntry.UI.GetUIForm(OverlayDescriptor);
+            FairyUIForm existing = FairyUIManager.Instance.GetUIForm(OverlayDescriptor);
             if (existing != null)
             {
-                GameEntry.UI.RefocusUIForm(existing);
+                FairyUIManager.Instance.RefocusUIForm(existing);
                 return;
             }
 
             FairyInventoryOverlayOpenData openData = new FairyInventoryOverlayOpenData();
-            UIForm uiForm = await FairyUIFormService.OpenFairyUIFormAsync(
+            FairyUIForm uiForm = await FairyUIFormService.OpenFairyUIFormAsync(
                 UIFormId.FairyInventoryOverlayForm,
                 openData);
             openData.Attach(uiForm);
@@ -74,20 +73,20 @@ namespace Game.Hot
 
         public static void Close(FairyFormInstanceData openData)
         {
-            UIForm uiForm = openData?.UIForm;
+            FairyUIForm uiForm = openData?.UIForm;
             if (uiForm != null &&
-                (GameEntry.UI.HasUIForm(uiForm.SerialId) || GameEntry.UI.IsLoadingUIForm(uiForm.SerialId)))
+                (FairyUIManager.Instance.HasUIForm(uiForm.SerialId) || FairyUIManager.Instance.IsLoadingUIForm(uiForm.SerialId)))
             {
-                GameEntry.UI.CloseUIForm(uiForm.SerialId);
+                FairyUIManager.Instance.CloseUIForm(uiForm.SerialId);
             }
         }
 
         public static void Refocus(FairyItemDetailOpenData openData)
         {
-            UIForm uiForm = openData?.UIForm;
-            if (uiForm != null && GameEntry.UI.HasUIForm(uiForm.SerialId))
+            FairyUIForm uiForm = openData?.UIForm;
+            if (uiForm != null && FairyUIManager.Instance.HasUIForm(uiForm.SerialId))
             {
-                GameEntry.UI.RefocusUIForm(uiForm, openData);
+                FairyUIManager.Instance.RefocusUIForm(uiForm, openData);
             }
         }
 
@@ -109,14 +108,17 @@ namespace Game.Hot
                 return;
             }
 
-            List<UIForm> forms = new List<UIForm>(s_DetailForms.Values);
-            foreach (UIForm uiForm in forms)
+            List<FairyUIForm> forms = new List<FairyUIForm>(s_DetailForms.Values);
+            foreach (FairyUIForm uiForm in forms)
             {
-                if (uiForm != null && GameEntry.UI.HasUIForm(uiForm.SerialId))
+                if (uiForm != null && FairyUIManager.Instance.HasUIForm(uiForm.SerialId))
                 {
-                    GameEntry.UI.CloseUIForm(uiForm.SerialId);
+                    FairyUIManager.Instance.CloseUIForm(uiForm.SerialId);
                 }
             }
+
+            s_DetailForms.Clear();
+            DetailCountChanged?.Invoke(0);
         }
     }
 }

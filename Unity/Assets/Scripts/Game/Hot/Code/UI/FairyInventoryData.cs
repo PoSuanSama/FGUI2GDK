@@ -1,5 +1,4 @@
 using System;
-using UnityGameFramework.Runtime;
 
 namespace Game.Hot
 {
@@ -36,9 +35,9 @@ namespace Game.Hot
 
     public class FairyFormInstanceData
     {
-        public UIForm UIForm { get; private set; }
+        public FairyUIForm UIForm { get; private set; }
 
-        public void Attach(UIForm uiForm)
+        public void Attach(FairyUIForm uiForm)
         {
             UIForm = uiForm ?? throw new ArgumentNullException(nameof(uiForm));
         }

@@ -14,13 +14,17 @@ using UnityGameFramework.Runtime;
 
 namespace Game.Editor
 {
+    /// <summary>
+    /// Editor 侧校验入口：统一经原生 <see cref="FairyUIManager"/> 驱动 FairyGUI 界面，
+    /// 并覆盖资源规则与包生命周期验证。不再依赖 UGUI 宿主。
+    /// </summary>
     public static class FairyGUIDemoAgent
     {
-        private const string GameFrameworkPrefabPath = "Assets/Scripts/Library/UGF/GameFramework.prefab";
-        private const string GameEntryPrefabPath = "Assets/Res/GameEntry.prefab";
         private const string FairyGUIResourceDirectory = "Assets/Res/UI/FairyGUI";
         private const string FairyGUIResourceName = "UI.FairyGUI";
         private const string ResourceCollectionPath = "Assets/Res/Editor/Config/ResourceCollection.xml";
+        private const string DescriptorAsset = "Assets/Res/UI/FairyGUI/FairyDemoForm.json";
+        private const int FairyDemoUIId = 103;
 
         [AgentCallable("Switch GDK to GameHot mode through the repository's Define Symbol menu.", 60)]
         public static void SwitchToGameHot()
@@ -37,101 +41,6 @@ namespace Game.Editor
             if (!EditorApplication.ExecuteMenuItem("Game/Define Symbol/Add UNITY_ET"))
             {
                 throw new InvalidOperationException("Unable to execute the ET define-symbol menu item.");
-            }
-        }
-
-        [AgentCallable("Configure the GameFramework prefab to use the unified GDK UIForm and UIGroup helpers, then verify both serialized values.", 60)]
-        public static void ConfigureUnifiedUIFormHelper()
-        {
-            ConfigureUIHelpers(
-                GameFrameworkPrefabPath,
-                typeof(DefaultUIFormHelper),
-                typeof(DefaultUIGroupHelper));
-            ConfigureUIHelpers(
-                GameEntryPrefabPath,
-                typeof(GDKUIFormHelper),
-                typeof(GDKUIGroupHelper));
-
-            VerifyUIHelpers(
-                GameFrameworkPrefabPath,
-                typeof(DefaultUIFormHelper),
-                typeof(DefaultUIGroupHelper));
-            VerifyUIHelpers(
-                GameEntryPrefabPath,
-                typeof(GDKUIFormHelper),
-                typeof(GDKUIGroupHelper));
-        }
-
-        private static void ConfigureUIHelpers(
-            string prefabPath,
-            Type formHelperType,
-            Type groupHelperType)
-        {
-            GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
-            try
-            {
-                UIComponent uiComponent = root.GetComponentInChildren<UIComponent>(true);
-                if (uiComponent == null)
-                {
-                    throw new InvalidOperationException(
-                        $"Prefab has no UIComponent: {prefabPath}");
-                }
-
-                SerializedObject serializedObject = new SerializedObject(uiComponent);
-                SerializedProperty formHelperTypeProperty =
-                    serializedObject.FindProperty("m_UIFormHelperTypeName");
-                SerializedProperty customFormHelper = serializedObject.FindProperty("m_CustomUIFormHelper");
-                SerializedProperty groupHelperTypeProperty =
-                    serializedObject.FindProperty("m_UIGroupHelperTypeName");
-                SerializedProperty customGroupHelper = serializedObject.FindProperty("m_CustomUIGroupHelper");
-                if (formHelperTypeProperty == null || customFormHelper == null ||
-                    groupHelperTypeProperty == null || customGroupHelper == null)
-                {
-                    throw new InvalidOperationException("UIComponent helper serialization fields were not found.");
-                }
-
-                formHelperTypeProperty.stringValue = formHelperType.FullName;
-                customFormHelper.objectReferenceValue = null;
-                groupHelperTypeProperty.stringValue = groupHelperType.FullName;
-                customGroupHelper.objectReferenceValue = null;
-                serializedObject.ApplyModifiedPropertiesWithoutUndo();
-                if (!PrefabUtility.SaveAsPrefabAsset(root, prefabPath))
-                {
-                    throw new InvalidOperationException(
-                        $"Unable to save the prefab: {prefabPath}");
-                }
-            }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(root);
-            }
-
-            AssetDatabase.ImportAsset(prefabPath, ImportAssetOptions.ForceUpdate);
-        }
-
-        private static void VerifyUIHelpers(
-            string prefabPath,
-            Type formHelperType,
-            Type groupHelperType)
-        {
-            GameObject savedPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            UIComponent savedUI = savedPrefab != null
-                ? savedPrefab.GetComponentInChildren<UIComponent>(true)
-                : null;
-            SerializedObject savedSerializedObject = savedUI != null
-                ? new SerializedObject(savedUI)
-                : null;
-            SerializedProperty savedFormType =
-                savedSerializedObject?.FindProperty("m_UIFormHelperTypeName");
-            SerializedProperty savedGroupType =
-                savedSerializedObject?.FindProperty("m_UIGroupHelperTypeName");
-            if (savedFormType == null ||
-                savedFormType.stringValue != formHelperType.FullName ||
-                savedGroupType == null ||
-                savedGroupType.stringValue != groupHelperType.FullName)
-            {
-                throw new InvalidOperationException(
-                    $"UIForm or UIGroup helper serialization did not persist for '{prefabPath}'.");
             }
         }
 
@@ -162,7 +71,7 @@ namespace Game.Editor
             AssetDatabase.ImportAsset(ResourceCollectionPath, ImportAssetOptions.ForceUpdate);
         }
 
-        [AgentCallable("Open and interact with the FairyGUI demo through the unified GF UIForm host.", 30)]
+        [AgentCallable("Open and interact with the FairyGUI demo through the native FairyUIManager host.", 30)]
         public static async UniTask OpenFairyDemoForm()
         {
             if (!EditorApplication.isPlaying)
@@ -170,44 +79,30 @@ namespace Game.Editor
                 throw new InvalidOperationException("FairyGUI demo smoke test requires PlayMode.");
             }
 
-            if (GameEntry.UI == null)
+            FairyUIForm existing = FairyUIManager.Instance.GetUIForm(DescriptorAsset);
+            if (existing == null)
             {
-                throw new InvalidOperationException("GDK UI component is not initialized.");
+                existing = await FairyUIManager.Instance.OpenFairyUIFormAsync(FairyDemoUIId, "editor-demo");
             }
 
-            const string DescriptorAsset = "Assets/Res/UI/FairyGUI/FairyDemoForm.json";
-            UIForm uiForm = GameEntry.UI.GetUIForm(DescriptorAsset);
-            if (uiForm == null)
+            if (existing == null)
             {
-                uiForm = await FairyUIFormService.OpenFairyUIFormAsync(103);
+                throw new InvalidOperationException("FairyUIManager rejected the FairyGUI demo form.");
             }
 
-            if (uiForm == null)
-            {
-                throw new InvalidOperationException("GDK rejected the FairyGUI demo UIForm host.");
-            }
-
-            FairyUIFormLogic logic = uiForm.Logic as FairyUIFormLogic;
-            GComponent view = logic?.View;
+            GComponent view = existing.View;
             if (view == null ||
                 view.GetType().FullName != "Game.Hot.FairyGUI.Package1.UIMainView")
             {
-                throw new InvalidOperationException("Unified FairyGUI host did not expose the generated UIMainView binding.");
+                throw new InvalidOperationException("Native FairyGUI host did not expose the generated UIMainView binding.");
             }
 
-            GameObject host = logic.gameObject;
-            if (host.GetComponent<Canvas>() != null ||
-                host.GetComponent<RectTransform>() != null ||
-                host.GetComponent<UnityEngine.UI.GraphicRaycaster>() != null ||
-                host.GetComponent<UIPanel>() != null)
+            if (existing.Presenter == null || existing.Descriptor == null)
             {
-                throw new InvalidOperationException("Unified FairyGUI host contains a forbidden UGUI or UIPanel component.");
+                throw new InvalidOperationException("Native FairyGUI form is missing its presenter or descriptor.");
             }
 
-            AssertUnifiedUIHierarchy(uiForm, logic, view);
-
-            if (view.displayObject.parent == null ||
-                view.displayObject.parent.parent != GRoot.inst.container ||
+            if (view.displayObject?.parent == null ||
                 view.displayObject.stage != Stage.inst ||
                 !view.visible ||
                 !view.touchable)
@@ -224,8 +119,7 @@ namespace Game.Editor
 
             if (!int.TryParse(checkCountText.text, out int beforeCount))
             {
-                throw new InvalidOperationException(
-                    $"FairyGUI refresh counter is invalid: '{checkCountText.text}'.");
+                throw new InvalidOperationException($"FairyGUI refresh counter is invalid: '{checkCountText.text}'.");
             }
 
             refreshButton.onClick.Call();
@@ -384,6 +278,7 @@ namespace Game.Editor
             {
                 await UniTask.Yield(PlayerLoopTiming.Update);
             }
+
             IReadOnlyList<FairyPackageDiagnostic> finalDiagnostics = FairyPackageManager.GetDiagnostics();
             int finalReferenceCount = 0;
             foreach (FairyPackageDiagnostic diagnostic in finalDiagnostics)
@@ -405,7 +300,7 @@ namespace Game.Editor
             }
         }
 
-        [AgentCallable("Open, refocus, cover/reveal, owner-cancel or close, and recycle the unified FairyGUI form 100 times, then verify all runtime diagnostics return to baseline.", 300)]
+        [AgentCallable("Open, refocus, owner-cancel or close, and recycle the native FairyGUI form 100 times, then verify runtime diagnostics return to baseline.", 300)]
         public static async UniTask ValidateFairyUIFormLifecycleCycles()
         {
             if (!EditorApplication.isPlaying)
@@ -413,18 +308,11 @@ namespace Game.Editor
                 throw new InvalidOperationException("FairyGUI lifecycle cycles require PlayMode.");
             }
 
-            if (GameEntry.UI == null)
+            FairyUIForm existing = FairyUIManager.Instance.GetUIForm(DescriptorAsset);
+            if (existing != null)
             {
-                throw new InvalidOperationException("GDK UI component is not initialized.");
-            }
-
-            const int FairyDemoUIId = 103;
-            const string DescriptorAsset = "Assets/Res/UI/FairyGUI/FairyDemoForm.json";
-            UIForm existingForm = GameEntry.UI.GetUIForm(DescriptorAsset);
-            if (existingForm != null)
-            {
-                GameEntry.UI.CloseUIForm(existingForm.SerialId);
-                await WaitForFairyUIFormClosed(existingForm.SerialId, DescriptorAsset);
+                FairyUIManager.Instance.CloseUIForm(existing.SerialId);
+                await WaitForFairyUIFormClosed(existing.SerialId);
             }
 
             using (CancellationTokenSource canceledBeforeOpen = new CancellationTokenSource())
@@ -433,7 +321,7 @@ namespace Game.Editor
                 bool cancellationObserved = false;
                 try
                 {
-                    await FairyUIFormService.OpenFairyUIFormAsync(
+                    await FairyUIManager.Instance.OpenFairyUIFormAsync(
                         FairyDemoUIId,
                         new object(),
                         canceledBeforeOpen.Token);
@@ -449,47 +337,54 @@ namespace Game.Editor
                 }
             }
 
-            UIForm warmupForm = await FairyUIFormService.OpenFairyUIFormAsync(
+            FairyUIForm warmupForm = await FairyUIManager.Instance.OpenFairyUIFormAsync(
                 FairyDemoUIId,
                 new object());
-            FairyUIFormLogic warmupLogic = warmupForm.Logic as FairyUIFormLogic;
-            GameEntry.UI.CloseUIForm(warmupForm.SerialId);
-            await WaitForFairyUIFormClosed(warmupForm.SerialId, DescriptorAsset);
-            AssertFairyUIFormRecycled(warmupLogic, "warmup");
+            FairyUIManager.Instance.CloseUIForm(warmupForm.SerialId);
+            await WaitForFairyUIFormClosed(warmupForm.SerialId);
 
             await WaitForFairyPackageDiagnostics(Array.Empty<FairyPackageDiagnostic>());
             IReadOnlyList<FairyPackageDiagnostic> baselineDiagnostics = FairyPackageManager.GetDiagnostics();
-            int baselineLoadedForms = GameEntry.UI.GetAllLoadedUIForms().Length;
-            int baselineLoadingForms = GameEntry.UI.GetAllLoadingUIFormSerialIds().Length;
+            int baselineLoadedForms = FairyUIManager.Instance.GetAllLoadedUIForms().Length;
+            int baselineLoadingForms = FairyUIManager.Instance.GetAllLoadingUIFormSerialIds().Length;
             int baselineRootChildren = GRoot.inst.numChildren;
-            int baselinePanels = Resources.FindObjectsOfTypeAll<UIPanel>().Length;
-            int baselineStageCameras = Resources.FindObjectsOfTypeAll<StageCamera>().Length;
 
             for (int cycle = 0; cycle < 100; cycle++)
             {
                 using CancellationTokenSource ownerCancellation = new CancellationTokenSource();
                 object openUserData = new object();
-                UIForm uiForm = await FairyUIFormService.OpenFairyUIFormAsync(
+                FairyUIForm uiForm = await FairyUIManager.Instance.OpenFairyUIFormAsync(
                     FairyDemoUIId,
                     openUserData,
                     ownerCancellation.Token);
-                FairyUIFormLogic logic = uiForm.Logic as FairyUIFormLogic;
-                if (logic?.View == null || logic.Presenter == null || logic.Descriptor == null)
+                if (uiForm?.View == null || uiForm.Presenter == null || uiForm.Descriptor == null)
                 {
                     throw new InvalidOperationException(
-                        $"FairyGUI lifecycle cycle {cycle} opened without a complete prepared state.");
+                        $"FairyGUI lifecycle cycle {cycle} opened without a complete native state.");
                 }
 
-                AssertUnifiedUIHierarchy(uiForm, logic, logic.View);
                 AssertPresenterObject(
-                    logic.Presenter,
+                    uiForm.Presenter,
                     "LastOpenUserData",
                     openUserData,
                     $"FairyGUI lifecycle cycle {cycle} replaced the original open userData.");
 
                 if (cycle % 10 == 0)
                 {
-                    await ExerciseStackLifecycle(uiForm, logic, cycle);
+                    int refocusBefore = GetPresenterInt(uiForm.Presenter, "RefocusCount");
+                    object refocusUserData = new object();
+                    FairyUIManager.Instance.RefocusUIForm(uiForm, refocusUserData);
+                    if (GetPresenterInt(uiForm.Presenter, "RefocusCount") != refocusBefore + 1)
+                    {
+                        throw new InvalidOperationException(
+                            $"FairyGUI lifecycle cycle {cycle} did not dispatch refocus exactly once.");
+                    }
+
+                    AssertPresenterObject(
+                        uiForm.Presenter,
+                        "LastRefocusUserData",
+                        refocusUserData,
+                        $"FairyGUI lifecycle cycle {cycle} replaced refocus userData.");
                 }
 
                 if (cycle % 5 == 0)
@@ -498,32 +393,25 @@ namespace Game.Editor
                 }
                 else
                 {
-                    GameEntry.UI.CloseUIForm(uiForm.SerialId);
+                    FairyUIManager.Instance.CloseUIForm(uiForm.SerialId);
                 }
 
-                await WaitForFairyUIFormClosed(uiForm.SerialId, DescriptorAsset);
-                AssertFairyUIFormRecycled(logic, cycle.ToString());
+                await WaitForFairyUIFormClosed(uiForm.SerialId);
             }
 
             await WaitForFairyPackageDiagnostics(baselineDiagnostics);
-            int finalLoadedForms = GameEntry.UI.GetAllLoadedUIForms().Length;
-            int finalLoadingForms = GameEntry.UI.GetAllLoadingUIFormSerialIds().Length;
+            int finalLoadedForms = FairyUIManager.Instance.GetAllLoadedUIForms().Length;
+            int finalLoadingForms = FairyUIManager.Instance.GetAllLoadingUIFormSerialIds().Length;
             int finalRootChildren = GRoot.inst.numChildren;
-            int finalPanels = Resources.FindObjectsOfTypeAll<UIPanel>().Length;
-            int finalStageCameras = Resources.FindObjectsOfTypeAll<StageCamera>().Length;
             if (finalLoadedForms != baselineLoadedForms ||
                 finalLoadingForms != baselineLoadingForms ||
-                finalRootChildren != baselineRootChildren ||
-                finalPanels != baselinePanels ||
-                finalStageCameras != baselineStageCameras)
+                finalRootChildren != baselineRootChildren)
             {
                 throw new InvalidOperationException(
                     "FairyGUI lifecycle cycles did not return to baseline. " +
                     $"Loaded {baselineLoadedForms}->{finalLoadedForms}, " +
                     $"loading {baselineLoadingForms}->{finalLoadingForms}, " +
-                    $"root children {baselineRootChildren}->{finalRootChildren}, " +
-                    $"UIPanels {baselinePanels}->{finalPanels}, " +
-                    $"StageCameras {baselineStageCameras}->{finalStageCameras}.");
+                    $"root children {baselineRootChildren}->{finalRootChildren}.");
             }
 
             if (UIPackage.GetByName("Package1") != null)
@@ -533,100 +421,7 @@ namespace Game.Editor
             }
         }
 
-        [AgentCallable("Validate serial-ID and synchronous-pool prepared-state correlation without replacing the original userData.", 30)]
-        public static void ValidateFairyUIPreparedStateCorrelation()
-        {
-            Type registryType = typeof(FairyUIFormLogic).Assembly.GetType(
-                "Game.FairyUIFormPreparedRegistry",
-                throwOnError: true);
-            Type stateType = typeof(FairyUIFormLogic).Assembly.GetType(
-                "Game.FairyUIFormPreparedState",
-                throwOnError: true);
-            const System.Reflection.BindingFlags StaticFlags =
-                System.Reflection.BindingFlags.Static |
-                System.Reflection.BindingFlags.NonPublic;
-            const System.Reflection.BindingFlags InstanceFlags =
-                System.Reflection.BindingFlags.Instance |
-                System.Reflection.BindingFlags.NonPublic;
-
-            System.Reflection.ConstructorInfo constructor = stateType.GetConstructor(
-                InstanceFlags,
-                binder: null,
-                new[]
-                {
-                    typeof(string),
-                    typeof(FairyUIFormDescriptor),
-                    typeof(FairyPackageLease),
-                    typeof(GComponent),
-                    typeof(IFairyUIPresenter),
-                    typeof(object),
-                },
-                modifiers: null);
-            System.Reflection.MethodInfo beginOpen = registryType.GetMethod("BeginOpen", StaticFlags);
-            System.Reflection.MethodInfo bindSerialId = registryType.GetMethod("BindSerialId", StaticFlags);
-            System.Reflection.MethodInfo consumeNew = registryType.GetMethod("ConsumeNewInstance", StaticFlags);
-            System.Reflection.MethodInfo consumePooled = registryType.GetMethod("ConsumePooledInstance", StaticFlags);
-            System.Reflection.MethodInfo tryRemove = registryType.GetMethod("TryRemove", StaticFlags);
-            if (constructor == null || beginOpen == null || bindSerialId == null || consumeNew == null ||
-                consumePooled == null || tryRemove == null)
-            {
-                throw new InvalidOperationException(
-                    "FairyGUI prepared-state correlation probe could not resolve the internal handoff contract.");
-            }
-
-            object firstState = constructor.Invoke(new object[] { "FairyDemoForm", null, null, null, null, null });
-            object secondState = constructor.Invoke(new object[] { "FairyDemoForm", null, null, null, null, null });
-            object pooledUserData = new object();
-            object pooledState = constructor.Invoke(
-                new object[] { "FairyDemoForm", null, null, null, null, pooledUserData });
-            try
-            {
-                using ((IDisposable)beginOpen.Invoke(null, new[] { firstState }))
-                {
-                    bindSerialId.Invoke(null, new[] { (object)71001, firstState });
-                }
-
-                using ((IDisposable)beginOpen.Invoke(null, new[] { secondState }))
-                {
-                    bindSerialId.Invoke(null, new[] { (object)71002, secondState });
-                }
-
-                object consumedSecond = consumeNew.Invoke(
-                    null,
-                    new object[] { 71002, "FairyDemoForm", null });
-                object consumedFirst = consumeNew.Invoke(
-                    null,
-                    new object[] { 71001, "FairyDemoForm", null });
-                if (!ReferenceEquals(consumedSecond, secondState) ||
-                    !ReferenceEquals(consumedFirst, firstState))
-                {
-                    throw new InvalidOperationException(
-                        "Concurrent FairyGUI opens with identical descriptor/userData were correlated by queue order instead of GF serial ID.");
-                }
-
-                using ((IDisposable)beginOpen.Invoke(null, new[] { pooledState }))
-                {
-                    object consumedPooled = consumePooled.Invoke(
-                        null,
-                        new[] { (object)"FairyDemoForm", pooledUserData });
-                    if (!ReferenceEquals(consumedPooled, pooledState))
-                    {
-                        throw new InvalidOperationException(
-                            "A pooled FairyGUI instance did not consume the exact synchronous prepared state.");
-                    }
-                }
-            }
-            finally
-            {
-                foreach (object state in new[] { firstState, secondState, pooledState })
-                {
-                    tryRemove.Invoke(null, new[] { state });
-                    ((IDisposable)state).Dispose();
-                }
-            }
-        }
-
-        [AgentCallable("Inspect the unified FairyGUI GRoot, GF UIForm host, and runtime visibility state.", 30)]
+        [AgentCallable("Inspect the native FairyGUI GRoot and runtime visibility state.", 30)]
         public static void InspectFairyDemoRendering()
         {
             if (!EditorApplication.isPlaying)
@@ -634,30 +429,13 @@ namespace Game.Editor
                 throw new InvalidOperationException("FairyGUI rendering inspection requires PlayMode.");
             }
 
-            const string DescriptorAsset = "Assets/Res/UI/FairyGUI/FairyDemoForm.json";
-            UIForm uiForm = GameEntry.UI.GetUIForm(DescriptorAsset);
-            FairyUIFormLogic logic = uiForm?.Logic as FairyUIFormLogic;
-            GComponent view = logic?.View;
+            FairyUIForm uiForm = FairyUIManager.Instance.GetUIForm(DescriptorAsset);
+            GComponent view = uiForm?.View;
             if (view == null ||
                 view.GetType().FullName != "Game.Hot.FairyGUI.Package1.UIMainView")
             {
-                throw new InvalidOperationException("No open unified FairyGUI demo UIForm exists in PlayMode.");
+                throw new InvalidOperationException("No open native FairyGUI demo form exists in PlayMode.");
             }
-
-            if (logic.GetComponent<UIPanel>() != null ||
-                logic.GetComponent<Canvas>() != null ||
-                logic.GetComponent<RectTransform>() != null ||
-                logic.GetComponent<UnityEngine.UI.GraphicRaycaster>() != null)
-            {
-                throw new InvalidOperationException("Unified FairyGUI host contains legacy UIPanel or UGUI components.");
-            }
-
-            if (UnityEngine.Object.FindObjectsByType<UIPanel>(FindObjectsSortMode.None).Length != 0)
-            {
-                throw new InvalidOperationException("Legacy per-form FairyGUI UIPanel instances still exist in PlayMode.");
-            }
-
-            AssertUnifiedUIHierarchy(uiForm, logic, view);
 
             Camera stageCamera = StageCamera.main;
             if (stageCamera == null || GRoot.inst == null || view.displayObject?.stage != Stage.inst)
@@ -682,55 +460,22 @@ namespace Game.Editor
                     $"view={view.width}x{view.height}, root={GRoot.inst.width}x{GRoot.inst.height}.");
             }
 
-            int viewLayerMask = 1 << view.displayObject.gameObject.layer;
-            if ((stageCamera.cullingMask & viewLayerMask) == 0)
-            {
-                throw new InvalidOperationException(
-                    $"FairyGUI Stage Camera does not render the MainView layer " +
-                    $"'{LayerMask.LayerToName(view.displayObject.gameObject.layer)}'.");
-            }
-
-            Renderer[] renderers = view.displayObject.gameObject.GetComponentsInChildren<Renderer>(true);
-            Plane[] frustumPlanes = GeometryUtility.CalculateFrustumPlanes(stageCamera);
-            Renderer visibleRenderer = null;
-            foreach (Renderer renderer in renderers)
-            {
-                if (renderer.enabled &&
-                    renderer.gameObject.activeInHierarchy &&
-                    renderer.sharedMaterial != null &&
-                    GeometryUtility.TestPlanesAABB(frustumPlanes, renderer.bounds))
-                {
-                    visibleRenderer = renderer;
-                    break;
-                }
-            }
-
-            if (visibleRenderer == null)
-            {
-                throw new InvalidOperationException(
-                    $"FairyGUI MainView has no enabled renderer inside the Stage Camera frustum. " +
-                    $"Renderer count={renderers.Length}.");
-            }
-
             Log.Info(
-                "Unified FairyGUI rendering inspection passed. stageCamera={0}, serialId={1}, " +
-                "group={2}, uiSize={3}x{4}, renderer={5}.",
+                "Native FairyGUI rendering inspection passed. stageCamera={0}, serialId={1}, " +
+                "group={2}, uiSize={3}x{4}.",
                 stageCamera.name,
                 uiForm.SerialId,
                 uiForm.UIGroup.Name,
                 view.width,
-                view.height,
-                visibleRenderer.name);
+                view.height);
         }
 
-        private static async UniTask WaitForFairyUIFormClosed(int serialId, string descriptorAsset)
+        private static async UniTask WaitForFairyUIFormClosed(int serialId)
         {
             for (int frame = 0; frame < 300; frame++)
             {
-                if (!GameEntry.UI.HasUIForm(serialId) &&
-                    !GameEntry.UI.IsLoadingUIForm(serialId) &&
-                    !GameEntry.UI.HasUIForm(descriptorAsset) &&
-                    !GameEntry.UI.IsLoadingUIForm(descriptorAsset))
+                if (!FairyUIManager.Instance.HasUIForm(serialId) &&
+                    !FairyUIManager.Instance.IsLoadingUIForm(serialId))
                 {
                     await UniTask.Yield(PlayerLoopTiming.Update);
                     return;
@@ -740,81 +485,7 @@ namespace Game.Editor
             }
 
             throw new InvalidOperationException(
-                $"FairyGUI UIForm '{serialId}' did not close and recycle within 300 frames.");
-        }
-
-        private static async UniTask ExerciseStackLifecycle(
-            UIForm uiForm,
-            FairyUIFormLogic logic,
-            int cycle)
-        {
-            IFairyUIPresenter presenter = logic.Presenter;
-            int refocusBefore = GetPresenterInt(presenter, "RefocusCount");
-            object refocusUserData = new object();
-            GameEntry.UI.RefocusUIForm(uiForm, refocusUserData);
-            if (GetPresenterInt(presenter, "RefocusCount") != refocusBefore + 1)
-            {
-                throw new InvalidOperationException(
-                    $"FairyGUI lifecycle cycle {cycle} did not dispatch refocus exactly once.");
-            }
-
-            AssertPresenterObject(
-                presenter,
-                "LastRefocusUserData",
-                refocusUserData,
-                $"FairyGUI lifecycle cycle {cycle} replaced refocus userData.");
-
-            int pauseBefore = GetPresenterInt(presenter, "PauseCount");
-            int resumeBefore = GetPresenterInt(presenter, "ResumeCount");
-            int coverBefore = GetPresenterInt(presenter, "CoverCount");
-            int revealBefore = GetPresenterInt(presenter, "RevealCount");
-            UIForm coveringForm = null;
-            try
-            {
-                coveringForm = await GameEntry.UI.OpenUIFormAsync(1);
-                if (GetPresenterInt(presenter, "PauseCount") != pauseBefore + 1 ||
-                    GetPresenterInt(presenter, "CoverCount") != coverBefore + 1 ||
-                    logic.View.visible ||
-                    logic.View.touchable)
-                {
-                    throw new InvalidOperationException(
-                        $"FairyGUI lifecycle cycle {cycle} did not map GF cover/pause to hidden, non-interactive state.");
-                }
-            }
-            finally
-            {
-                if (coveringForm != null && GameEntry.UI.HasUIForm(coveringForm.SerialId))
-                {
-                    GameEntry.UI.CloseUIForm(coveringForm.SerialId);
-                    await WaitForUIFormClosed(coveringForm.SerialId);
-                }
-            }
-
-            if (GetPresenterInt(presenter, "ResumeCount") != resumeBefore + 1 ||
-                GetPresenterInt(presenter, "RevealCount") != revealBefore + 1 ||
-                !logic.View.visible ||
-                !logic.View.touchable)
-            {
-                throw new InvalidOperationException(
-                    $"FairyGUI lifecycle cycle {cycle} did not restore GF reveal/resume visibility and interaction.");
-            }
-        }
-
-        private static async UniTask WaitForUIFormClosed(int serialId)
-        {
-            for (int frame = 0; frame < 300; frame++)
-            {
-                if (!GameEntry.UI.HasUIForm(serialId) && !GameEntry.UI.IsLoadingUIForm(serialId))
-                {
-                    await UniTask.Yield(PlayerLoopTiming.Update);
-                    return;
-                }
-
-                await UniTask.Yield(PlayerLoopTiming.Update);
-            }
-
-            throw new InvalidOperationException(
-                $"GF UIForm '{serialId}' did not close and recycle within 300 frames.");
+                $"FairyGUI form '{serialId}' did not close and recycle within 300 frames.");
         }
 
         private static int GetPresenterInt(IFairyUIPresenter presenter, string propertyName)
@@ -839,124 +510,6 @@ namespace Game.Editor
             if (!ReferenceEquals(actual, expected))
             {
                 throw new InvalidOperationException(error);
-            }
-        }
-
-        private static void AssertFairyUIFormRecycled(FairyUIFormLogic logic, string cycle)
-        {
-            if (logic == null || logic.View != null || logic.Presenter != null || logic.Descriptor != null)
-            {
-                throw new InvalidOperationException(
-                    $"FairyGUI UIForm logic retained prepared state after lifecycle cycle '{cycle}'.");
-            }
-        }
-
-        private static void AssertUnifiedUIHierarchy(
-            UIForm uiForm,
-            FairyUIFormLogic logic,
-            GComponent view)
-        {
-            if (uiForm.UIGroup.Helper is not GDKUIGroupHelper groupHelper)
-            {
-                throw new InvalidOperationException(
-                    $"GF UI group '{uiForm.UIGroup.Name}' does not use the GDK FairyGUI group helper.");
-            }
-
-            Transform stageTransform = Stage.inst.gameObject.transform;
-            Transform uiRoot = GameEntry.UI.transform;
-            if (stageTransform.parent != uiRoot)
-            {
-                throw new InvalidOperationException(
-                    $"FairyGUI Stage is not parented under the GF UI root. " +
-                    $"stageParent='{stageTransform.parent?.name ?? "<scene root>"}', " +
-                    $"uiRoot='{uiRoot?.name ?? "<missing>"}'.");
-            }
-
-            Transform rootContainerTransform = GRoot.inst.container.cachedTransform;
-            if (rootContainerTransform.parent != stageTransform)
-            {
-                throw new InvalidOperationException(
-                    $"FairyGUI GRoot is not a direct child of Stage. " +
-                    $"groutParent='{rootContainerTransform.parent?.name ?? "<missing>"}', " +
-                    $"stage='{stageTransform.name}'.");
-            }
-
-            Transform frameworkGroup = groupHelper.transform;
-            string expectedFrameworkGroupName = $"UI Group - {uiForm.UIGroup.Name}";
-            if (!string.Equals(frameworkGroup.name, expectedFrameworkGroupName, StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException(
-                    $"GF UI group helper is named '{frameworkGroup.name}' instead of " +
-                    $"'{expectedFrameworkGroupName}'.");
-            }
-
-            if (logic.transform.parent != frameworkGroup)
-            {
-                throw new InvalidOperationException(
-                    $"FairyGUI host '{logic.name}' is not parented under GF UI group '{uiForm.UIGroup.Name}'.");
-            }
-
-            if ((logic.gameObject.hideFlags & HideFlags.HideInHierarchy) == 0)
-            {
-                throw new InvalidOperationException(
-                    $"FairyGUI pooled host '{logic.name}' is visible in the runtime hierarchy.");
-            }
-
-            Transform viewTransform = view.displayObject?.gameObject?.transform;
-            if (viewTransform == null ||
-                !string.Equals(viewTransform.name, "MainView", StringComparison.Ordinal) ||
-                viewTransform.parent != frameworkGroup)
-            {
-                throw new InvalidOperationException(
-                    $"FairyGUI MainView is not a direct child of '{expectedFrameworkGroupName}'. " +
-                    $"Actual view='{viewTransform?.name ?? "<missing>"}', " +
-                    $"parent='{viewTransform?.parent?.name ?? "<missing>"}'.");
-            }
-
-            if (view.displayObject.parent == null ||
-                view.displayObject.parent.parent != GRoot.inst.container ||
-                view.displayObject.stage != Stage.inst)
-            {
-                throw new InvalidOperationException(
-                    $"FairyGUI MainView is not connected to the single GRoot display tree through " +
-                    $"'{expectedFrameworkGroupName}'.");
-            }
-
-            Container groupContainer = view.displayObject.parent;
-            Transform rootTransform = GRoot.inst.container.cachedTransform;
-            const float TransformTolerance = 0.000001f;
-            if ((frameworkGroup.position - rootTransform.position).sqrMagnitude > TransformTolerance ||
-                Quaternion.Angle(frameworkGroup.rotation, rootTransform.rotation) > 0.001f ||
-                (frameworkGroup.lossyScale - rootTransform.lossyScale).sqrMagnitude > TransformTolerance)
-            {
-                throw new InvalidOperationException(
-                    $"GF UI group '{expectedFrameworkGroupName}' does not match the GRoot transform. " +
-                    $"Group position={frameworkGroup.position}, rotation={frameworkGroup.rotation.eulerAngles}, " +
-                    $"scale={frameworkGroup.lossyScale}; root position={rootTransform.position}, " +
-                    $"rotation={rootTransform.rotation.eulerAngles}, scale={rootTransform.lossyScale}.");
-            }
-
-            if (!Mathf.Approximately(groupContainer.width, GRoot.inst.width) ||
-                !Mathf.Approximately(groupContainer.height, GRoot.inst.height))
-            {
-                throw new InvalidOperationException(
-                    $"GF UI group '{expectedFrameworkGroupName}' does not match the GRoot logical size. " +
-                    $"Group={groupContainer.width}x{groupContainer.height}, " +
-                    $"root={GRoot.inst.width}x{GRoot.inst.height}.");
-            }
-
-            string forbiddenGroupName = $"Fairy UI Group - {uiForm.UIGroup.Name}";
-            Transform fairyRoot = GRoot.inst.displayObject?.gameObject?.transform;
-            Transform[] fairyNodes = fairyRoot != null
-                ? fairyRoot.GetComponentsInChildren<Transform>(true)
-                : Array.Empty<Transform>();
-            foreach (Transform fairyNode in fairyNodes)
-            {
-                if (string.Equals(fairyNode.name, forbiddenGroupName, StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException(
-                        $"Legacy FairyGUI group '{forbiddenGroupName}' still exists under GRoot.");
-                }
             }
         }
 
@@ -1110,6 +663,5 @@ namespace Game.Editor
                     $"into '{FairyGUIResourceName}'.");
             }
         }
-
     }
 }

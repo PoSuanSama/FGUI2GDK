@@ -1,4 +1,4 @@
-﻿//------------------------------------------------------------
+//------------------------------------------------------------
 // Game Framework
 // Copyright © 2013-2021 Jiang Yin. All rights reserved.
 // Homepage: https://gameframework.cn/
@@ -17,7 +17,7 @@ namespace Game.Hot
     {
         private bool m_StartGame = false;
         private CancellationTokenSource m_FairyOpenCancellation;
-        private UIForm m_FairyDemoUIForm;
+        private FairyUIForm m_FairyDemoUIForm;
 
         public void StartGame()
         {
@@ -42,9 +42,9 @@ namespace Game.Hot
 
             if (!isShutdown && m_FairyDemoUIForm != null)
             {
-                if (GameEntry.UI.HasUIForm(m_FairyDemoUIForm.SerialId))
+                if (FairyUIManager.Instance.HasUIForm(m_FairyDemoUIForm.SerialId))
                 {
-                    GameEntry.UI.CloseUIForm(m_FairyDemoUIForm.SerialId);
+                    FairyUIManager.Instance.CloseUIForm(m_FairyDemoUIForm.SerialId);
                 }
 
                 m_FairyDemoUIForm = null;

@@ -6,7 +6,7 @@ using UnityGameFramework.Runtime;
 
 namespace Game.Hot
 {
-        [FairyUIPresenter("FairyDemoForm")]
+        [FairyUIPresenter(UIFormId.FairyDemoForm)]
     public sealed class FairyDemoForm : IFairyUIPresenter
     {
         private int m_CheckCount;

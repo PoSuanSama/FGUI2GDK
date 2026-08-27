@@ -5,7 +5,6 @@ using Cysharp.Threading.Tasks;
 using FairyGUI;
 using Game.Hot.FairyGUI.Package1;
 using UnityEditor;
-using UnityGameFramework.Runtime;
 
 namespace Game.Hot.Editor
 {
@@ -22,11 +21,6 @@ namespace Game.Hot.Editor
                 throw new InvalidOperationException("FairyGUI inventory smoke test requires PlayMode.");
             }
 
-            if (GameEntry.UI == null)
-            {
-                throw new InvalidOperationException("GDK UI component is not initialized.");
-            }
-
             try
             {
                 await VerifyInventoryAndMultiWindowFlow();
@@ -41,14 +35,13 @@ namespace Game.Hot.Editor
         {
             await FairyInventoryFlow.OpenInventoryAsync();
 
-            UIForm inventoryForm = GameEntry.UI.GetUIForm(InventoryAsset);
+            FairyUIForm inventoryForm = FairyUIManager.Instance.GetUIForm(InventoryAsset);
             if (inventoryForm == null)
             {
                 throw new InvalidOperationException("Inventory FairyGUI form did not open.");
             }
 
-            FairyUIFormLogic inventoryLogic = inventoryForm.Logic as FairyUIFormLogic;
-            UIInventoryView inventoryView = inventoryLogic?.View as UIInventoryView;
+            UIInventoryView inventoryView = inventoryForm.View as UIInventoryView;
             if (inventoryView == null)
             {
                 throw new InvalidOperationException("Inventory form did not expose UIInventoryView.");
@@ -87,7 +80,7 @@ namespace Game.Hot.Editor
                 throw new InvalidOperationException($"Expected 3 detail forms, found {FairyInventoryFlow.OpenDetailCount}.");
             }
 
-            List<UIForm> detailForms = new List<UIForm>(FairyInventoryFlow.OpenDetailForms);
+            List<FairyUIForm> detailForms = new List<FairyUIForm>(FairyInventoryFlow.OpenDetailForms);
             if (detailForms.Count != 3)
             {
                 throw new InvalidOperationException("Open detail form snapshot does not match the expected count.");
@@ -96,11 +89,10 @@ namespace Game.Hot.Editor
             FairyItemDetailForm targetPresenter = null;
             GGraph targetFrame = null;
             UIItemDetailWindow targetDetailView = null;
-            foreach (UIForm detailForm in detailForms)
+            foreach (FairyUIForm detailForm in detailForms)
             {
-                FairyUIFormLogic detailLogic = detailForm.Logic as FairyUIFormLogic;
-                FairyItemDetailForm presenter = detailLogic?.Presenter as FairyItemDetailForm;
-                if (presenter != null && detailLogic.View is UIItemDetailWindow detailView)
+                FairyItemDetailForm presenter = detailForm.Presenter as FairyItemDetailForm;
+                if (presenter != null && detailForm.View is UIItemDetailWindow detailView)
                 {
                     targetPresenter = presenter;
                     targetFrame = detailView.WindowFrame;
@@ -133,7 +125,7 @@ namespace Game.Hot.Editor
             int resumeBase = targetPresenter.ResumeCount;
 
             await FairyInventoryFlow.OpenOverlayAsync();
-            UIForm overlayForm = GameEntry.UI.GetUIForm(OverlayAsset);
+            FairyUIForm overlayForm = FairyUIManager.Instance.GetUIForm(OverlayAsset);
             if (overlayForm == null)
             {
                 throw new InvalidOperationException("Overlay FairyGUI form did not open.");
@@ -145,7 +137,7 @@ namespace Game.Hot.Editor
                 throw new InvalidOperationException("Detail form was not covered and paused by the overlay.");
             }
 
-            GameEntry.UI.CloseUIForm(overlayForm.SerialId);
+            FairyUIManager.Instance.CloseUIForm(overlayForm.SerialId);
             await UniTask.Yield(PlayerLoopTiming.Update);
             if (targetPresenter.RevealCount != revealBase + 1 || targetPresenter.ResumeCount != resumeBase + 1)
             {
@@ -171,10 +163,10 @@ namespace Game.Hot.Editor
         {
             try
             {
-                UIForm uiForm = GameEntry.UI.GetUIForm(assetName);
-                if (uiForm != null && GameEntry.UI.HasUIForm(uiForm.SerialId))
+                FairyUIForm uiForm = FairyUIManager.Instance.GetUIForm(assetName);
+                if (uiForm != null && FairyUIManager.Instance.HasUIForm(uiForm.SerialId))
                 {
-                    GameEntry.UI.CloseUIForm(uiForm.SerialId);
+                    FairyUIManager.Instance.CloseUIForm(uiForm.SerialId);
                 }
             }
             catch

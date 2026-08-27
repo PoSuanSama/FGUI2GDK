@@ -1,15 +1,15 @@
 using System;
 
-namespace Game.Hot
+namespace Game
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public sealed class FairyUIPresenterAttribute : Attribute
     {
-        public FairyUIPresenterAttribute(string csName)
+        public FairyUIPresenterAttribute(int uiFormId)
         {
-            CsName = csName;
+            UiFormId = uiFormId;
         }
 
-        public string CsName { get; }
+        public int UiFormId { get; }
     }
 }
