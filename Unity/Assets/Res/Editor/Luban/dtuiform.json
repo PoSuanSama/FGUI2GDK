@@ -66,50 +66,6 @@
     "ComponentName": ""
   },
   {
-    "Id": 1,
-    "CSName": "DialogForm",
-    "Desc": "弹出框",
-    "AssetName": "Hot/DialogForm",
-    "UIGroupName": "Default",
-    "AllowMultiInstance": true,
-    "PauseCoveredUIForm": true,
-    "PackageName": "",
-    "ComponentName": ""
-  },
-  {
-    "Id": 100,
-    "CSName": "MenuForm",
-    "Desc": "主菜单",
-    "AssetName": "Hot/MenuForm",
-    "UIGroupName": "Default",
-    "AllowMultiInstance": false,
-    "PauseCoveredUIForm": true,
-    "PackageName": "",
-    "ComponentName": ""
-  },
-  {
-    "Id": 101,
-    "CSName": "SettingForm",
-    "Desc": "设置",
-    "AssetName": "Hot/SettingForm",
-    "UIGroupName": "Default",
-    "AllowMultiInstance": false,
-    "PauseCoveredUIForm": true,
-    "PackageName": "",
-    "ComponentName": ""
-  },
-  {
-    "Id": 102,
-    "CSName": "AboutForm",
-    "Desc": "关于",
-    "AssetName": "Hot/AboutForm",
-    "UIGroupName": "Default",
-    "AllowMultiInstance": false,
-    "PauseCoveredUIForm": true,
-    "PackageName": "",
-    "ComponentName": ""
-  },
-  {
     "Id": 103,
     "CSName": "FairyDemoForm",
     "Desc": "FairyGUI演示",
