@@ -1,23 +1,40 @@
 using FairyGUI;
+using GameFramework;
 
 namespace Game
 {
-    public sealed class FairyGuideStep
+    public sealed class FairyGuideStep : IReference
     {
-        public FairyGuideStep(string id, string text, GObject target = null, GComponent content = null)
+        public string Id { get; private set; }
+        public string Text { get; private set; }
+        public GObject Target { get; private set; }
+        public GComponent Content { get; private set; }
+
+        public static FairyGuideStep Create(string id, string text, GObject target = null, GComponent content = null)
         {
-            Id = id;
-            Text = text;
-            Target = target;
-            Content = content;
+            FairyGuideStep step = ReferencePool.Acquire<FairyGuideStep>();
+            step.Id = id;
+            step.Text = text;
+            step.Target = target;
+            step.Content = content;
+            return step;
         }
 
-        public string Id { get; }
+        public void Clear()
+        {
+            Id = null;
+            Text = null;
+            Target = null;
+            if (Content != null)
+            {
+                Content.Dispose();
+                Content = null;
+            }
+        }
 
-        public string Text { get; }
-
-        public GObject Target { get; }
-
-        public GComponent Content { get; }
+        public void Dispose()
+        {
+            ReferencePool.Release(this);
+        }
     }
 }
