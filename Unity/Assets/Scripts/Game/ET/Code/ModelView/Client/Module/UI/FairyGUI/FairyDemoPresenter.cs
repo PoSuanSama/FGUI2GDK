@@ -12,6 +12,8 @@ namespace ET.Client
     {
         private int m_CheckCount;
         private UIMainView m_View;
+        private FairyUIWidgetContainer m_WidgetContainer;
+        private FairyInventoryItemWidget m_ItemWidget;
 
         public int PauseCount { get; private set; }
         public int ResumeCount { get; private set; }
@@ -31,6 +33,10 @@ namespace ET.Client
             }
 
             m_CheckCount = 0;
+            m_WidgetContainer = FairyUIWidgetContainer.Create(m_View);
+            m_ItemWidget = FairyInventoryItemWidget.Create();
+            m_WidgetContainer.AddWidget(m_ItemWidget);
+            m_WidgetContainer.OpenWidget(m_ItemWidget);
             m_View.OpenInventoryButton.onClick.Add(OnOpenInventoryButtonClick);
             m_View.RefreshButton.onClick.Add(OnRefreshButtonClick);
             UpdateStatus("FairyGUI 资源包已就绪");
@@ -44,6 +50,10 @@ namespace ET.Client
 
         public void OnClose(bool isShutdown, object userData)
         {
+            m_WidgetContainer?.RecycleAllWidgets();
+            m_WidgetContainer?.Dispose();
+            m_WidgetContainer = null;
+            m_ItemWidget = null;
             if (m_View != null)
             {
                 m_View.OpenInventoryButton.onClick.Remove(OnOpenInventoryButtonClick);
