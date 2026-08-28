@@ -216,10 +216,16 @@ namespace Game
                 Action<FairyUIFormDescriptor> preparePackage = FairyUIPresenterRegistry.PreparePackage;
                 Func<FairyUIFormDescriptor, IFairyUIPresenter> createPresenter =
                     FairyUIPresenterRegistry.CreatePresenter;
-                if (preparePackage == null || createPresenter == null)
+                if (preparePackage == null)
                 {
                     throw new GameFrameworkException(
-                        "FairyGUI package binding and presenter factories must be registered before opening a form.");
+                        "FairyGUI package binding must be registered before opening a form.");
+                }
+
+                if (presenterFactory == null && createPresenter == null)
+                {
+                    throw new GameFrameworkException(
+                        "Either a per-open presenter factory or a class presenter registry must be available before opening a form.");
                 }
 
                 packageLease = await FairyPackageManager.AcquireAsync(descriptor.PackageName, ownerToken);
@@ -250,7 +256,11 @@ namespace Game
                     presenter = presenterFactory(descriptor);
                 }
 
-                presenter ??= createPresenter(descriptor);
+                if (presenter == null && createPresenter != null)
+                {
+                    presenter = createPresenter(descriptor);
+                }
+
                 if (presenter == null)
                 {
                     throw new GameFrameworkException(

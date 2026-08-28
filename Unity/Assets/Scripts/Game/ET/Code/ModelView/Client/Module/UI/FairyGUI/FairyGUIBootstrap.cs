@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Game;
 using Game.FairyGUI.Package1;
@@ -37,9 +36,8 @@ namespace ET.Client
                 UGFUIFormId.FairyRuntimeInspectorForm,
                 static owner => owner.AddChild<FairyRuntimeInspectorFormComponent>());
 
-            IReadOnlyDictionary<int, Func<IFairyUIPresenter>> factories =
-                FairyUIPresenterRegistryBuilder.Build(typeof(FairyGUIBootstrap).Assembly);
-
+            // ET 全部界面走 Component/System 打开链(per-open 工厂),不再注册类 Presenter;
+            // 未命中注册表的打开会由 FairyUIManager 直接报稳定错误。
             FairyUIPresenterRegistry.PreparePackage = descriptor =>
             {
                 if (!string.Equals(descriptor.PackageName, "Package1", StringComparison.Ordinal))
@@ -68,17 +66,6 @@ namespace ET.Client
             EnsureGroup(uiManager, "Message", 200);
             EnsureGroup(uiManager, "Guide", 300);
             EnsureGroup(uiManager, "RuntimeInspector", 400);
-
-            FairyUIPresenterRegistry.CreatePresenter = descriptor =>
-            {
-                if (factories.TryGetValue(descriptor.UiId, out Func<IFairyUIPresenter> factory))
-                {
-                    return factory();
-                }
-
-                throw new GameFrameworkException(
-                    $"No FairyGUI presenter is registered for UI '{descriptor.UiId}'.");
-            };
 
             s_Initialized = true;
         }
