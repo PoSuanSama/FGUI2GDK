@@ -83,6 +83,38 @@ namespace Game
                 DesignResolutionY,
                 UIContentScaler.ScreenMatchMode.MatchWidthOrHeight);
 
+            AttachStageToBuiltinUI();
+
+        }
+
+        /// <summary>
+        /// 把 FairyGUI Stage 归位到 GameEntry 的 Builtin/UI 节点下
+        /// (与旧 UGUI Canvas 的宿主位置一致,避免 Stage 散落在场景根)。
+        /// Stage 自建时挂场景根并 DontDestroyOnLoad;这里只换父,保持 world 变换。
+        /// Builtin 组件未挂载(非 GameHot 流程)时跳过。
+        /// </summary>
+        private void AttachStageToBuiltinUI()
+        {
+            BuiltinComponent builtin = GameEntry.Builtin;
+            Stage stage = Stage.inst;
+            if (builtin == null || stage == null || stage.gameObject == null)
+            {
+                return;
+            }
+
+            Transform builtinTransform = builtin.transform;
+            Transform uiNode = builtinTransform.Find("UI");
+            if (uiNode == null)
+            {
+                GameObject uiGo = new GameObject("UI");
+                uiGo.transform.SetParent(builtinTransform, false);
+                uiNode = uiGo.transform;
+            }
+
+            if (!ReferenceEquals(stage.gameObject.transform.parent, uiNode))
+            {
+                stage.gameObject.transform.SetParent(uiNode, false);
+            }
         }
 
         public bool AddUIGroup(string name, int depth)

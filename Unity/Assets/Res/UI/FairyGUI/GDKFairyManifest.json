@@ -5,7 +5,7 @@
     "type": "Unity",
     "version": "5.0"
   },
-  "sourceHash": "06539806b1576b4060a1d8918839537db7ef7126e9a94cd1e8a14c365a7f2ec2",
+  "sourceHash": "807adb777823f78da20fcbab920622e459bec039c1d61ac9b597047d42abdf2f",
   "contractHash": "ba6794173335c8b7164aa1dbf97511f400730b0110816fc5e0cad5e6deb17fa1",
   "packages": [
     {
@@ -13,7 +13,7 @@
       "name": "Package1",
       "dependencies": [],
       "descriptorAsset": "Assets/Res/UI/FairyGUI/Package1_fui.bytes",
-      "descriptorSha256": "aaffc18e952dbc5d6eb5db9b576db8618e624b838b5f099a2c81c1f65d85592b",
+      "descriptorSha256": "315effdb6c9d37729916fb1f339ad2ffada6c8d089420c2faed71f37191c0b21",
       "runtimeAssets": [
         {
           "path": "Assets/Res/UI/FairyGUI/Package1_strings_ChineseSimplified.xml",

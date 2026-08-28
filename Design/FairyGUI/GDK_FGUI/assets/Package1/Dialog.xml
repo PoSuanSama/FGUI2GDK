@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component size="640,360">
   <displayList>
-    <graph id="dlgmask" name="mask" xy="0,0" size="640,360" touchable="false" type="rect" lineSize="1" lineColor="#ff243447" fillColor="#ff101a27">
+    <graph id="dlgpanel" name="panel" xy="0,0" size="640,360" touchable="false" type="rect" lineSize="1" lineColor="#ff243447" fillColor="#ff101a27">
       <relation target="" sidePair="width-width,height-height"/>
     </graph>
-    <text id="dlgtitle" name="titleText" xy="48,36" size="544,36" fontSize="26" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="标题">
+    <graph id="dlgaccent" name="accent" xy="48,28" size="4,36" touchable="false" type="rect" lineSize="0" fillColor="#ff22d3ee">
+      <relation target="" sidePair="width-width"/>
+    </graph>
+    <text id="dlgtitle" name="titleText" xy="68,25" size="524,36" fontSize="24" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="标题">
       <relation target="" sidePair="width-width"/>
     </text>
-    <text id="dlgmsg" name="messageText" xy="48,104" size="544,140" fontSize="16" color="#cbd5e1" leading="6" autoSize="none" text="消息内容">
+    <text id="dlgsubtitle" name="subtitleText" xy="68,64" size="524,20" fontSize="12" color="#64748b" autoSize="none" singleLine="true" text="GAME FRAMEWORK  /  FAIRYGUI DIALOG"/>
+    <graph id="dlgdivider" name="divider" xy="48,96" size="544,2" touchable="false" type="rect" lineSize="0" fillColor="#ff243447">
+      <relation target="" sidePair="width-width"/>
+    </graph>
+    <text id="dlgmsg" name="messageText" xy="48,122" size="544,130" fontSize="15" color="#cbd5e1" leading="6" autoSize="none" text="消息内容">
       <relation target="" sidePair="width-width"/>
     </text>
-    <component id="dlgconfirm" name="confirmButton" src="yih6b" fileName="DialogConfirmButton.xml" xy="416,284" size="120,44"/>
-    <component id="dlgcancel" name="cancelButton" src="yih6b" fileName="DialogConfirmButton.xml" xy="264,284" size="120,44"/>
-    <component id="dlgother" name="otherButton" src="yih6b" fileName="DialogConfirmButton.xml" xy="112,284" size="120,44"/>
+    <component id="dlgother" name="otherButton" src="i20a7" fileName="ActionButton.xml" xy="86,296" size="132,40"/>
+    <component id="dlgcancel" name="cancelButton" src="i20a7" fileName="ActionButton.xml" xy="254,296" size="132,40"/>
+    <component id="dlgconfirm" name="confirmButton" src="i20a7" fileName="ActionButton.xml" xy="422,296" size="132,40"/>
   </displayList>
 </component>

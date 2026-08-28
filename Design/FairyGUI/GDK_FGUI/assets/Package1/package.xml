@@ -12,7 +12,6 @@
     <component id="q84t8" name="RuntimeInspectorView.xml" path="/" exported="true"/>
     <component id="std89" name="RuntimeInspectorCloseButton.xml" path="/"/>
     <component id="yih6a" name="Dialog.xml" path="/" exported="true"/>
-    <component id="yih6b" name="DialogConfirmButton.xml" path="/" exported="true"/>
   </resources>
   <publish name="Package1" genCode="true"/>
 </packageDescription>

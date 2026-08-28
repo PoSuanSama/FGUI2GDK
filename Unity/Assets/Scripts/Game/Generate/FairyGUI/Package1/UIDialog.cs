@@ -7,18 +7,24 @@ namespace Game.FairyGUI.Package1
 {
     public partial class UIDialog : GComponent
     {
-        private GGraph m_Mask;
-        public GGraph Mask => this.m_Mask;
+        private GGraph m_Panel;
+        public GGraph Panel => this.m_Panel;
+        private GGraph m_Accent;
+        public GGraph Accent => this.m_Accent;
         private GTextField m_TitleText;
         public GTextField TitleText => this.m_TitleText;
+        private GTextField m_SubtitleText;
+        public GTextField SubtitleText => this.m_SubtitleText;
+        private GGraph m_Divider;
+        public GGraph Divider => this.m_Divider;
         private GTextField m_MessageText;
         public GTextField MessageText => this.m_MessageText;
-        private GButton m_ConfirmButton;
-        public GButton ConfirmButton => this.m_ConfirmButton;
-        private GButton m_CancelButton;
-        public GButton CancelButton => this.m_CancelButton;
-        private GButton m_OtherButton;
-        public GButton OtherButton => this.m_OtherButton;
+        private UIActionButton m_OtherButton;
+        public UIActionButton OtherButton => this.m_OtherButton;
+        private UIActionButton m_CancelButton;
+        public UIActionButton CancelButton => this.m_CancelButton;
+        private UIActionButton m_ConfirmButton;
+        public UIActionButton ConfirmButton => this.m_ConfirmButton;
         public const string URL = "ui://oozeu71hyih6a";
 
         public static UIDialog CreateInstance()
@@ -30,12 +36,15 @@ namespace Game.FairyGUI.Package1
         {
             base.ConstructFromXML(xml);
 
-            m_Mask = (GGraph)GetChild("mask");
+            m_Panel = (GGraph)GetChild("panel");
+            m_Accent = (GGraph)GetChild("accent");
             m_TitleText = (GTextField)GetChild("titleText");
+            m_SubtitleText = (GTextField)GetChild("subtitleText");
+            m_Divider = (GGraph)GetChild("divider");
             m_MessageText = (GTextField)GetChild("messageText");
-            m_ConfirmButton = (GButton)GetChild("confirmButton");
-            m_CancelButton = (GButton)GetChild("cancelButton");
-            m_OtherButton = (GButton)GetChild("otherButton");
+            m_OtherButton = (UIActionButton)GetChild("otherButton");
+            m_CancelButton = (UIActionButton)GetChild("cancelButton");
+            m_ConfirmButton = (UIActionButton)GetChild("confirmButton");
         }
     }
 }
