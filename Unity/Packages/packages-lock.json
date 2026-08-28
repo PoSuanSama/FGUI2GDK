@@ -27,41 +27,6 @@
       "dependencies": {},
       "hash": "ca7f87b6a72f3739f99a5ad0c957c7aae0cbd922"
     },
-    "com.coffee.softmask-for-ugui": {
-      "version": "https://github.com/mob-sakai/SoftMaskForUGUI.git?path=Packages/src",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {
-        "com.unity.ugui": "1.0.0"
-      },
-      "hash": "94ef3ada02ea62a8290bd8ce9d3f572edbdcd007"
-    },
-    "com.coffee.ui-effect": {
-      "version": "https://github.com/mob-sakai/UIEffect.git?path=Packages/src",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {
-        "com.unity.ugui": "1.0.0"
-      },
-      "hash": "1f4427c3d5d249534dba69d8c53acafb5d5fbd7f"
-    },
-    "com.coffee.ui-particle": {
-      "version": "https://github.com/mob-sakai/ParticleEffectForUGUI.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {
-        "com.unity.ugui": "1.0.0",
-        "com.unity.modules.particlesystem": "1.0.0"
-      },
-      "hash": "5a305705f84549e50223d897bb95495edd78bf1a"
-    },
-    "com.coffee.unmask": {
-      "version": "https://github.com/mob-sakai/UnmaskForUGUI.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "33356da2c43fa28397192baee70910c978e3169f"
-    },
     "com.cysharp.memorypack": {
       "version": "https://github.com/XuToWei/MemoryPack-Extension.git?path=src/MemoryPack.Unity/Assets/Plugins/MemoryPack",
       "depth": 0,
@@ -271,42 +236,12 @@
     },
     "com.unity.ugui": {
       "version": "2.0.0",
-      "depth": 0,
+      "depth": 2,
       "source": "builtin",
       "dependencies": {
         "com.unity.modules.ui": "1.0.0",
         "com.unity.modules.imgui": "1.0.0"
       }
-    },
-    "com.yasirkula.inspectplus": {
-      "version": "https://github.com/yasirkula/UnityInspectPlus.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "04f6baf3f57a2684f950f8e3e91a10ed4f95bcb7"
-    },
-    "com.yasirkula.runtimeinspector": {
-      "version": "https://github.com/yasirkula/UnityRuntimeInspector.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "ec8421f717664d75493e7132cbe16f2cfdbbf946"
-    },
-    "me.qiankanglai.loopscrollrect": {
-      "version": "https://github.com/qiankanglai/LoopScrollRect.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {
-        "com.unity.ugui": "1.0.0"
-      },
-      "hash": "cb18906158c4ddcef902e23fe84e0c275cd6da04"
-    },
-    "me.xw.codebind": {
-      "version": "https://github.com/XuToWei/CodeBind.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "2692bed575f6b329f60a0a3270e5c7bc2551010e"
     },
     "me.xw.protobufunity": {
       "version": "https://github.com/XuToWei/Protobuf-Unity.git",
@@ -321,13 +256,6 @@
       "source": "git",
       "dependencies": {},
       "hash": "d2de4560cf6938d511e0d31962f436053c594561"
-    },
-    "me.xw.statecontroller": {
-      "version": "https://github.com/XuToWei/StateController.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "96d019fe7e0ffff29eab17e77f9684a042c5db95"
     },
     "me.xw.toolbarextension": {
       "version": "https://github.com/XuToWei/ToolbarExtension.git",

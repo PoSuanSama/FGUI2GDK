@@ -7,12 +7,6 @@ namespace Game
     /// </summary>
     public partial class GameEntry
     {
-        public static AssetSetComponent AssetSet
-        {
-            get;
-            private set;
-        }
-
         public static CodeRunnerComponent CodeRunner
         {
             get;
@@ -25,18 +19,10 @@ namespace Game
             private set;
         }
 
-        public static ScreenComponent Screen
-        {
-            get;
-            private set;
-        }
-
         private static void InitExtensionComponents()
         {
-            AssetSet = UnityGameFramework.Runtime.GameEntry.GetComponent<AssetSetComponent>();
             CodeRunner = UnityGameFramework.Runtime.GameEntry.GetComponent<CodeRunnerComponent>();
             NetworkService = UnityGameFramework.Runtime.GameEntry.GetComponent<NetworkServiceComponent>();
-            Screen = UnityGameFramework.Runtime.GameEntry.GetComponent<ScreenComponent>();
         }
     }
 }

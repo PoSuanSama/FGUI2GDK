@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Cysharp.Threading.Tasks;
-using ThunderFireUITool;
 using UnityEditor;
 
 namespace Game.Editor
@@ -26,7 +25,6 @@ namespace Game.Editor
                 stopwatch.Stop();
                 UnityEngine.Debug.Log($"Export cost {stopwatch.ElapsedMilliseconds} Milliseconds!");
                 AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-                EditorLocalizationTool.Clear();
                 var activeObject = Selection.activeObject;
                 if (activeObject != null)
                 {
@@ -57,7 +55,6 @@ namespace Game.Editor
                 stopwatch.Stop();
                 UnityEngine.Debug.Log($"Export cost {stopwatch.ElapsedMilliseconds} Milliseconds!");
                 AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-                EditorLocalizationTool.Clear();
                 var activeObject = Selection.activeObject;
                 if (activeObject != null)
                 {

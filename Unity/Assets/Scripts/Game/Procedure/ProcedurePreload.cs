@@ -23,9 +23,6 @@ namespace Game
             await GameEntry.Localization.LoadLanguageAsync(GameEntry.Localization.Language);
             Log.Info("Finish load Localization!");
 
-            Log.Info("Start init UXTool!");
-            await UXTool.InitAsync();
-            Log.Info("Finish init UXTool!");
 #if UNITY_HOTFIX && ENABLE_IL2CPP
             await HybridCLRHelper.LoadAsync();
 #endif
@@ -37,7 +34,6 @@ namespace Game
 
         protected override void OnDestroy(ProcedureOwner procedureOwner)
         {
-            UXTool.Clear();
             base.OnDestroy(procedureOwner);
         }
 

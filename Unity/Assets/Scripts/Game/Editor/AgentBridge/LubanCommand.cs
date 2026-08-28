@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using AgentBridge;
 using Newtonsoft.Json.Linq;
-using ThunderFireUITool;
 using UnityEditor;
 using UnityEngine;
 
@@ -196,7 +195,6 @@ namespace Game.Editor
         private static void RefreshAfterExport()
         {
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-            EditorLocalizationTool.Clear();
         }
 
         private static string TruncateOutput(string output)
