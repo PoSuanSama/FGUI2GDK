@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<stringtable>
+  <string name="7xe70-title">GDK 多语言标题</string>
+  <string name="7xe70-subtitle">本地化桥已接通</string>
+  <string name="7xe70-statuslabel">运行时状态</string>
+</stringtable>

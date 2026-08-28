@@ -12,6 +12,7 @@ $binDir = Join-Path $repoRoot 'Bin'
 $toolExe = Join-Path $binDir 'Tool.exe'
 $descriptorGenerator = Join-Path $PSCmdlet.MyInvocation.MyCommand.Path '..\Generate-FairyUIFormDescriptors.ps1'
 $runtimeManifestGenerator = Join-Path $PSCmdlet.MyInvocation.MyCommand.Path '..\Generate-FairyRuntimeManifest.ps1'
+$localizationGenerator = Join-Path $PSCmdlet.MyInvocation.MyCommand.Path '..\Generate-FairyLocalizationXml.ps1'
 $unityProject = [System.IO.Path]::GetFullPath((Join-Path $repoRoot $UnityProject))
 $bridgeSession = Join-Path $repoRoot '.agents/skills/gdk-development-workflow/scripts/bridge_session.py'
 
@@ -41,6 +42,11 @@ if (-not (Test-Path -LiteralPath $runtimeManifestGenerator -PathType Leaf)) {
     throw "Runtime manifest generator not found: $runtimeManifestGenerator"
 }
 & $runtimeManifestGenerator
+
+if (-not (Test-Path -LiteralPath $localizationGenerator -PathType Leaf)) {
+    throw "Localization XML generator not found: $localizationGenerator"
+}
+& $localizationGenerator
 
 if (-not (Test-Path -LiteralPath $bridgeSession -PathType Leaf)) {
     throw "Unity Agent Bridge session script not found: $bridgeSession"

@@ -229,6 +229,7 @@ namespace Game
                 }
 
                 packageLease = await FairyPackageManager.AcquireAsync(descriptor.PackageName, ownerToken);
+                await FairyLocalization.ApplyAsync(descriptor.PackageName, ownerToken);
                 preparePackage(descriptor);
                 pendingView = UIPackage.CreateObject(
                     descriptor.PackageName,

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "packages": [
+    "Package1"
+  ],
+  "languages": [
+    "ChineseSimplified",
+    "ChineseTraditional",
+    "English",
+    "Korean"
+  ],
+  "entries": [
+    {
+      "package": "Package1",
+      "language": "ChineseSimplified",
+      "asset": "Assets/Res/UI/FairyGUI/Package1_strings_ChineseSimplified.xml",
+      "sha256": "f52b3a915c32fe8b58c8f429a45de1bbf5af175fe5e4db3e5c61d3910788386d",
+      "keyCount": 3
+    },
+    {
+      "package": "Package1",
+      "language": "ChineseTraditional",
+      "asset": "Assets/Res/UI/FairyGUI/Package1_strings_ChineseTraditional.xml",
+      "sha256": "edb69487cc3ee15b58bff27972c715b0c22e6c507351377e7c4b18f4c77400ce",
+      "keyCount": 3
+    },
+    {
+      "package": "Package1",
+      "language": "English",
+      "asset": "Assets/Res/UI/FairyGUI/Package1_strings_English.xml",
+      "sha256": "95242741623f007620d1f16c1dd6084ffe512c0481b5dddfdb3fe2f26d9ab3a9",
+      "keyCount": 3
+    },
+    {
+      "package": "Package1",
+      "language": "Korean",
+      "asset": "Assets/Res/UI/FairyGUI/Package1_strings_Korean.xml",
+      "sha256": "9092edc9c2ac368a1d0853fe70cea9d9fd82fb4ca7c21ffb2e9da4e91f76b492",
+      "keyCount": 3
+    }
+  ],
+  "sourceHash": "45add05f404224078fd2a981c8ceef0f8104ec9cc8b3414f7b8e1cb1e21f2a71",
+  "contractHash": "ba6794173335c8b7164aa1dbf97511f400730b0110816fc5e0cad5e6deb17fa1",
+  "mappingPath": "D:\\GitHubProject\\FGUI2GDK\\Tools\\FairyGUI\\..\\..\\Design\\FairyGUI\\GDK_FGUI\\settings\\FairyLocalization.json"
+}

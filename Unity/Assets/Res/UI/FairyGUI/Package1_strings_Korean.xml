@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<stringtable>
+  <string name="7xe70-title">GDK 다국어 제목</string>
+  <string name="7xe70-subtitle">로컬라이제이션 브리지 연결됨</string>
+  <string name="7xe70-statuslabel">런타임 상태</string>
+</stringtable>

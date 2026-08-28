@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "package": "Package1",
+      "componentId": "7xe70",
+      "elementId": "title",
+      "key": "FairyDemo.Title"
+    },
+    {
+      "package": "Package1",
+      "componentId": "7xe70",
+      "elementId": "subtitle",
+      "key": "FairyDemo.Subtitle"
+    },
+    {
+      "package": "Package1",
+      "componentId": "7xe70",
+      "elementId": "statuslabel",
+      "key": "FairyDemo.StatusLabel"
+    }
+  ]
+}

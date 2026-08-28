@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<stringtable>
+  <string name="7xe70-title">GDK Localized Title</string>
+  <string name="7xe70-subtitle">Localization bridge connected</string>
+  <string name="7xe70-statuslabel">Runtime status</string>
+</stringtable>
