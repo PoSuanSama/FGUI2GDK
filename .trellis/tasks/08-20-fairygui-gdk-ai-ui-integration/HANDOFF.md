@@ -1009,8 +1009,11 @@ OpenUIForm（priority 固定 `UIFormAsset`）。
       阶段 C 门禁 `052b4363`（Widget parent destroy + 真实 Fiber Remove 通过）与 `04300707`
       （LockStep 阻塞证据:客户端 UI 已删、需服务器,随阶段 E LockStep 批次验证）。
       残留:`UIComponentFairyUIBridge` 仍有 RuntimeInspector 关闭按钮一个引用方,待后续批次删除。
-4. [x] 阶段 D 服务桥 1–3 批 —— 本地化 `f743eefb`(生成器+运行时应用+冒烟;主文本翻译需 SDK 升级)、
+4. [x] 阶段 D 服务桥 1–5 批 —— 本地化 `f743eefb`(生成器+运行时应用+冒烟;主文本翻译需 SDK 升级)、
       声音 `69afe4d0`(soundRedirect 钩子+UISound 映射+冒烟;真实音效待设计期资源)、
-      安全区 `ad9ab10e`(GRoot 安全区容器+fullScreen 标记+换算冒烟;真实设备数据待验证)。
-      剩余:输入/焦点/手柄(需明确需求)、色觉(先验证 ColorBlindnessEffect 覆盖性)。
+      安全区 `ad9ab10e`(GRoot 安全区容器+fullScreen 标记+换算冒烟;真实设备数据待验证)、
+      输入/焦点/手柄 `bd67ae67`(FairyInputService 方向导航+确认/取消;手柄真机待设备)、
+      色觉 `bb058518`(覆盖性结论:URP 下旧 ColorBlindnessEffect 不生效,FairyGUI 独立
+      StageCamera 不受相机级组件覆盖,Player 滤镜需新 URP RendererFeature+性能实测,
+      记录为后续批次;本批落地语义颜色 lint)+ `608509f7`(符号模式恢复工具)。
 5. [ ] 阶段 E 页面批次 → 阶段 F 零 UGUI → 阶段 G 收口（沿用 §10 原计划）。
