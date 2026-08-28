@@ -65,3 +65,19 @@
 - [x] design.md 的"待验证点"已通过阶段 1 调研消除或明确（design.md §8 已记录 F1/F2 与 dispatcher 决策）
 - [x] 分支策略与提交拆分方案已定（分支 `fgui/et-owner-dispatcher`，按 HANDOFF §16 逻辑批次提交：
       `a306b572` P0-1 / `3de99143` P0-2 owner / `ca02b491` dispatcher 骨架）
+
+## 2026-08-28 阶段 C 剩余门禁验证记录
+
+- [x] Widget parent destroy：`FairyInventorySmokeTest` 新增断言，owner 销毁后 Demo Widget
+      经宿主上下文统一回收（View 已释放、Opened 复位、demo serial 全关），提交 `dc2b2e86` 前后验证通过。
+- [x] 真实 Fiber Remove：新增 `ET.FairyFiberLifecycleSmokeTest`（AgentCallable），独立
+      NetClient fiber 的 root 打开 Demo（含 Widget）后 `FiberManager.Remove`，断言 serial/Widget/
+      加载窗体数回基线，结束恢复主 owner Demo；提交 `dc2b2e86`。
+- [ ] ET LockStep 原行为等价：**无法补采，记录阻塞**。证据（2026-08-28 快照）：
+  - `HotfixView/Client/LockStep/UI/UILSLobby|UILSLogin|UILSRoom/` 目录为空，客户端 LockStep
+    UI 代码已被删除（旧 UGUI 界面先删后未迁移，父任务 AC24 已知风险）；
+  - `Hotfix/Client/LockStep/` 无登录/房间客户端流程，只有网络处理器与 LSClientHelper；
+  - `EditorBuildSettings` 无 LockStep 场景；服务器端流程（`Hotfix/Server/LockStep` 的
+    Match/Room/Map）需要跑服务器，PlayMode 单机无法复现原行为。
+  - 处置：LockStep 验证随“阶段 E 页面批次”的 LockStep 迁移批次进行（届时需服务器环境或
+    记录产品删除决定），不得宣称等价。
