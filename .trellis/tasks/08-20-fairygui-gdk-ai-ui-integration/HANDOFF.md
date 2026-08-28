@@ -329,6 +329,40 @@ P0-2 剩余项为“五个有状态 Presenter 按骨架逐个迁移”。
 P0-2 剩余：五个有状态 Presenter/Flow/Bootstrap 按骨架逐个迁移（状态进 Component、行为进 System、
 打开链改 `FairyUIPresenterAdapter`），完成后删除 `UIComponentFairyUIBridge` 委托桥。
 
+### 7.7 2026-08-28 阶段 C 收尾与阶段 D 1–3 批证据（main 分支，已提交）
+
+分支 `fgui/et-owner-dispatcher` 已 fast-forward 合并回 main。此后证据如下，接手者按需重跑：
+
+**阶段 C 收尾**
+- `132b0f33` FairyDemo 迁移样本；`d4f2b4d5` 背包/详情/覆盖层/Inspector 四件套迁移
+  （ModelView Component + HotfixView 静态 System + 闭包捕获 EntityRef 做按钮订阅）；
+  `3a7b8943` ET 移除类 Presenter 注册表。ET gen 20–23 / GameHot gen 21–24 均 0 error/0 warning。
+- `052b4363` Widget parent destroy + 真实 Fiber Remove 门禁：冒烟断言 owner 销毁后 Demo Widget
+  经宿主上下文回收（View 释放、Opened 复位）、demo serial 全关；新增
+  `ET.FairyFiberLifecycleSmokeTest`（独立 NetClient fiber 打开 Demo 后 Remove，全部回基线）。
+- `04300707` LockStep 门禁：**阻塞已记录**——客户端 LockStep UI 目录为空（旧 UGUI 界面先删后未迁移，
+  AC24 已知风险）、无 LockStep 场景、PlayMode 单机需服务器；验证随阶段 E LockStep 批次进行，
+  不得宣称等价。
+- 迁移中固化的框架约束：`AddChild<T>` 需 `[ChildOf]` + `IAwake`（ET0001 静态校验）；
+  `FairyUIFormOnUpdateSystem` 基类需幽灵泛型 `<T,P1,P2>` 匹配 ETSystemGenerator 模板；
+  FairyGUI 按钮订阅类型是 `EventCallback1`。
+
+**阶段 D 服务桥 1–3 批**
+- `f743eefb` 本地化桥：`Generate-FairyLocalizationXml.ps1`（读 settings/FairyLocalization.json 映射 +
+  Luban 变长前缀字典 → 每语言 strings XML + manifest，-Check 确定性通过）；
+  `FairyLocalization` 在打开链 AcquireAsync 后、CreateObject 前按当前语言 `SetStringsSource`，按包幂等；
+  `Localization.xlsx` 新增三键并重导出四语言字典；`ET.FairyLocalizationSmokeTest` 通过。
+  已知边界：vendor SDK 快照的 TranslateComponent 不翻主文本（只翻 tips/gear/cp），需升级 SDK 或补丁。
+- `69afe4d0` 声音桥：`UIConfig.soundRedirect` 委托扩展点（OWN001 已确认的最小 vendor 补丁，
+  Stage 两处重载优先调钩子，未注入行为不变）+ `FairySound`（click=10001/select=10000 映射 +
+  未映射诊断一次 + GDK UISound 组播放）；`ET.FairySoundSmokeTest` 通过。
+  已知边界：Package1 无音频资源，真实按钮/transition 音效待设计期挂 sound 资源验证。
+- `ad9ab10e` 安全区桥：`FairyUIGroupHelper` 双容器（全屏+安全区子容器），`Screen.safeArea` 像素经
+  contentScaleFactor 缩放 + Y 翻转换算到 GRoot 设计坐标，onUpdate 变化重算（幂等）；
+  窗体默认挂安全区容器（AddRelation 关系适配），descriptor `fullScreen` 标记（JSON 缺省 false）；
+  `ET.FairySafeAreaSmokeTest`（注入像素矩形验证换算/幂等）通过。
+  已知边界：编辑器 safeArea 恒为全屏，真实刘海屏数据待目标设备验证；fullScreen 生成端未接通。
+
 ## 8. 必须优先解决的阻塞问题
 
 ### P0-1：打开成功后的 owner token 不再拥有窗体（已修复并提交 a306b572）
@@ -970,7 +1004,13 @@ OpenUIForm（priority 固定 `UIFormAsset`）。
       改收 context，GameHot 五个表单与 ET 五个 Presenter 已迁移。
 2. [x] P2：GF 能力透出 —— 已落地 `dd72f24c`：实例锁/优先级/IsValidUIForm/UIGroupCount/GetAllUIGroups/
       批量关闭透出 + OpenUIFormFailure/CloseUIFormComplete 事件桥。
-3. [ ] P2：五个 Presenter 按骨架迁移（阶段 C 收尾）—— dispatcher 骨架（`ca02b491`）已就绪：
-      每界面状态进 ModelView Component、行为进 HotfixView System、打开链改 Component + Adapter，
-      全部完成后删除 `UIComponentFairyUIBridge` 委托桥。
-4. [ ] 阶段 D 服务桥 → 阶段 E 页面批次 → 阶段 F 零 UGUI → 阶段 G 收口（沿用 §10 原计划）。
+3. [x] P2：五个 Presenter 按骨架迁移（阶段 C 收尾）—— 已落地 `132b0f33`（FairyDemo 样本）与
+      `d4f2b4d5`（背包/详情/覆盖层/Inspector 四件套）；`3a7b8943` 移除 ET 类 Presenter 注册表；
+      阶段 C 门禁 `052b4363`（Widget parent destroy + 真实 Fiber Remove 通过）与 `04300707`
+      （LockStep 阻塞证据:客户端 UI 已删、需服务器,随阶段 E LockStep 批次验证）。
+      残留:`UIComponentFairyUIBridge` 仍有 RuntimeInspector 关闭按钮一个引用方,待后续批次删除。
+4. [x] 阶段 D 服务桥 1–3 批 —— 本地化 `f743eefb`(生成器+运行时应用+冒烟;主文本翻译需 SDK 升级)、
+      声音 `69afe4d0`(soundRedirect 钩子+UISound 映射+冒烟;真实音效待设计期资源)、
+      安全区 `ad9ab10e`(GRoot 安全区容器+fullScreen 标记+换算冒烟;真实设备数据待验证)。
+      剩余:输入/焦点/手柄(需明确需求)、色觉(先验证 ColorBlindnessEffect 覆盖性)。
+5. [ ] 阶段 E 页面批次 → 阶段 F 零 UGUI → 阶段 G 收口（沿用 §10 原计划）。
