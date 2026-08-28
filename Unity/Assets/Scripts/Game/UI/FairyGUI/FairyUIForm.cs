@@ -175,7 +175,10 @@ namespace Game
                 m_Context.PauseCoveredUIForm = pauseCoveredUIForm;
             }
 
-            m_GroupHelper.AddForm(m_View, 0);
+            // 安全区桥(design §10.3):默认挂安全区容器;descriptor fullScreen
+            // 的覆盖层/背景界面挂全屏容器。
+            bool attachToSafeArea = !(m_Descriptor?.FullScreen ?? false);
+            m_GroupHelper.AddForm(m_View, 0, attachToSafeArea);
             SetVisible(false);
         }
 

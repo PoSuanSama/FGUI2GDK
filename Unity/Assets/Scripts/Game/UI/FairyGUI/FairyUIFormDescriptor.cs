@@ -26,6 +26,12 @@ namespace Game
         public string BindingType { get; private set; }
         public IReadOnlyList<string> Dependencies { get; private set; }
 
+        /// <summary>
+        /// 全屏界面标记(design §10.3):true 时窗体挂 UIGroup 全屏容器,
+        /// false/缺省时挂安全区容器。JSON 缺省为 false,兼容旧描述符。
+        /// </summary>
+        public bool FullScreen { get; private set; }
+
         public static FairyUIFormDescriptor Parse(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
@@ -85,6 +91,7 @@ namespace Game
                 ComponentName = data.ComponentName,
                 BindingType = data.BindingType,
                 Dependencies = data.Dependencies ?? new List<string>(),
+                FullScreen = data.FullScreen,
             };
         }
 
@@ -103,6 +110,7 @@ namespace Game
             [JsonProperty("componentName")] public string ComponentName;
             [JsonProperty("bindingType")] public string BindingType;
             [JsonProperty("dependencies")] public List<string> Dependencies;
+            [JsonProperty("fullScreen")] public bool FullScreen;
         }
     }
 }
