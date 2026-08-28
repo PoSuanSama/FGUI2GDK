@@ -11,6 +11,7 @@
         "Game.ET.Code.Model",
         "Game.ET.Code.ModelView",
         "Game",
+        "FairyGUI",
         "AgentBridge.Editor",
         "UniTask"
     ],

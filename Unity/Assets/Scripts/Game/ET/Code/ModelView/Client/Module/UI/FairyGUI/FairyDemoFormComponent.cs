@@ -1,4 +1,5 @@
 using FairyGUI;
+using Game;
 
 namespace ET.Client
 {
@@ -32,5 +33,11 @@ namespace ET.Client
         public int OnOpenCount;
 
         public int OnCloseCount;
+
+        /// <summary>
+        /// 示例 Widget 实例(宿主上下文容器持有,关闭时统一回收);
+        /// 冒烟测试用它断言 parent destroy 级联:owner 销毁后 Widget View 必须已释放。
+        /// </summary>
+        public FairyInventoryItemWidget ItemWidget;
     }
 }

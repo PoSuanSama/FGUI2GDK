@@ -32,6 +32,7 @@ namespace ET.Client
             self.CheckCount = 0;
             FairyUIWidgetContainer widgetContainer = self.Context.Widgets;
             FairyInventoryItemWidget itemWidget = FairyInventoryItemWidget.Create();
+            self.ItemWidget = itemWidget;
             widgetContainer.AddWidget(itemWidget);
             widgetContainer.OpenWidget(itemWidget);
 
@@ -87,6 +88,7 @@ namespace ET.Client
 
             self.OpenInventoryClick = null;
             self.RefreshClick = null;
+            self.ItemWidget = null;
         }
 
         private static async UniTaskVoid OpenInventoryAsync(

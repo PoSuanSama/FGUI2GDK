@@ -194,6 +194,20 @@ namespace ET
             int firstSerialId = forms[0].SerialId;
             int thirdSerialId = forms[2].SerialId;
 
+            // Widget parent destroy 门禁:owner 销毁时,Demo 窗体上的示例 Widget
+            // 必须随宿主上下文统一回收(View 已释放、Opened 复位)。
+            FairyUIForm demoForm = uiManager.GetUIForm(DemoAsset);
+            ET.Client.FairyDemoFormComponent demoComponent =
+                demoForm?.Presenter is ET.Client.FairyUIPresenterAdapter demoAdapter
+                    ? demoAdapter.Component as ET.Client.FairyDemoFormComponent
+                    : null;
+            Game.FairyInventoryItemWidget demoWidget = demoComponent?.ItemWidget;
+            if (demoWidget == null || demoWidget.Opened == false || demoWidget.View == null)
+            {
+                throw new InvalidOperationException(
+                    "ET demo widget was not alive before owner destroy.");
+            }
+
             owner.Dispose();
             FairyUIForm pendingForm = null;
             try
@@ -210,6 +224,17 @@ namespace ET
                 (pendingForm != null && uiManager.HasUIForm(pendingForm.SerialId)))
             {
                 throw new InvalidOperationException("Destroying UIComponent left an owned FairyGUI serial open.");
+            }
+
+            if (uiManager.GetUIForm(DemoAsset) != null)
+            {
+                throw new InvalidOperationException("Destroying UIComponent left the owned FairyGUI demo serial open.");
+            }
+
+            if (demoWidget.Opened || demoWidget.View != null)
+            {
+                throw new InvalidOperationException(
+                    "Destroying UIComponent did not recycle the demo widget through the host context.");
             }
 
             ET.Client.UIComponent replacementOwner = root.AddComponent<ET.Client.UIComponent>();
