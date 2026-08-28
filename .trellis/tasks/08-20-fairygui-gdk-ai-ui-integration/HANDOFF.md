@@ -54,6 +54,10 @@
    ```
 
 4. 确认当前提交是否仍为本文快照提交；若不是，先审查快照之后的差异，再更新本文中的状态。
+
+   当前分支 `fgui/et-owner-dispatcher` 自快照后新增提交：`a306b572`（P0-1）、`3de99143`（ET owner）、
+   `ca02b491`（dispatcher 骨架）、`19671eef`（复盘文档+工具链）、`eae54cd0`（FairyUIFormContext
+   Widget 级联）、`dd72f24c`（GF 能力透出）。
 5. 先复核第 7.4 节的 P0-1 已提交改动（`a306b572`）与证据，再继续第 8 节的 P0-2；不要跳过工作树审查。
 
 ## 3. 当前工作树保护要求
@@ -961,7 +965,12 @@ OpenUIForm（priority 固定 `UIFormAsset`）。
 
 ### 19.5 推荐收尾顺序（在 §10 各阶段门禁内）
 
-1. P1：Widget/容器生命周期级联（19.2，需公共 API 决策）＋ EventContainer/ResourceContainer 进窗体上下文（19.4）。
-2. P2：GF 能力透出（19.1 表格，纯新增 API，零破坏）。
-3. P2：五个 Presenter 按骨架迁移（阶段 C 收尾）。
-4. 阶段 D 服务桥 → 阶段 E 页面批次 → 阶段 F 零 UGUI → 阶段 G 收口（沿用 §10 原计划）。
+1. [x] P1：Widget/容器生命周期级联 —— 已落地 `eae54cd0`：`FairyUIFormContext`（View/SerialId/UIId
+      元数据 + Widget 容器 + Event/Resource 容器）随窗体自动级联与清理；`IFairyUIPresenter.OnViewReady`
+      改收 context，GameHot 五个表单与 ET 五个 Presenter 已迁移。
+2. [x] P2：GF 能力透出 —— 已落地 `dd72f24c`：实例锁/优先级/IsValidUIForm/UIGroupCount/GetAllUIGroups/
+      批量关闭透出 + OpenUIFormFailure/CloseUIFormComplete 事件桥。
+3. [ ] P2：五个 Presenter 按骨架迁移（阶段 C 收尾）—— dispatcher 骨架（`ca02b491`）已就绪：
+      每界面状态进 ModelView Component、行为进 HotfixView System、打开链改 Component + Adapter，
+      全部完成后删除 `UIComponentFairyUIBridge` 委托桥。
+4. [ ] 阶段 D 服务桥 → 阶段 E 页面批次 → 阶段 F 零 UGUI → 阶段 G 收口（沿用 §10 原计划）。
