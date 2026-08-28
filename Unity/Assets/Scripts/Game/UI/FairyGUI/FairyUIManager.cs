@@ -24,6 +24,17 @@ namespace Game
 
         public static Func<int, DRUIForm> UIFormTableProvider;
 
+        /// <summary>
+        /// GF 打开失败事件桥:业务可以订阅稳定回调,不再依赖打开轮询兜底。
+        /// 参数按引用持有且不可变——回调内只读,不要自行 Release。
+        /// </summary>
+        public static event EventHandler<OpenUIFormFailureEventArgs> OpenUIFormFailure;
+
+        /// <summary>
+        /// GF 关闭完成事件桥:回调参数为被关闭的 serial ID。
+        /// </summary>
+        public static event Action<int> CloseUIFormComplete;
+
         private const string DescriptorAssetRoot = "Assets/Res/UI/FairyGUI";
         private const int DesignResolutionX = 1280;
         private const int DesignResolutionY = 720;
@@ -32,6 +43,7 @@ namespace Game
         private FairyUIFormHelper m_UIFormHelper;
         private readonly Dictionary<string, FairyUIGroupHelper> m_Groups =
             new Dictionary<string, FairyUIGroupHelper>(StringComparer.Ordinal);
+        private bool m_EventsAttached;
 
         public void Initialize()
         {
@@ -57,6 +69,13 @@ namespace Game
 
             m_UIFormHelper = new FairyUIFormHelper(ReleaseAsset);
             m_UIManager.SetUIFormHelper(m_UIFormHelper);
+
+            if (!m_EventsAttached)
+            {
+                m_UIManager.OpenUIFormFailure += OnOpenUIFormFailure;
+                m_UIManager.CloseUIFormComplete += OnCloseUIFormComplete;
+                m_EventsAttached = true;
+            }
 
             GRoot root = GRoot.inst;
             root.SetContentScaleFactor(
@@ -125,6 +144,30 @@ namespace Game
 
         public void RefocusUIForm(FairyUIForm form, object userData) =>
             GetRequiredUIManager().RefocusUIForm(form, userData);
+
+        /// <summary>
+        /// GF 语义层透出:界面实例加锁/解锁(锁定后回收的对象池实例不会被复用于其他界面)。
+        /// </summary>
+        public void SetUIFormInstanceLocked(object uiFormInstance, bool locked) =>
+            GetRequiredUIManager().SetUIFormInstanceLocked(uiFormInstance, locked);
+
+        /// <summary>
+        /// GF 语义层透出:设置界面实例优先级(影响对象池回收排序)。
+        /// </summary>
+        public void SetUIFormInstancePriority(object uiFormInstance, int priority) =>
+            GetRequiredUIManager().SetUIFormInstancePriority(uiFormInstance, priority);
+
+        public bool IsValidUIForm(FairyUIForm form) => GetRequiredUIManager().IsValidUIForm(form);
+
+        public int UIGroupCount => GetRequiredUIManager().UIGroupCount;
+
+        public IUIGroup[] GetAllUIGroups() => GetRequiredUIManager().GetAllUIGroups();
+
+        public void CloseAllLoadedUIForms() => GetRequiredUIManager().CloseAllLoadedUIForms();
+
+        public void CloseAllLoadedUIForms(object userData) => GetRequiredUIManager().CloseAllLoadedUIForms(userData);
+
+        public void CloseAllLoadingUIForms() => GetRequiredUIManager().CloseAllLoadingUIForms();
 
         public async UniTask<FairyUIForm> OpenFairyUIFormAsync(
             int uiId,
@@ -340,6 +383,16 @@ namespace Game
         {
             return m_UIManager ?? throw new GameFrameworkException(
                 "FairyUIManager is not initialized. Call Initialize before using it.");
+        }
+
+        private void OnOpenUIFormFailure(object sender, OpenUIFormFailureEventArgs args)
+        {
+            OpenUIFormFailure?.Invoke(sender, args);
+        }
+
+        private void OnCloseUIFormComplete(object sender, CloseUIFormCompleteEventArgs args)
+        {
+            CloseUIFormComplete?.Invoke(args.SerialId);
         }
 
         private void RequestCloseOwnedUIForm(int serialId)
