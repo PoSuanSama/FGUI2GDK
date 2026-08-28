@@ -25,6 +25,7 @@ namespace Game.Editor
         private const string ResourceCollectionPath = "Assets/Res/Editor/Config/ResourceCollection.xml";
         private const string DescriptorAsset = "Assets/Res/UI/FairyGUI/FairyDemoForm.json";
         private const int FairyDemoUIId = 103;
+        private const int FairyItemDetailUIId = 105;
 
         [AgentCallable("Switch GDK to GameHot mode through the repository's Define Symbol menu.", 60)]
         public static void SwitchToGameHot()
@@ -343,6 +344,80 @@ namespace Game.Editor
             FairyUIManager.Instance.CloseUIForm(warmupForm.SerialId);
             await WaitForFairyUIFormClosed(warmupForm.SerialId);
 
+            using (CancellationTokenSource staleOwnerCancellation = new CancellationTokenSource())
+            using (CancellationTokenSource currentOwnerCancellation = new CancellationTokenSource())
+            {
+                FairyUIForm staleOwnerForm = await FairyUIManager.Instance.OpenFairyUIFormAsync(
+                    FairyDemoUIId,
+                    new object(),
+                    staleOwnerCancellation.Token);
+                int staleSerialId = staleOwnerForm.SerialId;
+                FairyUIManager.Instance.CloseUIForm(staleSerialId);
+                await WaitForFairyUIFormClosed(staleSerialId);
+
+                FairyUIForm currentOwnerForm = await FairyUIManager.Instance.OpenFairyUIFormAsync(
+                    FairyDemoUIId,
+                    new object(),
+                    currentOwnerCancellation.Token);
+                if (!ReferenceEquals(staleOwnerForm, currentOwnerForm))
+                {
+                    throw new InvalidOperationException(
+                        "FairyGUI owner cancellation regression did not exercise a pooled form reuse.");
+                }
+
+                int currentSerialId = currentOwnerForm.SerialId;
+                staleOwnerCancellation.Cancel();
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                if (!FairyUIManager.Instance.HasUIForm(currentSerialId))
+                {
+                    throw new InvalidOperationException(
+                        "A stale FairyGUI owner token closed the pooled form's current serial ID.");
+                }
+
+                FairyUIManager.Instance.CloseUIForm(currentSerialId);
+                currentOwnerCancellation.Cancel();
+                await WaitForFairyUIFormClosed(currentSerialId);
+            }
+
+            using (CancellationTokenSource firstInstanceOwner = new CancellationTokenSource())
+            using (CancellationTokenSource secondInstanceOwner = new CancellationTokenSource())
+            using (CancellationTokenSource thirdInstanceOwner = new CancellationTokenSource())
+            {
+                FairyUIForm firstInstance = await FairyUIManager.Instance.OpenFairyUIFormAsync(
+                    FairyItemDetailUIId,
+                    CreateItemDetailOpenData(1001),
+                    firstInstanceOwner.Token);
+                FairyUIForm secondInstance = await FairyUIManager.Instance.OpenFairyUIFormAsync(
+                    FairyItemDetailUIId,
+                    CreateItemDetailOpenData(1002),
+                    secondInstanceOwner.Token);
+                FairyUIForm thirdInstance = await FairyUIManager.Instance.OpenFairyUIFormAsync(
+                    FairyItemDetailUIId,
+                    CreateItemDetailOpenData(1003),
+                    thirdInstanceOwner.Token);
+
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                firstInstanceOwner.Cancel();
+                await WaitForFairyUIFormClosed(firstInstance.SerialId);
+                if (!FairyUIManager.Instance.HasUIForm(secondInstance.SerialId) ||
+                    !FairyUIManager.Instance.HasUIForm(thirdInstance.SerialId))
+                {
+                    throw new InvalidOperationException(
+                        "Canceling one multi-instance FairyGUI owner closed a different serial ID.");
+                }
+
+                secondInstanceOwner.Cancel();
+                await WaitForFairyUIFormClosed(secondInstance.SerialId);
+                if (!FairyUIManager.Instance.HasUIForm(thirdInstance.SerialId))
+                {
+                    throw new InvalidOperationException(
+                        "Canceling the second multi-instance FairyGUI owner closed the third serial ID.");
+                }
+
+                thirdInstanceOwner.Cancel();
+                await WaitForFairyUIFormClosed(thirdInstance.SerialId);
+            }
+
             await WaitForFairyPackageDiagnostics(Array.Empty<FairyPackageDiagnostic>());
             IReadOnlyList<FairyPackageDiagnostic> baselineDiagnostics = FairyPackageManager.GetDiagnostics();
             int baselineLoadedForms = FairyUIManager.Instance.GetAllLoadedUIForms().Length;
@@ -511,6 +586,46 @@ namespace Game.Editor
             {
                 throw new InvalidOperationException(error);
             }
+        }
+
+        private static object CreateItemDetailOpenData(int token)
+        {
+            Type itemType = FindLoadedType(
+                "Game.Hot.FairyInventoryItemData",
+                "ET.Client.FairyInventoryItemData");
+            Type categoryType = FindLoadedType(
+                "Game.Hot.FairyInventoryCategory",
+                "ET.Client.FairyInventoryCategory");
+            Type openDataType = FindLoadedType(
+                "Game.Hot.FairyItemDetailOpenData",
+                "ET.Client.FairyItemDetailOpenData");
+
+            object item = Activator.CreateInstance(
+                itemType,
+                token,
+                $"Owner lifecycle item {token}",
+                Enum.ToObject(categoryType, 1),
+                1,
+                "Owner lifecycle regression probe");
+            return Activator.CreateInstance(openDataType, item, token);
+        }
+
+        private static Type FindLoadedType(params string[] fullNames)
+        {
+            foreach (System.Reflection.Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                foreach (string fullName in fullNames)
+                {
+                    Type type = assembly.GetType(fullName, throwOnError: false);
+                    if (type != null)
+                    {
+                        return type;
+                    }
+                }
+            }
+
+            throw new InvalidOperationException(
+                $"Unable to locate a loaded FairyGUI lifecycle data type: {string.Join(", ", fullNames)}.");
         }
 
         private static async UniTask WaitForFairyPackageDiagnostics(

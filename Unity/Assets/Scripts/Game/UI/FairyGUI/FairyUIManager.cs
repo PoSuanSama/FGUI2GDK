@@ -68,13 +68,14 @@ namespace Game
 
         public bool AddUIGroup(string name, int depth)
         {
+            IUIManager uiManager = GetRequiredUIManager();
             if (m_Groups.ContainsKey(name))
             {
                 return false;
             }
 
             FairyUIGroupHelper helper = new FairyUIGroupHelper(name);
-            if (!m_UIManager.AddUIGroup(name, depth, helper))
+            if (!uiManager.AddUIGroup(name, depth, helper))
             {
                 helper.Dispose();
                 return false;
@@ -86,25 +87,25 @@ namespace Game
             return true;
         }
 
-        public bool HasUIGroup(string name) => m_UIManager.HasUIGroup(name);
+        public bool HasUIGroup(string name) => GetRequiredUIManager().HasUIGroup(name);
 
-        public IUIGroup GetUIGroup(string name) => m_UIManager.GetUIGroup(name);
+        public IUIGroup GetUIGroup(string name) => GetRequiredUIManager().GetUIGroup(name);
 
-        public bool HasUIForm(int serialId) => m_UIManager.HasUIForm(serialId);
+        public bool HasUIForm(int serialId) => GetRequiredUIManager().HasUIForm(serialId);
 
-        public bool HasUIForm(string assetName) => m_UIManager.HasUIForm(assetName);
+        public bool HasUIForm(string assetName) => GetRequiredUIManager().HasUIForm(assetName);
 
-        public bool IsLoadingUIForm(int serialId) => m_UIManager.IsLoadingUIForm(serialId);
+        public bool IsLoadingUIForm(int serialId) => GetRequiredUIManager().IsLoadingUIForm(serialId);
 
-        public bool IsLoadingUIForm(string assetName) => m_UIManager.IsLoadingUIForm(assetName);
+        public bool IsLoadingUIForm(string assetName) => GetRequiredUIManager().IsLoadingUIForm(assetName);
 
-        public FairyUIForm GetUIForm(int serialId) => m_UIManager.GetUIForm(serialId) as FairyUIForm;
+        public FairyUIForm GetUIForm(int serialId) => GetRequiredUIManager().GetUIForm(serialId) as FairyUIForm;
 
-        public FairyUIForm GetUIForm(string assetName) => m_UIManager.GetUIForm(assetName) as FairyUIForm;
+        public FairyUIForm GetUIForm(string assetName) => GetRequiredUIManager().GetUIForm(assetName) as FairyUIForm;
 
         public FairyUIForm[] GetAllLoadedUIForms()
         {
-            IUIForm[] loaded = m_UIManager.GetAllLoadedUIForms();
+            IUIForm[] loaded = GetRequiredUIManager().GetAllLoadedUIForms();
             FairyUIForm[] result = new FairyUIForm[loaded.Length];
             for (int i = 0; i < loaded.Length; i++)
             {
@@ -114,21 +115,23 @@ namespace Game
             return result;
         }
 
-        public int[] GetAllLoadingUIFormSerialIds() => m_UIManager.GetAllLoadingUIFormSerialIds();
+        public int[] GetAllLoadingUIFormSerialIds() => GetRequiredUIManager().GetAllLoadingUIFormSerialIds();
 
-        public void CloseUIForm(int serialId) => m_UIManager.CloseUIForm(serialId);
+        public void CloseUIForm(int serialId) => GetRequiredUIManager().CloseUIForm(serialId);
 
-        public void CloseUIForm(FairyUIForm form) => m_UIManager.CloseUIForm(form);
+        public void CloseUIForm(FairyUIForm form) => GetRequiredUIManager().CloseUIForm(form);
 
-        public void RefocusUIForm(FairyUIForm form) => m_UIManager.RefocusUIForm(form);
+        public void RefocusUIForm(FairyUIForm form) => GetRequiredUIManager().RefocusUIForm(form);
 
-        public void RefocusUIForm(FairyUIForm form, object userData) => m_UIManager.RefocusUIForm(form, userData);
+        public void RefocusUIForm(FairyUIForm form, object userData) =>
+            GetRequiredUIManager().RefocusUIForm(form, userData);
 
         public async UniTask<FairyUIForm> OpenFairyUIFormAsync(
             int uiId,
             object userData = null,
             CancellationToken ownerToken = default)
         {
+            IUIManager uiManager = GetRequiredUIManager();
             DRUIForm uiForm = UIFormTableProvider != null
                 ? UIFormTableProvider(uiId)
                 : GameEntry.Tables.DTUIForm.GetOrDefault(uiId);
@@ -139,7 +142,7 @@ namespace Game
 
             string descriptorAssetName = GetDescriptorAssetName(uiForm.AssetName);
             if (!uiForm.AllowMultiInstance &&
-                (m_UIManager.IsLoadingUIForm(descriptorAssetName) || m_UIManager.HasUIForm(descriptorAssetName)))
+                (uiManager.IsLoadingUIForm(descriptorAssetName) || uiManager.HasUIForm(descriptorAssetName)))
             {
                 throw new GameFrameworkException(
                     $"FairyGUI UI form '{descriptorAssetName}' is loading or already open.");
@@ -210,7 +213,7 @@ namespace Game
                 await FairyPackageManager.WaitForPendingAssetsAsync(pendingState.PackageLease, ownerToken);
                 ownerToken.ThrowIfCancellationRequested();
 
-                if (!m_UIManager.HasUIGroup(uiForm.UIGroupName))
+                if (!uiManager.HasUIGroup(uiForm.UIGroupName))
                 {
                     throw new GameFrameworkException(
                         $"FairyGUI UI group '{uiForm.UIGroupName}' is not registered.");
@@ -219,7 +222,7 @@ namespace Game
                 int serialId;
                 using (FairyUIFormPendingRegistry.BeginOpen(pendingState))
                 {
-                    serialId = m_UIManager.OpenUIForm(
+                    serialId = uiManager.OpenUIForm(
                         descriptorAssetName,
                         uiForm.UIGroupName,
                         Constant.AssetPriority.UIFormAsset,
@@ -232,21 +235,21 @@ namespace Game
                 {
                     if (ownerToken.IsCancellationRequested)
                     {
-                        if (m_UIManager.HasUIForm(serialId) || m_UIManager.IsLoadingUIForm(serialId))
+                        if (uiManager.HasUIForm(serialId) || uiManager.IsLoadingUIForm(serialId))
                         {
-                            m_UIManager.CloseUIForm(serialId);
+                            uiManager.CloseUIForm(serialId);
                         }
 
                         ownerToken.ThrowIfCancellationRequested();
                     }
 
-                    if (m_UIManager.IsLoadingUIForm(serialId))
+                    if (uiManager.IsLoadingUIForm(serialId))
                     {
                         await UniTask.Yield(PlayerLoopTiming.Update);
                         continue;
                     }
 
-                    FairyUIForm openedForm = m_UIManager.GetUIForm(serialId) as FairyUIForm;
+                    FairyUIForm openedForm = uiManager.GetUIForm(serialId) as FairyUIForm;
                     if (openedForm == null)
                     {
                         throw new GameFrameworkException(
@@ -254,7 +257,17 @@ namespace Game
                     }
 
                     pendingState = null;
-                    return openedForm;
+                    try
+                    {
+                        openedForm.AttachOwnerCancellation(ownerToken, RequestCloseOwnedUIForm);
+                        ownerToken.ThrowIfCancellationRequested();
+                        return openedForm;
+                    }
+                    catch
+                    {
+                        CloseOwnedUIForm(serialId);
+                        throw;
+                    }
                 }
             }
             finally
@@ -262,8 +275,11 @@ namespace Game
                 if (pendingState != null)
                 {
                     FairyUIFormPendingRegistry.TryRemove(pendingState);
-                    pendingState.PackageLease?.Dispose();
-                    pendingState.View?.Dispose();
+                    if (!pendingState.IsAdopted)
+                    {
+                        pendingState.PackageLease?.Dispose();
+                        pendingState.View?.Dispose();
+                    }
                 }
 
                 pendingView?.Dispose();
@@ -312,6 +328,37 @@ namespace Game
             {
                 rootContainer.SetChildIndex(groups[i].Container, firstIndex + i);
             }
+        }
+
+        private IUIManager GetRequiredUIManager()
+        {
+            return m_UIManager ?? throw new GameFrameworkException(
+                "FairyUIManager is not initialized. Call Initialize before using it.");
+        }
+
+        private void RequestCloseOwnedUIForm(int serialId)
+        {
+            if (PlayerLoopHelper.IsMainThread)
+            {
+                CloseOwnedUIForm(serialId);
+                return;
+            }
+
+            PlayerLoopHelper.AddContinuation(
+                PlayerLoopTiming.Update,
+                () => CloseOwnedUIForm(serialId));
+        }
+
+        private void CloseOwnedUIForm(int serialId)
+        {
+            IUIManager uiManager = m_UIManager;
+            if (uiManager == null ||
+                (!uiManager.HasUIForm(serialId) && !uiManager.IsLoadingUIForm(serialId)))
+            {
+                return;
+            }
+
+            uiManager.CloseUIForm(serialId);
         }
 
         private static bool IsUIInstancePool(ObjectPoolBase pool)

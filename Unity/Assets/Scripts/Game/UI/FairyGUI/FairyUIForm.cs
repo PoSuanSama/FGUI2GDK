@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using FairyGUI;
 using GameFramework;
 using GameFramework.UI;
@@ -32,6 +33,18 @@ namespace Game
         public GComponent View { get; }
         public IFairyUIPresenter Presenter { get; }
         public object UserData { get; }
+        public bool IsAdopted { get; private set; }
+
+        public void MarkAdopted()
+        {
+            if (IsAdopted)
+            {
+                throw new GameFrameworkException(
+                    $"FairyGUI pending state '{DescriptorKey}' was adopted more than once.");
+            }
+
+            IsAdopted = true;
+        }
     }
 
     /// <summary>
@@ -47,6 +60,8 @@ namespace Game
         private FairyPackageLease m_PackageLease;
         private FairyUIFormDescriptor m_Descriptor;
         private object m_UserData;
+        private CancellationTokenRegistration m_OwnerCancellationRegistration;
+        private bool m_HasOwnerCancellationRegistration;
         private bool m_Opened;
         private bool m_Disposed;
 
@@ -73,12 +88,53 @@ namespace Game
                 throw new GameFrameworkException("FairyUI form already adopted a pending state.");
             }
 
+            pendingState.MarkAdopted();
             m_PendingState = pendingState;
             m_Descriptor = pendingState.Descriptor;
             m_View = pendingState.View;
             m_Presenter = pendingState.Presenter;
             m_PackageLease = pendingState.PackageLease;
             m_UserData = pendingState.UserData;
+        }
+
+        internal void AttachOwnerCancellation(
+            CancellationToken ownerToken,
+            Action<int> closeBySerialId)
+        {
+            if (!ownerToken.CanBeCanceled)
+            {
+                return;
+            }
+
+            if (closeBySerialId == null)
+            {
+                throw new ArgumentNullException(nameof(closeBySerialId));
+            }
+
+            if (m_Disposed || !m_Opened || SerialId <= 0)
+            {
+                throw new GameFrameworkException(
+                    "Owner cancellation can only be attached to an opened FairyGUI form.");
+            }
+
+            DisposeOwnerCancellationRegistration();
+            int serialId = SerialId;
+            OwnerCancellationState cancellationState = new OwnerCancellationState(
+                serialId,
+                closeBySerialId);
+            CancellationTokenRegistration registration = ownerToken.Register(
+                static state => ((OwnerCancellationState)state).Close(),
+                cancellationState);
+
+            // 已取消的 token 会在注册期间同步回调，此时池化宿主可能已关闭并等待回收。
+            if (m_Disposed || !m_Opened || SerialId != serialId)
+            {
+                registration.Dispose();
+                return;
+            }
+
+            m_OwnerCancellationRegistration = registration;
+            m_HasOwnerCancellationRegistration = true;
         }
 
         public void OnInit(int serialId, string uiFormAssetName, IUIGroup uiGroup, bool pauseCoveredUIForm, bool isNewInstance, object userData)
@@ -113,8 +169,12 @@ namespace Game
         {
             Release(isShutdown: false, userData: m_UserData);
             SerialId = 0;
+            UIFormAssetName = null;
+            UIGroup = null;
             DepthInUIGroup = 0;
             PauseCoveredUIForm = true;
+            m_Descriptor = null;
+            m_UserData = null;
         }
 
         public void OnOpen(object userData)
@@ -216,6 +276,14 @@ namespace Game
             m_PackageLease = null;
             TryCleanup(() => packageLease?.Dispose(), ref firstException);
 
+            if (m_HasOwnerCancellationRegistration)
+            {
+                CancellationTokenRegistration registration = m_OwnerCancellationRegistration;
+                m_OwnerCancellationRegistration = default;
+                m_HasOwnerCancellationRegistration = false;
+                TryCleanup(registration.Dispose, ref firstException);
+            }
+
             m_PendingState = null;
             m_Opened = false;
 
@@ -223,6 +291,19 @@ namespace Game
             {
                 throw firstException;
             }
+        }
+
+        private void DisposeOwnerCancellationRegistration()
+        {
+            if (!m_HasOwnerCancellationRegistration)
+            {
+                return;
+            }
+
+            CancellationTokenRegistration registration = m_OwnerCancellationRegistration;
+            m_OwnerCancellationRegistration = default;
+            m_HasOwnerCancellationRegistration = false;
+            registration.Dispose();
         }
 
         private static void TryCleanup(Action cleanup, ref Exception firstException)
@@ -234,6 +315,23 @@ namespace Game
             catch (Exception exception)
             {
                 firstException ??= exception;
+            }
+        }
+
+        private sealed class OwnerCancellationState
+        {
+            private readonly int m_SerialId;
+            private readonly Action<int> m_CloseBySerialId;
+
+            internal OwnerCancellationState(int serialId, Action<int> closeBySerialId)
+            {
+                m_SerialId = serialId;
+                m_CloseBySerialId = closeBySerialId;
+            }
+
+            internal void Close()
+            {
+                m_CloseBySerialId(m_SerialId);
             }
         }
     }
