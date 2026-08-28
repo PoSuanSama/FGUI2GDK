@@ -23,13 +23,13 @@ namespace ET.Client
         public int RevealCount { get; private set; }
         public int RefocusCount { get; private set; }
 
-        public void OnViewReady(GComponent view)
+        public void OnViewReady(FairyUIFormContext context)
         {
-            m_View = view as UIItemDetailWindow;
+            m_View = context.View as UIItemDetailWindow;
             if (m_View == null)
             {
                 throw new InvalidOperationException(
-                    $"FairyGUI item detail requires '{typeof(UIItemDetailWindow).FullName}', found '{view?.GetType().FullName}'.");
+                    $"FairyGUI item detail requires '{typeof(UIItemDetailWindow).FullName}', found '{context?.View?.GetType().FullName}'.");
             }
 
             CollectWindowParts();

@@ -20,13 +20,13 @@ namespace Game.Hot
         public object LastOpenUserData { get; private set; }
         public object LastRefocusUserData { get; private set; }
 
-        public void OnViewReady(GComponent view)
+        public void OnViewReady(FairyUIFormContext context)
         {
-            m_View = view as UIMainView;
+            m_View = context.View as UIMainView;
             if (m_View == null)
             {
                 throw new InvalidOperationException(
-                    $"FairyGUI demo requires '{typeof(UIMainView).FullName}', found '{view?.GetType().FullName}'.");
+                    $"FairyGUI demo requires '{typeof(UIMainView).FullName}', found '{context?.View?.GetType().FullName}'.");
             }
 
             m_CheckCount = 0;

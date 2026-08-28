@@ -25,9 +25,10 @@ namespace ET.Client
 
         public FairyUIFormComponent Component => m_Component;
 
-        public void OnViewReady(GComponent view)
+        public void OnViewReady(FairyUIFormContext context)
         {
-            m_Component.View = view;
+            m_Component.Context = context;
+            m_Component.View = context?.View;
         }
 
         public void OnOpen(object userData)
@@ -41,7 +42,9 @@ namespace ET.Client
             m_Component.UserData = userData;
             m_Component.IsShutdown = isShutdown;
             FairyUIFormSystemDispatcher.FairyUIFormOnClose(m_Component);
+            // 宿主随后清理上下文(Widget/事件/资源);这里先摘除 Component 引用。
             m_Component.FairyForm = null;
+            m_Component.Context = null;
             m_Component.View = null;
             m_Component.UserData = null;
             m_Component.IsShutdown = false;

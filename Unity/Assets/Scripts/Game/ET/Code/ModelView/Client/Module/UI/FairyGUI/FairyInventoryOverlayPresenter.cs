@@ -12,13 +12,13 @@ namespace ET.Client
         private FairyInventoryOverlayOpenData m_OpenData;
         private UIInventoryOverlayView m_View;
 
-        public void OnViewReady(GComponent view)
+        public void OnViewReady(FairyUIFormContext context)
         {
-            m_View = view as UIInventoryOverlayView;
+            m_View = context.View as UIInventoryOverlayView;
             if (m_View == null)
             {
                 throw new InvalidOperationException(
-                    $"FairyGUI inventory overlay requires '{typeof(UIInventoryOverlayView).FullName}', found '{view?.GetType().FullName}'.");
+                    $"FairyGUI inventory overlay requires '{typeof(UIInventoryOverlayView).FullName}', found '{context?.View?.GetType().FullName}'.");
             }
 
             m_View.CloseButton.onClick.Add(OnCloseClick);

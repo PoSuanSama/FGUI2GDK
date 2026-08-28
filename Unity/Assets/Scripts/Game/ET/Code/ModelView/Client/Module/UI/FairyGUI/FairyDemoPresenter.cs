@@ -24,17 +24,18 @@ namespace ET.Client
         public object LastOpenUserData { get; private set; }
         public object LastRefocusUserData { get; private set; }
 
-        public void OnViewReady(GComponent view)
+        public void OnViewReady(FairyUIFormContext context)
         {
-            m_View = view as UIMainView;
+            m_View = context.View as UIMainView;
             if (m_View == null)
             {
                 throw new InvalidOperationException(
-                    $"FairyGUI demo requires '{typeof(UIMainView).FullName}', found '{view?.GetType().FullName}'.");
+                    $"FairyGUI demo requires '{typeof(UIMainView).FullName}', found '{context?.View?.GetType().FullName}'.");
             }
 
             m_CheckCount = 0;
-            m_WidgetContainer = FairyUIWidgetContainer.Create(m_View);
+            // Widget 容器由宿主 FairyUIForm 持有并自动级联 Pause/Cover/Refocus/Update,关闭时统一回收。
+            m_WidgetContainer = context.Widgets;
             m_ItemWidget = FairyInventoryItemWidget.Create();
             m_WidgetContainer.AddWidget(m_ItemWidget);
             m_WidgetContainer.OpenWidget(m_ItemWidget);
@@ -58,8 +59,7 @@ namespace ET.Client
 
         public void OnClose(bool isShutdown, object userData)
         {
-            m_WidgetContainer?.RecycleAllWidgets();
-            m_WidgetContainer?.Dispose();
+            // Widget 回收由宿主上下文统一执行(Presenter.OnClose 之后),这里只清本地引用。
             m_WidgetContainer = null;
             m_ItemWidget = null;
             m_Owner = default;

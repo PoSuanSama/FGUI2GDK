@@ -17,6 +17,7 @@ namespace Game
             FairyPackageLease packageLease,
             GComponent view,
             IFairyUIPresenter presenter,
+            FairyUIFormContext context,
             object userData)
         {
             DescriptorKey = descriptorKey;
@@ -24,6 +25,7 @@ namespace Game
             PackageLease = packageLease;
             View = view;
             Presenter = presenter;
+            Context = context;
             UserData = userData;
         }
 
@@ -32,6 +34,7 @@ namespace Game
         public FairyPackageLease PackageLease { get; }
         public GComponent View { get; }
         public IFairyUIPresenter Presenter { get; }
+        public FairyUIFormContext Context { get; }
         public object UserData { get; }
         public bool IsAdopted { get; private set; }
 
@@ -57,6 +60,7 @@ namespace Game
         private FairyUIGroupHelper m_GroupHelper;
         private GComponent m_View;
         private IFairyUIPresenter m_Presenter;
+        private FairyUIFormContext m_Context;
         private FairyPackageLease m_PackageLease;
         private FairyUIFormDescriptor m_Descriptor;
         private object m_UserData;
@@ -74,6 +78,7 @@ namespace Game
 
         public GComponent View => m_View;
         public IFairyUIPresenter Presenter => m_Presenter;
+        public FairyUIFormContext Context => m_Context;
         public FairyUIFormDescriptor Descriptor => m_Descriptor;
 
         internal void Adopt(FairyUIFormPendingState pendingState)
@@ -93,6 +98,7 @@ namespace Game
             m_Descriptor = pendingState.Descriptor;
             m_View = pendingState.View;
             m_Presenter = pendingState.Presenter;
+            m_Context = pendingState.Context;
             m_PackageLease = pendingState.PackageLease;
             m_UserData = pendingState.UserData;
         }
@@ -161,6 +167,14 @@ namespace Game
                     $"UI group '{uiGroup.Name}' must use '{typeof(FairyUIGroupHelper).FullName}'.");
             }
 
+            if (m_Context != null)
+            {
+                m_Context.Form = this;
+                m_Context.SerialId = serialId;
+                m_Context.UIGroupName = uiGroup.Name;
+                m_Context.PauseCoveredUIForm = pauseCoveredUIForm;
+            }
+
             m_GroupHelper.AddForm(m_View, 0);
             SetVisible(false);
         }
@@ -176,7 +190,6 @@ namespace Game
             m_Descriptor = null;
             m_UserData = null;
         }
-
         public void OnOpen(object userData)
         {
             SetVisible(true);
@@ -193,32 +206,38 @@ namespace Game
         {
             SetVisible(false);
             m_Presenter.OnPause();
+            CascadeWidgets(container => container.PauseAllWidgets());
         }
 
         public void OnResume()
         {
             SetVisible(true);
             m_Presenter.OnResume();
+            CascadeWidgets(container => container.ResumeAllWidgets());
         }
 
         public void OnCover()
         {
             m_Presenter.OnCover();
+            CascadeWidgets(container => container.CoverAllWidgets());
         }
 
         public void OnReveal()
         {
             m_Presenter.OnReveal();
+            CascadeWidgets(container => container.RevealAllWidgets());
         }
 
         public void OnRefocus(object userData)
         {
             m_Presenter.OnRefocus(userData);
+            CascadeWidgets(container => container.RefocusAllWidgets(userData));
         }
 
         public void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             m_Presenter.OnUpdate(elapseSeconds, realElapseSeconds);
+            CascadeWidgets(container => container.UpdateAllWidgets(elapseSeconds, realElapseSeconds));
         }
 
         public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
@@ -229,6 +248,8 @@ namespace Game
             {
                 m_GroupHelper.SetFormDepth(m_View, depthInUIGroup);
             }
+
+            CascadeWidgets(container => container.OnDepthChanged(uiGroupDepth, depthInUIGroup));
         }
 
         private void SetVisible(bool visible)
@@ -243,6 +264,14 @@ namespace Game
 
             m_View.visible = visible;
             m_View.touchable = visible;
+        }
+
+        private void CascadeWidgets(Action<FairyUIWidgetContainer> cascade)
+        {
+            if (m_Context != null && m_Context.HasWidgets)
+            {
+                cascade(m_Context.Widgets);
+            }
         }
 
         private void Release(bool isShutdown, object userData)
@@ -260,6 +289,14 @@ namespace Game
             if (presenter != null && m_Opened)
             {
                 TryCleanup(() => presenter.OnClose(isShutdown, userData), ref firstException);
+            }
+
+            // Widget/事件/资源上下文在视图释放前清理:RecycleWidget 需要视图仍挂在父节点下。
+            FairyUIFormContext context = m_Context;
+            m_Context = null;
+            if (context != null)
+            {
+                TryCleanup(() => context.Clear(), ref firstException);
             }
 
             GComponent view = m_View;

@@ -198,6 +198,11 @@ namespace Game
                         $"FairyGUI presenter is not registered for UI '{descriptor.CsName}'.");
                 }
 
+                FairyUIFormContext context = new FairyUIFormContext
+                {
+                    View = pendingView,
+                    UIId = uiId
+                };
                 string descriptorKey = Path.GetFileNameWithoutExtension(descriptorAssetName);
                 pendingState = new FairyUIFormPendingState(
                     descriptorKey,
@@ -205,11 +210,12 @@ namespace Game
                     packageLease,
                     pendingView,
                     presenter,
+                    context,
                     userData);
                 packageLease = null;
                 pendingView = null;
 
-                presenter.OnViewReady(pendingState.View);
+                presenter.OnViewReady(pendingState.Context);
                 await FairyPackageManager.WaitForPendingAssetsAsync(pendingState.PackageLease, ownerToken);
                 ownerToken.ThrowIfCancellationRequested();
 

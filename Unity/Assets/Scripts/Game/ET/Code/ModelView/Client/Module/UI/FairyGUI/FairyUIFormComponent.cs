@@ -22,6 +22,14 @@ namespace ET.Client
         [MemoryPackIgnore]
         public FairyUIForm FairyForm { get; set; }
 
+        /// <summary>
+        /// 窗体级上下文所有者(Widget/事件/资源容器),由 FairyUIPresenterAdapter 注入;
+        /// 宿主关闭时先清 Component 引用再清上下文。
+        /// </summary>
+        [BsonIgnore]
+        [MemoryPackIgnore]
+        public FairyUIFormContext Context { get; set; }
+
         [BsonIgnore]
         [MemoryPackIgnore]
         public GComponent View { get; set; }

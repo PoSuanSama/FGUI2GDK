@@ -17,13 +17,13 @@ namespace ET.Client
         public int CoverCount { get; private set; }
         public int RevealCount { get; private set; }
 
-        public void OnViewReady(GComponent view)
+        public void OnViewReady(FairyUIFormContext context)
         {
-            m_View = view as UIInventoryView;
+            m_View = context.View as UIInventoryView;
             if (m_View == null)
             {
                 throw new InvalidOperationException(
-                    $"FairyGUI inventory requires '{typeof(UIInventoryView).FullName}', found '{view?.GetType().FullName}'.");
+                    $"FairyGUI inventory requires '{typeof(UIInventoryView).FullName}', found '{context?.View?.GetType().FullName}'.");
             }
 
             m_View.AllButton.onClick.Add(OnAllClick);

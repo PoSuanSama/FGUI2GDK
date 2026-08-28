@@ -13,13 +13,13 @@ namespace ET.Client
         private UIRuntimeInspectorView m_View;
         private GTextField m_InfoText;
 
-        public void OnViewReady(GComponent view)
+        public void OnViewReady(FairyUIFormContext context)
         {
-            m_View = view as UIRuntimeInspectorView;
+            m_View = context.View as UIRuntimeInspectorView;
             if (m_View == null)
             {
                 throw new InvalidOperationException(
-                    $"FairyGUI RuntimeInspector requires '{typeof(UIRuntimeInspectorView).FullName}', found '{view?.GetType().FullName}'.");
+                    $"FairyGUI RuntimeInspector requires '{typeof(UIRuntimeInspectorView).FullName}', found '{context?.View?.GetType().FullName}'.");
             }
 
             m_InfoText = new GTextField();
