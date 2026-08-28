@@ -24,6 +24,20 @@
 
 验证：切 ET 模式，`list_agent_methods` 能调 ET 验证方法，打开 FGUI 界面成功；编译 0 错误。
 
+#### 2026-08-28 阶段 3 功能 owner 进展
+
+- [x] `UIComponent` 持有 pending open 和 owned serial/CTS；HotfixView System 按固定 Destroy 顺序清理。
+- [x] EntryEvent 先创建 owner，再经 owner API 打开 Demo；ET Flow/Presenter 不再直接无主打开/关闭。
+- [x] ET 最终 generation 141 编译 0 error/0 warning；ET inventory/三实例/Destroy/pending/shutdown 冒烟通过。
+- [x] 验证后恢复 `UNITY_GAMEHOT`，最终 generation 142 编译 0 error/0 warning。
+- [x] Presenter 热更分层方案已批准并落地骨架（提交 `ca02b491`）：采用原 UGFUIForm/UGFSystemSingleton
+      同构的 Entity/System dispatcher（design.md §8 决策），ET0004/CS1061 已消解，派发自检通过。
+- [ ] 五个有状态 Presenter/Flow/Bootstrap 按骨架逐个迁移（状态进 Component、行为进 HotfixView System、
+      打开链改 `FairyUIPresenterAdapter`），全部完成后删除 `UIComponentFairyUIBridge` 委托桥。
+- [ ] ET LockStep、Widget parent destroy 与真实 Fiber Remove 验证。
+- [ ] 接入复盘（HANDOFF §19）新增缺口：Widget 生命周期级联、GF 实例锁/优先级/事件透出、
+      窗体 EventContainer/ResourceContainer 上下文。
+
 ### 阶段 4：删除 UGUI 栈 + 编排
 10. 删除 Game.Hot 与 ET 的 UGUI 界面代码/prefab、`UnityGameFramework.Runtime.UI` 绑定层、旧宿主胶水（`FairyUIFormLogic/Host/UIGroupContainer/GDKUIFormHelper`）。
 11. 删除 `AssetName` 的 prefab 校验分支（问题 3），新增一键编排脚本 `luban export → 描述符生成 → 资源刷新`（问题 5）。
@@ -48,5 +62,6 @@
 - F2：GameEntry.prefab 的 UIComponent 已在 PlayMode 注册 "Default"/"Pop" 等 GDKUIGroupHelper 组；FairyUIManager 需要同名 FairyUIGroupHelper 组，而 IUIManager 无 remove-group API。阶段 1 端到端冒烟因此被组名冲突阻塞，须在阶段 2 切换入口时同步移除/跳过 UIComponent 的 UGUI 组注册，或阶段 4 删除 UIComponent 后自然消除。
 ## task.py start 前检查
 - [x] 热更边界已定：选 A，Presenter 热更，ET 侧完整复刻背包演示
-- [ ] design.md 的"待验证点"已通过阶段 1 调研消除或明确
-- [ ] 分支策略与提交拆分方案已定
+- [x] design.md 的"待验证点"已通过阶段 1 调研消除或明确（design.md §8 已记录 F1/F2 与 dispatcher 决策）
+- [x] 分支策略与提交拆分方案已定（分支 `fgui/et-owner-dispatcher`，按 HANDOFF §16 逻辑批次提交：
+      `a306b572` P0-1 / `3de99143` P0-2 owner / `ca02b491` dispatcher 骨架）

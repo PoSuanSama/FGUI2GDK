@@ -82,6 +82,17 @@ Unity Agent Bridge 运行时发现后执行：编译/Error 日志、描述符与
 - [x] 扩展 100 次 PlayMode 探针，每 10 次真实覆盖/恢复并检查 pause/cover、resume/reveal、refocus、
       visibility/touchability 与 userData 引用身份；最终 GF、GRoot、包租约和资源诊断回到基线。
 
+## 10. 2026-08-28 持续 owner token 复核纠偏
+
+- [x] 修复打开返回后 owner token 失效：registration 按 GF serial ID 关闭目标实例，并由
+      `FairyUIForm` 在 Close/Recycle/失败路径释放。
+- [x] 覆盖已取消 token、打开后下一帧取消、旧 token + 池化宿主复用、三个同 assetName 多实例逐个
+      取消、cancel + 显式 close、100 次回基线和窗口保持打开时停止 PlayMode。
+- [x] Unity Bridge generation 129 编译 0 error/0 warning；GameHot smoke、生命周期 Agent 和退出后
+      Error 日志验证通过。
+- [x] 补充 `.trellis/spec/frontend/hook-guidelines.md`，固定“捕获 serial、转交 registration 所有权、
+      池化复用前释放”的可执行契约。
+
 ## 回滚点
 
 - 描述符生成器、核心宿主、演示迁移和资源配置分别保持可审查边界。

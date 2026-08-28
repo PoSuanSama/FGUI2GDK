@@ -67,3 +67,7 @@ Unity/ProjectSettings/EditorBuildSettings.asset
 
 /Unity/Assets/StreamingAssets/*
 nul
+
+# JVM crash / replay logs (Unity Editor)
+hs_err_pid*.log
+replay_pid*.log

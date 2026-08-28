@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "hooks": {
+      "UserPromptSubmit": [
+        {
+          "hooks": [
+            {
+              "type": "command",
+              "command": "python -X utf8 .claude/hooks/inject-workflow-state.py",
+              "timeout": 15
+            }
+          ]
+        }
+      ],
+      "SubagentStart": [
+        {
+          "matcher": "^(?:trellis-implement|trellis-check|trellis-research)$",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "python -X utf8 .claude/hooks/inject-subagent-context.py",
+              "timeout": 15
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
