@@ -32,8 +32,9 @@ namespace Game
             GameEntry.Event.Subscribe(WebRequestSuccessEventArgs.EventId, OnWebRequestSuccess);
             GameEntry.Event.Subscribe(WebRequestFailureEventArgs.EventId, OnWebRequestFailure);
 
-            // 向服务器请求版本信息
-            GameEntry.WebRequest.AddWebRequest(Utility.Text.Format(GameEntry.Builtin.BuildInfo.CheckVersionUrl, GetPlatformPath()), this);
+            // 向服务器请求版本信息(内置 BuildInfo 已随 Builtin 移除,版本检查跳过)
+            Log.Info("CheckVersion skipped: Builtin BuildInfo was removed.");
+            m_CheckVersionComplete = true;
         }
 
         protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
@@ -69,20 +70,7 @@ namespace Game
 
         private void GotoUpdateApp(object userData)
         {
-            string url = null;
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
-            url = GameEntry.Builtin.BuildInfo.WindowsAppUrl;
-#elif UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
-            url = GameEntry.Builtin.BuildInfo.MacOSAppUrl;
-#elif UNITY_IOS
-            url = GameEntry.Builtin.BuildInfo.IOSAppUrl;
-#elif UNITY_ANDROID
-            url = GameEntry.Builtin.BuildInfo.AndroidAppUrl;
-#endif
-            if (!string.IsNullOrEmpty(url))
-            {
-                Application.OpenURL(url);
-            }
+            Log.Info("Force update app URL unavailable: Builtin BuildInfo was removed.");
         }
 
         private void OnWebRequestSuccess(object sender, GameEventArgs e)
@@ -107,18 +95,8 @@ namespace Game
 
             if (m_VersionInfo.ForceUpdateGame)
             {
-                // 需要强制更新游戏应用
-                GameEntry.Builtin.OpenDialogForm(new BuiltinDialogParams
-                {
-                    Mode = 2,
-                    Title = GameEntry.Localization.GetString("ForceUpdate.Title"),
-                    Message = GameEntry.Localization.GetString("ForceUpdate.Message"),
-                    ConfirmText = GameEntry.Localization.GetString("ForceUpdate.UpdateButton"),
-                    OnClickConfirm = GotoUpdateApp,
-                    CancelText = GameEntry.Localization.GetString("ForceUpdate.QuitButton"),
-                    OnClickCancel = delegate (object userData) { UnityGameFramework.Runtime.GameEntry.Shutdown(ShutdownType.Quit); },
-                });
-
+                // 需要强制更新游戏应用(内置界面已移除,直接打开更新地址)
+                GotoUpdateApp(null);
                 return;
             }
 

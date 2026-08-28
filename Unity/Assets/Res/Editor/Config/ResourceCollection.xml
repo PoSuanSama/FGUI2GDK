@@ -77,8 +77,6 @@
       <Resource Name="Res/UI/UIPrefab/Button/Preset_Button_CommonHome" LoadType="0" Packed="False" />
       <Resource Name="Res/UI/UIPrefab/Button/Preset_Button_FirstStrong" LoadType="0" Packed="False" />
       <Resource Name="Res/UI/UIPrefab/Button/Preset_Button_FirstWeak" LoadType="0" Packed="False" />
-      <Resource Name="Res/UI/UIPrefab/HPBarInstances" LoadType="0" Packed="False" />
-      <Resource Name="Res/UI/UIPrefab/HPBarItem" LoadType="0" Packed="False" />
       <Resource Name="Res/UI/UISound/click" LoadType="0" Packed="False" />
       <Resource Name="Res/UI/UISound/select" LoadType="0" Packed="False" />
       <Resource Name="Res/UI/UISprite/Common" LoadType="0" Packed="False" />
@@ -191,7 +189,6 @@
       <Asset Guid="638ff8ae4a0d15047839cd265d3bc296" ResourceName="Res/Music/music_background" />
       <Asset Guid="63f1652d458177346b601aa5d17d524e" ResourceName="Auto/Combine/887714db" />
       <Asset Guid="63fe6ff9ab9e1433f8db4ebd940f2442" ResourceName="Res/Material/done_fx_bolt_cyan_mat" />
-      <Asset Guid="654c33b0a4496454481a16682b4046ac" ResourceName="Res/UI/UIPrefab/HPBarInstances" />
       <Asset Guid="663e8d9c4af162a42b0291d124f08e23" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="69535882c3a640945a975f2a4438825d" ResourceName="UI.UXTool" />
       <Asset Guid="6a20488bc1db41d47bf65a05117a877d" ResourceName="Auto/Combine/0a91126d" />
@@ -245,7 +242,6 @@
       <Asset Guid="94d28398aaf1dad4c8c2b147cba2ecb1" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="955000b4d1441470e8cbf94f483228b5" ResourceName="Res/Material/done_tile_nebula_green_dff" />
       <Asset Guid="96b34642febcb6c4f88d68e6cbfa331b" ResourceName="UI.UXTool" />
-      <Asset Guid="96d2e77dd9853514da336717bd5627c0" ResourceName="Res/UI/UIPrefab/HPBarItem" />
       <Asset Guid="97b1f8b25cca2bc458cb9d6127c8d186" ResourceName="Res/Material/part_spark_large_mat" />
       <Asset Guid="9991b46b99751664f801fa2ca5f8bdef" ResourceName="Auto/Combine/0a91126d" />
       <Asset Guid="9a7e5f9d69f95dc4593996b20425e542" ResourceName="UI.UXTool" />

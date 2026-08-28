@@ -33,11 +33,6 @@ namespace Game.Hot
             float fromHPRatio = m_TargetableObjectData.HPRatio;
             m_TargetableObjectData.HP -= damageHP;
             float toHPRatio = m_TargetableObjectData.HPRatio;
-            if (fromHPRatio > toHPRatio)
-            {
-                HotEntry.HPBar.ShowHPBar(this, fromHPRatio, toHPRatio);
-            }
-
             if (m_TargetableObjectData.HP <= 0)
             {
                 OnDead(attacker);

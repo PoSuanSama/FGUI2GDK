@@ -14,7 +14,6 @@ namespace Game
         private long m_UpdateTotalCompressedLength = 0L;
         private int m_UpdateSuccessCount = 0;
         private List<UpdateLengthData> m_UpdateLengthData = new List<UpdateLengthData>();
-        private BuiltinUpdateResourceForm m_UpdateResourceForm = null;
 
         protected override void OnEnter(ProcedureOwner procedureOwner)
         {
@@ -27,8 +26,6 @@ namespace Game
             procedureOwner.RemoveData("UpdateResourceTotalCompressedLength");
             m_UpdateSuccessCount = 0;
             m_UpdateLengthData.Clear();
-            m_UpdateResourceForm = null;
-
             GameEntry.Event.Subscribe(ResourceUpdateStartEventArgs.EventId, OnResourceUpdateStart);
             GameEntry.Event.Subscribe(ResourceUpdateChangedEventArgs.EventId, OnResourceUpdateChanged);
             GameEntry.Event.Subscribe(ResourceUpdateSuccessEventArgs.EventId, OnResourceUpdateSuccess);
@@ -36,17 +33,8 @@ namespace Game
 
             if (Application.internetReachability == NetworkReachability.ReachableViaCarrierDataNetwork)
             {
-                GameEntry.Builtin.OpenDialogForm(new BuiltinDialogParams
-                {
-                    Mode = 2,
-                    Title = GameEntry.Localization.GetString("UpdateResourceViaCarrierDataNetwork.Title"),
-                    Message = GameEntry.Localization.GetString("UpdateResourceViaCarrierDataNetwork.Message"),
-                    ConfirmText = GameEntry.Localization.GetString("UpdateResourceViaCarrierDataNetwork.UpdateButton"),
-                    OnClickConfirm = StartUpdateResources,
-                    CancelText = GameEntry.Localization.GetString("UpdateResourceViaCarrierDataNetwork.QuitButton"),
-                    OnClickCancel = delegate (object userData) { UnityGameFramework.Runtime.GameEntry.Shutdown(ShutdownType.Quit); },
-                });
-
+                Log.Info("Updating via carrier data network.");
+                StartUpdateResources(null);
                 return;
             }
 
@@ -55,11 +43,6 @@ namespace Game
 
         protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
         {
-            if (m_UpdateResourceForm != null)
-            {
-                Object.Destroy(m_UpdateResourceForm.gameObject);
-                m_UpdateResourceForm = null;
-            }
 
             GameEntry.Event.Unsubscribe(ResourceUpdateStartEventArgs.EventId, OnResourceUpdateStart);
             GameEntry.Event.Unsubscribe(ResourceUpdateChangedEventArgs.EventId, OnResourceUpdateChanged);
@@ -83,11 +66,6 @@ namespace Game
 
         private void StartUpdateResources(object userData)
         {
-            if (m_UpdateResourceForm == null)
-            {
-                m_UpdateResourceForm = Object.Instantiate(GameEntry.Builtin.UpdateResourceFormTemplate);
-            }
-
             Log.Info("Start update resources...");
             GameEntry.Resource.UpdateResources(OnUpdateResourcesComplete);
         }
@@ -102,7 +80,7 @@ namespace Game
 
             float progressTotal = (float)currentTotalUpdateLength / m_UpdateTotalCompressedLength;
             string descriptionText = GameEntry.Localization.GetString("UpdateResource.Tips", m_UpdateSuccessCount.ToString(), m_UpdateCount.ToString(), GetByteLengthString(currentTotalUpdateLength), GetByteLengthString(m_UpdateTotalCompressedLength), progressTotal, GetByteLengthString((int)GameEntry.Download.CurrentSpeed));
-            m_UpdateResourceForm.SetProgress(progressTotal, descriptionText);
+            Log.Info("Update resources progress: {0}% ({1}).", (int)(progressTotal * 100), descriptionText);
         }
 
         private string GetByteLengthString(long byteLength)

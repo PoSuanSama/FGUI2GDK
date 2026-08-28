@@ -827,7 +827,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6236864355115087355}
-  - component: {fileID: 3263503042252047593}
   m_Layer: 0
   m_Name: Builtin
   m_TagString: Untagged
@@ -850,28 +849,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 6490688045227276243}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3263503042252047593
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7912205806130114534}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4c8494330e440299f2f6a0461e36f4a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_BuildInfoRelease: {fileID: 11400000, guid: 8123453476da1a845b0085c7c4178c94, type: 2}
-  m_BuildInfoDebug: {fileID: 11400000, guid: b1031378de14f7d42add6fc4841c13ec, type: 2}
-  m_LocalizationDictionaries:
-  - {fileID: 11400000, guid: 4896147b713f9aa4abd840e4ca33bd47, type: 2}
-  - {fileID: 11400000, guid: 99b23739d64635c4bbfba2da32b27e9f, type: 2}
-  - {fileID: 11400000, guid: 369a8562a7b6662459e9134740a51846, type: 2}
-  - {fileID: 11400000, guid: 8f96a4a3135153c40a9a6bd8589f6c4c, type: 2}
-  m_UpdateResourceFormTemplate: {fileID: 5642876425673278357, guid: a6c731de80e9d824d8f657301a357269,
-    type: 3}
-  m_DialogFormTemplate: {fileID: 0}
 --- !u!1 &8267718989769468308
 GameObject:
   m_ObjectHideFlags: 0

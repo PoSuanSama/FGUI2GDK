@@ -19,8 +19,6 @@ namespace Game.Hot
             await HotEntry.Tables.LoadAllAsync();
             Log.Info("Game.Hot.Code Load Config!");
             
-            await HotEntry.HPBar.PreloadAsync();
-            
             ChangeState<ProcedureGame>(procedureOwner);
         }
 

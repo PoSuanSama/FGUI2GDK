@@ -42,7 +42,6 @@ namespace Game.Hot
         public static TablesComponent Tables { get; private set; }
 
         #region Custom Components
-        public static HPBarComponent HPBar { get; private set; }
         #endregion
 
         private void InitComponents()
@@ -51,7 +50,6 @@ namespace Game.Hot
             Tables = HotComponentEntry.GetComponent<TablesComponent>();
 
             #region Custom Components
-            HPBar = HotComponentEntry.GetComponent<HPBarComponent>();
             #endregion
         }
 

@@ -94,7 +94,7 @@ namespace Game
         /// 注意:运行时有两个 Builtin 节点——
         /// - GameEntry 直接子节点 Builtin:GameFramework 嵌套 prefab 实例根被改名而来,
         ///   承载 DataNode/Resource/Scene 等 UGF 运行时组件;
-        /// - Game/Builtin:GameEntry.prefab 的静态节点,承载 BuiltinComponent。
+        /// - Game/Builtin:GameEntry.prefab 的静态节点(Builtin 组件已移除,节点保留)。
         /// 旧 UGUI 的 UI 节点在第一个 Builtin 下,故经其子组件(DataNodeComponent)
         /// 定位实例根。非 GameHot 流程(组件未注册)时跳过。
         /// Stage 自建时挂场景根并 DontDestroyOnLoad;这里只换父。

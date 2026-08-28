@@ -10,7 +10,6 @@ namespace Game
         public static UniTask LoadLanguageAsync(this LocalizationComponent localizationComponent, Language language)
         {
             GameEntry.Localization.RemoveAllRawStrings();
-            GameEntry.Builtin.InitDefaultDictionary(language);
             return localizationComponent.ReadDataAsync(AssetUtility.GetLocalizationAsset(language), Constant.AssetPriority.DictionaryAsset);
         }
     }
