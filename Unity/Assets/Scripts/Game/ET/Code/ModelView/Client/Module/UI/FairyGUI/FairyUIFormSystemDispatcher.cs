@@ -14,6 +14,12 @@ namespace ET.Client
     /// </summary>
     public static class FairyUIFormSystemDispatcher
     {
+        public static void FairyUIFormOnViewReady(FairyUIFormComponent formComponent)
+        {
+            Dispatch<IFairyUIFormOnViewReady, IFairyUIFormOnViewReadySystem>(
+                formComponent, static (system, component) => system.Run(component));
+        }
+
         public static void FairyUIFormOnOpen(FairyUIFormComponent formComponent)
         {
             Dispatch<IFairyUIFormOnOpen, IFairyUIFormOnOpenSystem>(

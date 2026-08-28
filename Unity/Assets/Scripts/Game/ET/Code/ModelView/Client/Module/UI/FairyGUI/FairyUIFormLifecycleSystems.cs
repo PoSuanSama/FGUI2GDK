@@ -16,6 +16,42 @@ namespace ET.Client
     /// 以避免接口 Run 参数与生成类泛型参数不一致(原 UGFUIForm 同样不在派发中传递数据)。
     /// </summary>
 
+    public interface IFairyUIFormOnViewReady
+    {
+    }
+
+    public interface IFairyUIFormOnViewReadySystem : ISystemType
+    {
+        void Run(FairyUIFormComponent o);
+    }
+
+    [EntitySystem]
+    public abstract class FairyUIFormOnViewReadySystem<T> : SystemObject, IFairyUIFormOnViewReadySystem
+        where T : FairyUIFormComponent, IFairyUIFormOnViewReady
+    {
+        Type ISystemType.Type()
+        {
+            return typeof(T);
+        }
+
+        Type ISystemType.SystemType()
+        {
+            return typeof(IFairyUIFormOnViewReadySystem);
+        }
+
+        int ISystemType.GetInstanceQueueIndex()
+        {
+            return InstanceQueueIndex.None;
+        }
+
+        void IFairyUIFormOnViewReadySystem.Run(FairyUIFormComponent o)
+        {
+            this.FairyUIFormOnViewReady((T)o);
+        }
+
+        protected abstract void FairyUIFormOnViewReady(T self);
+    }
+
     public interface IFairyUIFormOnOpen
     {
     }

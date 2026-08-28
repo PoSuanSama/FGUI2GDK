@@ -174,6 +174,15 @@ namespace Game
             object userData = null,
             CancellationToken ownerToken = default)
         {
+            return await OpenFairyUIFormAsync(uiId, userData, ownerToken, null);
+        }
+
+        internal async UniTask<FairyUIForm> OpenFairyUIFormAsync(
+            int uiId,
+            object userData,
+            CancellationToken ownerToken,
+            Func<FairyUIFormDescriptor, IFairyUIPresenter> presenterFactory)
+        {
             IUIManager uiManager = GetRequiredUIManager();
             DRUIForm uiForm = UIFormTableProvider != null
                 ? UIFormTableProvider(uiId)
@@ -234,7 +243,14 @@ namespace Game
                             pendingView.GetType().FullName));
                 }
 
-                IFairyUIPresenter presenter = createPresenter(descriptor);
+                // per-open 工厂优先(ET Component/System 路径);返回 null 时回退类 Presenter 注册表。
+                IFairyUIPresenter presenter = null;
+                if (presenterFactory != null)
+                {
+                    presenter = presenterFactory(descriptor);
+                }
+
+                presenter ??= createPresenter(descriptor);
                 if (presenter == null)
                 {
                     throw new GameFrameworkException(

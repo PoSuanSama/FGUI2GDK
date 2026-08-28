@@ -81,7 +81,12 @@ namespace ET.Client
             bool ownershipTransferred = false;
             try
             {
-                openedForm = await FairyUIFormService.OpenFairyUIFormAsync(uiId, userData, ownerToken);
+                FairyUIFormService.PresenterFactory presenterFactory = new FairyUIFormService.PresenterFactory(
+                    () => CreateComponentPresenter(self, ownerRef, uiId),
+                    () => { /* per-open Component 失败清理在 Create 内部处理 */ });
+                openedForm = await FairyUIFormService.OpenFairyUIFormAsync(
+                    uiId, userData, presenterFactory.Create, ownerToken);
+                presenterFactory.Consume();
 
                 UIComponent currentOwner = ownerRef;
                 if (currentOwner == null ||
@@ -174,6 +179,28 @@ namespace ET.Client
         public static int GetPendingFairyUIOpenCount(this UIComponent self)
         {
             return self?.PendingFairyUIOpens?.Count ?? 0;
+        }
+
+        private static IFairyUIPresenter CreateComponentPresenter(
+            UIComponent self,
+            EntityRef<UIComponent> ownerRef,
+            int uiId)
+        {
+            // 未命中 Component/System 注册表时回退到类 Presenter 注册表(返回 null)。
+            if (!FairyUIFormComponentRegistry.TryGet(uiId, out Func<UIComponent, FairyUIFormComponent> factory))
+            {
+                return null;
+            }
+
+            UIComponent currentOwner = ownerRef;
+            if (currentOwner == null || currentOwner.IsDisposed)
+            {
+                throw new OperationCanceledException(
+                    "The ET UI owner was destroyed before creating the FairyGUI component presenter.");
+            }
+
+            FairyUIFormComponent component = factory(currentOwner);
+            return new FairyUIPresenterAdapter(component);
         }
 
         private static void Cancel(CancellationTokenSource cancellation)

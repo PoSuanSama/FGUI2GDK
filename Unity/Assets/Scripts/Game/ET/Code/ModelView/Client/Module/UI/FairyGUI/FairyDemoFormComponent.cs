@@ -1,18 +1,33 @@
+using FairyGUI;
+
 namespace ET.Client
 {
     /// <summary>
-    /// FairyDemoForm 的 ET Component 状态(骨架示例)。
+    /// FairyDemoForm 的 ET Component 状态(原 FairyDemoPresenter 的状态迁入)。
     ///
-    /// 状态必须在 ModelView:Hotfix 程序集不允许声明字段/属性(ET0004)。
+    /// 状态在 ModelView(Hotfix 程序集不允许声明字段/属性,ET0004);
     /// 行为在 HotfixView 的 <see cref="FairyDemoFormComponentSystem"/>。
-    /// 完整迁移时,现有 FairyDemoPresenter 的状态字段移入此处,行为移入 System。
+    /// 实例由打开链创建为 UIComponent 的子 Entity,关闭时由 Adapter 销毁。
     /// </summary>
+    [ChildOf(typeof(UIComponent))]
     public class FairyDemoFormComponent : FairyUIFormComponent,
+        IAwake,
+        IFairyUIFormOnViewReady,
         IFairyUIFormOnOpen,
         IFairyUIFormOnClose
     {
+        public int CheckCount;
+
         /// <summary>
-        /// 派发自检计数:由 HotfixView 的 FairyDemoFormComponentSystem 递增。
+        /// 视图按钮订阅的委托:OnViewReady 创建并订阅,OnClose 对称移除。
+        /// 类型必须是 FairyGUI.EventCallback1(与 onClick.Add/Remove 一致)。
+        /// </summary>
+        public EventCallback1 OpenInventoryClick;
+
+        public EventCallback1 RefreshClick;
+
+        /// <summary>
+        /// 派发自检/冒烟断言计数:由 HotfixView System 递增。
         /// </summary>
         public int OnOpenCount;
 

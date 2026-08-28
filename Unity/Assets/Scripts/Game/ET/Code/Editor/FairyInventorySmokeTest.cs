@@ -32,8 +32,13 @@ namespace ET
             }
 
             FairyUIForm demoForm = uiManager.GetUIForm(DemoAsset);
-            ET.Client.FairyDemoPresenter demoPresenter = demoForm?.Presenter as ET.Client.FairyDemoPresenter;
-            ET.Client.UIComponent owner = demoPresenter?.LastOpenUserData as ET.Client.UIComponent;
+            ET.Client.UIComponent owner = null;
+            if (demoForm?.Presenter is ET.Client.FairyUIPresenterAdapter adapter && adapter.Component != null)
+            {
+                // Component/System 打开链:Adapter 包装的 Component 是 owner 的子实体。
+                owner = adapter.Component.Parent as ET.Client.UIComponent;
+            }
+
             if (owner == null || owner.IsDisposed || !owner.OwnsFairyUIForm(demoForm.SerialId))
             {
                 throw new InvalidOperationException("ET FairyGUI demo is not owned by a live UIComponent.");

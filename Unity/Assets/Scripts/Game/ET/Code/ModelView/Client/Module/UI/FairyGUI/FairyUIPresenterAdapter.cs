@@ -29,6 +29,7 @@ namespace ET.Client
         {
             m_Component.Context = context;
             m_Component.View = context?.View;
+            FairyUIFormSystemDispatcher.FairyUIFormOnViewReady(m_Component);
         }
 
         public void OnOpen(object userData)
@@ -48,6 +49,8 @@ namespace ET.Client
             m_Component.View = null;
             m_Component.UserData = null;
             m_Component.IsShutdown = false;
+            // Component 是 per-open 实例:关闭后销毁,由 UIComponent owner 的 Destroy 级联兜底。
+            m_Component.Dispose();
         }
 
         public void OnPause()
