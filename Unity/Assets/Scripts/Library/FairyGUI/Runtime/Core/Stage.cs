@@ -678,16 +678,33 @@ namespace FairyGUI
         /// <param name="volumeScale"></param>
         public void PlayOneShotSound(AudioClip clip, float volumeScale)
         {
+            // GDK 声音桥(design.md §10.2):宿主注入 UIConfig.soundRedirect 后,
+            // 播放请求统一交给宿主(FairySound 映射到 GDK UISound 组),
+            // 不再走 Stage 自带 AudioSource;未注入时保持 SDK 原行为。
+            System.Func<string, float, bool> redirect = UIConfig.soundRedirect;
+            if (redirect != null)
+            {
+                redirect(clip != null ? clip.name : string.Empty, volumeScale);
+                return;
+            }
+
             if (_audio != null && this.soundVolume > 0)
                 _audio.PlayOneShot(clip, volumeScale * this.soundVolume);
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="clip"></param>
         public void PlayOneShotSound(AudioClip clip)
         {
+            System.Func<string, float, bool> redirect = UIConfig.soundRedirect;
+            if (redirect != null)
+            {
+                redirect(clip != null ? clip.name : string.Empty, 1f);
+                return;
+            }
+
             if (_audio != null && this.soundVolume > 0)
                 _audio.PlayOneShot(clip, this.soundVolume);
         }

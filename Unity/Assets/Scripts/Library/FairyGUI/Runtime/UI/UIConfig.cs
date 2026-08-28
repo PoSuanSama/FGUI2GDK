@@ -46,6 +46,13 @@ namespace FairyGUI
         public static float buttonSoundVolumeScale = 1f;
 
         /// <summary>
+        /// GDK 声音桥钩子(design.md §10.2):宿主注入后 Stage.PlayOneShotSound
+        /// 把 (soundName, volumeScale) 交给宿主,不再走 Stage 自带 AudioSource。
+        /// 未注入时 SDK 保持原行为。
+        /// </summary>
+        public static Func<string, float, bool> soundRedirect;
+
+        /// <summary>
         /// Resource url of horizontal scrollbar
         /// </summary>
         public static string horizontalScrollBar;

@@ -51,6 +51,8 @@ namespace ET.Client
 
             FairyUIManager uiManager = FairyUIManager.Instance;
             uiManager.Initialize();
+            // 声音桥:按钮/transition 播放统一重定向到 GDK Sound 组。
+            FairySound.Initialize();
 
             TablesComponent tables = UnityGameFramework.Runtime.GameEntry.GetComponent<TablesComponent>();
             if (tables == null)
