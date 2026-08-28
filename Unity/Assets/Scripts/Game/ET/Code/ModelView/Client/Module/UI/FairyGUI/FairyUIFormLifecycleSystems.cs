@@ -313,8 +313,13 @@ namespace ET.Client
         void Run(FairyUIFormComponent o, float elapseSeconds, float realElapseSeconds);
     }
 
+    /// <summary>
+    /// ETSystemGenerator 的 EntitySystem 模板把所有参数(含 self)塞进基类泛型实参,
+    /// 因此 OnUpdate 基类必须带两个幽灵泛型参数 P1/P2 匹配模板生成的
+    /// FairyUIFormOnUpdateSystem&lt;T, float, float&gt;。抽象方法用具体 float。
+    /// </summary>
     [EntitySystem]
-    public abstract class FairyUIFormOnUpdateSystem<T> : SystemObject, IFairyUIFormOnUpdateSystem
+    public abstract class FairyUIFormOnUpdateSystem<T, P1, P2> : SystemObject, IFairyUIFormOnUpdateSystem
         where T : FairyUIFormComponent, IFairyUIFormOnUpdate
     {
         Type ISystemType.Type()

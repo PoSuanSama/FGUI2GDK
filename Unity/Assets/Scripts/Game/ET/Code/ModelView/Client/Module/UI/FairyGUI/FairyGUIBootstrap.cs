@@ -21,10 +21,21 @@ namespace ET.Client
             }
 
             // Component/System 打开链的映射登记:UI ID -> Component 工厂(泛型 AddChild)。
-            // 后续四个界面迁移时在此逐项登记;全部迁移后删除下方类 Presenter 反射扫描。
             FairyUIFormComponentRegistry.Register(
                 UGFUIFormId.FairyDemoForm,
                 static owner => owner.AddChild<FairyDemoFormComponent>());
+            FairyUIFormComponentRegistry.Register(
+                UGFUIFormId.FairyInventoryForm,
+                static owner => owner.AddChild<FairyInventoryFormComponent>());
+            FairyUIFormComponentRegistry.Register(
+                UGFUIFormId.FairyItemDetailForm,
+                static owner => owner.AddChild<FairyItemDetailFormComponent>());
+            FairyUIFormComponentRegistry.Register(
+                UGFUIFormId.FairyInventoryOverlayForm,
+                static owner => owner.AddChild<FairyInventoryOverlayFormComponent>());
+            FairyUIFormComponentRegistry.Register(
+                UGFUIFormId.FairyRuntimeInspectorForm,
+                static owner => owner.AddChild<FairyRuntimeInspectorFormComponent>());
 
             IReadOnlyDictionary<int, Func<IFairyUIPresenter>> factories =
                 FairyUIPresenterRegistryBuilder.Build(typeof(FairyGUIBootstrap).Assembly);

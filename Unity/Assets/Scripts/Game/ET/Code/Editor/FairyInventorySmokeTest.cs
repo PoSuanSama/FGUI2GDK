@@ -84,28 +84,31 @@ namespace ET
                 break;
             }
 
-            ET.Client.FairyItemDetailPresenter detailPresenter = detailForm?.Presenter as ET.Client.FairyItemDetailPresenter;
-            if (detailPresenter == null)
+            ET.Client.FairyItemDetailFormComponent detailComponent =
+                detailForm?.Presenter is ET.Client.FairyUIPresenterAdapter detailAdapter
+                    ? detailAdapter.Component as ET.Client.FairyItemDetailFormComponent
+                    : null;
+            if (detailComponent == null)
             {
-                throw new InvalidOperationException("Could not locate an ET detail presenter.");
+                throw new InvalidOperationException("Could not locate an ET detail component.");
             }
 
-            int refocusBefore = detailPresenter.RefocusCount;
+            int refocusBefore = detailComponent.RefocusCount;
             if (!owner.RefocusFairyUIForm(detailForm.SerialId))
             {
                 throw new InvalidOperationException("ET UI owner could not refocus its detail serial.");
             }
 
             await UniTask.Yield(PlayerLoopTiming.Update);
-            if (detailPresenter.RefocusCount != refocusBefore + 1)
+            if (detailComponent.RefocusCount != refocusBefore + 1)
             {
                 throw new InvalidOperationException("ET detail form did not refocus.");
             }
 
-            int coverBase = detailPresenter.CoverCount;
-            int pauseBase = detailPresenter.PauseCount;
-            int revealBase = detailPresenter.RevealCount;
-            int resumeBase = detailPresenter.ResumeCount;
+            int coverBase = detailComponent.CoverCount;
+            int pauseBase = detailComponent.PauseCount;
+            int revealBase = detailComponent.RevealCount;
+            int resumeBase = detailComponent.ResumeCount;
 
             await ET.Client.FairyInventoryFlow.OpenOverlayAsync(owner);
             FairyUIForm overlayForm = uiManager.GetUIForm(OverlayAsset);
@@ -115,7 +118,7 @@ namespace ET
             }
 
             await UniTask.Yield(PlayerLoopTiming.Update);
-            if (detailPresenter.CoverCount != coverBase + 1 || detailPresenter.PauseCount != pauseBase + 1)
+            if (detailComponent.CoverCount != coverBase + 1 || detailComponent.PauseCount != pauseBase + 1)
             {
                 throw new InvalidOperationException("ET detail form was not covered and paused by the overlay.");
             }
@@ -126,7 +129,7 @@ namespace ET
             }
 
             await UniTask.Yield(PlayerLoopTiming.Update);
-            if (detailPresenter.RevealCount != revealBase + 1 || detailPresenter.ResumeCount != resumeBase + 1)
+            if (detailComponent.RevealCount != revealBase + 1 || detailComponent.ResumeCount != resumeBase + 1)
             {
                 throw new InvalidOperationException("ET detail form was not revealed and resumed after the overlay closed.");
             }
