@@ -45,6 +45,18 @@ namespace Game.Editor
             }
         }
 
+        [AgentCallable("Switch Standalone to dual-symbol mode (UNITY_ET + UNITY_GAMEHOT) so ET validation can run alongside the GameHot GameEntry flow.", 60)]
+        public static void SwitchToDualSymbols()
+        {
+            // 仓库的 Add UNITY_ET / Add UNITY_GAMEHOT 菜单互相移除对方(且内部 domain reload
+            // 会中断后续符号写入),无法产生双符号状态;ET 冒烟需要 GameHot 流程初始化
+            // GameEntry 组件 + ET 流程跑 UI,因此直接给 Standalone 写入两个符号。
+            UnityGameFramework.Editor.ScriptingDefineSymbols.AddScriptingDefineSymbol(
+                BuildTargetGroup.Standalone, "UNITY_ET");
+            UnityGameFramework.Editor.ScriptingDefineSymbols.AddScriptingDefineSymbol(
+                BuildTargetGroup.Standalone, "UNITY_GAMEHOT");
+        }
+
         [AgentCallable("Add the FairyGUI directory to GameHot and ET resource rules, regenerate each collection, and verify every runtime asset is collected.", 120)]
         public static void ConfigureFairyGUIResourceRules()
         {

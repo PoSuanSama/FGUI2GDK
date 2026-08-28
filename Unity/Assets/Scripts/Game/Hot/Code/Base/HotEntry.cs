@@ -74,6 +74,8 @@ namespace Game.Hot
             uiManager.Initialize();
             // 声音桥:按钮/transition 播放统一重定向到 GDK Sound 组。
             FairySound.Initialize();
+            // 输入/焦点/手柄桥:方向导航 + 确认/取消映射。
+            FairyInputService.Instance.Initialize();
             uiManager.AddUIGroup("Default", 0);
             uiManager.AddUIGroup("Pop", 100);
             uiManager.AddUIGroup("Message", 200);
