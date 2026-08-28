@@ -117,25 +117,19 @@ namespace Game
                 return;
             }
 
+            // UI 节点静态存在于 GameFramework.prefab(根下,与 UI Form Instances 同层);
+            // 运行时只做 Stage 的挂载,不再动态创建节点。
             Transform uiNode = builtinRoot.Find("UI");
             if (uiNode == null)
             {
-                GameObject uiGo = new GameObject("UI");
-                uiGo.transform.SetParent(builtinRoot, false);
-                uiNode = uiGo.transform;
+                // 静态节点缺失属配置错误,记录诊断;不动态生成以免破坏 prefab 权威。
+                Log.Warning("FairyGUI Stage parent UI node is missing under the GameFramework Builtin root; the GameFramework.prefab UI node may have been removed.");
+                return;
             }
 
             if (!ReferenceEquals(stage.gameObject.transform.parent, uiNode))
             {
                 stage.gameObject.transform.SetParent(uiNode, false);
-            }
-
-            // 旧 UGUI 结构:UI Form Instances 也在 UI 节点下(prefab 静态残留节点,
-            // 运行时挂 Builtin 下)。FairyGUI 时代它暂无使用方,但保持原宿主位置。
-            Transform formInstances = builtinRoot.Find("UI Form Instances");
-            if (formInstances != null && !ReferenceEquals(formInstances.parent, uiNode))
-            {
-                formInstances.SetParent(uiNode, false);
             }
         }
 
