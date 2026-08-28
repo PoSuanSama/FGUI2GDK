@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using AgentBridge;
 using Cysharp.Threading.Tasks;
@@ -55,6 +56,29 @@ namespace Game.Editor
                 BuildTargetGroup.Standalone, "UNITY_ET");
             UnityGameFramework.Editor.ScriptingDefineSymbols.AddScriptingDefineSymbol(
                 BuildTargetGroup.Standalone, "UNITY_GAMEHOT");
+        }
+
+        [AgentCallable("Restore the repository's default per-platform symbol layout: client platforms (Android/Standalone/WebGL/WSA/iPhone) carry UNITY_GAMEHOT, Server carries UNITY_ET.", 60)]
+        public static void RestoreDefaultSymbols()
+        {
+            // 与仓库 DefineSymbolTool 菜单同源的分平台写法(菜单已验证可写;
+            // PlayerSettings.SetScriptingDefineSymbols 在本机静默无效,不要用它)。
+            // helper 的 BuildTargetGroups 不含 Server,默认布局自动保持 Server=UNITY_ET。
+            BuildTargetGroup[] clientGroups =
+            {
+                BuildTargetGroup.Standalone,
+                BuildTargetGroup.iOS,
+                BuildTargetGroup.Android,
+                BuildTargetGroup.WSA,
+                BuildTargetGroup.WebGL,
+            };
+            foreach (BuildTargetGroup group in clientGroups)
+            {
+                UnityGameFramework.Editor.ScriptingDefineSymbols.RemoveScriptingDefineSymbol(
+                    group, "UNITY_ET");
+                UnityGameFramework.Editor.ScriptingDefineSymbols.AddScriptingDefineSymbol(
+                    group, "UNITY_GAMEHOT");
+            }
         }
 
         [AgentCallable("Add the FairyGUI directory to GameHot and ET resource rules, regenerate each collection, and verify every runtime asset is collected.", 120)]
