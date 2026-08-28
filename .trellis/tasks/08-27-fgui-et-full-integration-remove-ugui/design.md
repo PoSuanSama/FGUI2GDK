@@ -125,3 +125,45 @@
 提交 8b39d6cc 删除的 `ET/Loader/UGF/UIForm/`、`UGFSystemSingleton` 属 GDK 自有 wrapper
 （路径在 `Game/ET/Loader`，非 `Library/UGF/UnityGameFramework` 供应商核心），按“GDK 可替换包装层”
 处理：不恢复，边界写入本设计。后续删除其它 `Library/UGF` 内容前仍需先做上游 diff 与依赖闭包证据。
+
+## 9. 阶段 D 服务桥接面调查（2026-08-28）
+
+### 9.1 本地化
+
+- GDK 侧：GF `LocalizationComponent`（`Library/UGF/UnityGameFramework/Runtime/Localization/`，
+  `GetString(key)` + `Language` 枚举）；`Game/Hot/Code/Generate/LocalizationKey.cs` 与 ET 同款
+  生成 key 常量；`Game/Localization/XmlLocalizationHelper.cs` 加载 Luban 导出文本。
+- FairyGUI 侧：`UIPackage.SetStringsSource(XML)` + `TranslationHelper.LoadFromXML`（格式
+  `<string name="componentId-elementId">text</string>`）；无其他运行时 i18n 路径。
+- 桥接方案：生成阶段把 Luban 四语言文本转成 FairyGUI 字符串 XML（每语言一份），bootstrap
+  在 `AddPackage` 前按当前 `GameEntry.Localization.Language` 加载对应 XML；Package1 组件把
+  文本节点改为绑定字符串 ID。方案批准后实现。
+
+### 9.2 声音
+
+- FairyGUI 侧：按钮/transition 声音走 `GComponent.__playSound` →
+  `Stage.inst.PlayOneShotSound(clip, volumeScale)`，`Stage._audio` 是 Stage GameObject 上的
+  AudioSource（`Stage.EnableSound/DisableSound` 可控），`soundVolume` 公开可设。
+- GDK 侧：`SoundExtension.PlayUISound(uiSoundId)` 读 Luban `DRUISound` 表经 GF `UISound` 组播放；
+  音量/静音在 `Constant.Setting`（`Setting.SoundVolume/UISoundVolume`）驱动 GF 声音组。
+- 桥接方案：`FairyUIManager.Initialize` 时把 FairyGUI 声音路径接到 GDK——
+  `Stage.soundVolume` 由 `Setting.UISoundVolume` 驱动；FairyGUI 的音频资源 URL 不直接放行，
+  设计阶段在描述符里给按钮/transition 的 `sound` 字段映射 `UISound` ID（或 MVP：禁用
+  FairyGUI 直接播放并给按钮 transition 绑定 GDK 回调）。方案批准后实现。
+
+### 9.3 安全区 / 输入 / 焦点 / 色觉
+
+- 安全区：`Screen.safeArea` 转 GRoot 坐标更新安全区容器（design.md §10.3 已定形态），
+  待设计项目提供三宽高比验证场景。
+- 输入：FairyGUI SDK 已支持指针/触摸/键盘；手柄导航与焦点恢复需 GDK InputSystem 映射
+  （design.md §10.4），依赖游戏的实际输入需求，暂缓到有明确手柄场景时实现。
+- 色觉：先验证现有 `ColorBlindnessEffect` 是否覆盖 FairyGUI 最终输出（design.md §10.5），
+  未验证前不得给 GComponent 加 ColorFilter。
+
+### 9.4 实施顺序
+
+1. 本地化桥（生成 + bootstrap 应用 + 四语言验证）。
+2. 声音桥（禁用/重定向 FairyGUI 直接播放 → GDK Sound）。
+3. 安全区/方向变化。
+4. 输入/焦点/手柄（有明确需求时）。
+5. 色觉验证与语义颜色。
