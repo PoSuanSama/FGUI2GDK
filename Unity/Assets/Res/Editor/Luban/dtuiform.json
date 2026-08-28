@@ -53,5 +53,16 @@
     "PauseCoveredUIForm": true,
     "PackageName": "Package1",
     "ComponentName": "RuntimeInspectorView"
+  },
+  {
+    "Id": 1,
+    "CSName": "DialogForm",
+    "Desc": "对话框",
+    "AssetName": "FairyGUI/Dialog",
+    "UIGroupName": "Default",
+    "AllowMultiInstance": true,
+    "PauseCoveredUIForm": true,
+    "PackageName": "Package1",
+    "ComponentName": "Dialog"
   }
 ]

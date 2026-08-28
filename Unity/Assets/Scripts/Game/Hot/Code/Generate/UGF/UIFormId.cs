@@ -33,5 +33,10 @@ namespace Game.Hot
         /// 运行时调试面板
         /// </summary>
         public const int FairyRuntimeInspectorForm = 107;
+
+        /// <summary>
+        /// 对话框
+        /// </summary>
+        public const int DialogForm = 1;
     }
 }

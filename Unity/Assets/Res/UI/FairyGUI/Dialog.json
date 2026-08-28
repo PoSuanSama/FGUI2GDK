@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "uiId": 1,
+  "csName": "DialogForm",
+  "uiAssetName": "FairyGUI/Dialog",
+  "uiGroupName": "Default",
+  "allowMultiInstance": true,
+  "pauseCoveredUIForm": true,
+  "packageId": "oozeu71h",
+  "packageName": "Package1",
+  "componentId": "yih6a",
+  "componentName": "Dialog",
+  "bindingType": "Game.FairyGUI.Package1.UIDialog",
+  "dependencies": []
+}

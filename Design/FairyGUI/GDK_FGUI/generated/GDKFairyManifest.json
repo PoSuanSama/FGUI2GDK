@@ -5,14 +5,14 @@
     "type": "Unity",
     "version": "5.0"
   },
-  "sourceHash": "45add05f404224078fd2a981c8ceef0f8104ec9cc8b3414f7b8e1cb1e21f2a71",
+  "sourceHash": "06539806b1576b4060a1d8918839537db7ef7126e9a94cd1e8a14c365a7f2ec2",
   "contractHash": "ba6794173335c8b7164aa1dbf97511f400730b0110816fc5e0cad5e6deb17fa1",
   "packages": [
     {
       "id": "oozeu71h",
       "name": "Package1",
       "file": "assets/Package1/package.xml",
-      "hash": "9f8f05af448b5e355ffda9787cc33dd02936406384f88134b45a665d86002bf0",
+      "hash": "b2bea59e9f68a02bcc4d19b7411694d4743d92822769d1ecd27eecf4418d7a8d",
       "dependencies": [],
       "resources": [
         {
@@ -867,6 +867,105 @@
             },
             {
               "id": "n4_std8",
+              "name": "icon",
+              "type": "GLoader",
+              "src": "",
+              "pkg": ""
+            }
+          ]
+        },
+        {
+          "type": "component",
+          "id": "yih6a",
+          "name": "Dialog.xml",
+          "path": "/",
+          "exported": true,
+          "file": "assets/Package1/Dialog.xml",
+          "hash": "bc3cd6e87bd9bcc00f54b3ee6045d1043754bfdce917b9ff88f9b5a634261385",
+          "members": [
+            {
+              "id": "dlgcancel",
+              "name": "cancelButton",
+              "type": "GButton",
+              "src": "yih6b",
+              "pkg": ""
+            },
+            {
+              "id": "dlgconfirm",
+              "name": "confirmButton",
+              "type": "GButton",
+              "src": "yih6b",
+              "pkg": ""
+            },
+            {
+              "id": "dlgmask",
+              "name": "mask",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "dlgmsg",
+              "name": "messageText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "dlgother",
+              "name": "otherButton",
+              "type": "GButton",
+              "src": "yih6b",
+              "pkg": ""
+            },
+            {
+              "id": "dlgtitle",
+              "name": "titleText",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            }
+          ]
+        },
+        {
+          "type": "component",
+          "id": "yih6b",
+          "name": "DialogConfirmButton.xml",
+          "path": "/",
+          "exported": true,
+          "file": "assets/Package1/DialogConfirmButton.xml",
+          "hash": "5d6f87f2e171e23d5cdb9f5ad879536b0524fe3df1df5ca49fab67edeb17921b",
+          "members": [
+            {
+              "id": "n0_yih6",
+              "name": "n0",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "n1_yih6",
+              "name": "n1",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "n2_yih6",
+              "name": "n2",
+              "type": "GGraph",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "n3_yih6",
+              "name": "title",
+              "type": "GTextField",
+              "src": "",
+              "pkg": ""
+            },
+            {
+              "id": "n4_yih6",
               "name": "icon",
               "type": "GLoader",
               "src": "",

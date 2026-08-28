@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="640,360">
+  <displayList>
+    <graph id="dlgmask" name="mask" xy="0,0" size="640,360" touchable="false" type="rect" lineSize="1" lineColor="#ff243447" fillColor="#ff101a27">
+      <relation target="" sidePair="width-width,height-height"/>
+    </graph>
+    <text id="dlgtitle" name="titleText" xy="48,36" size="544,36" fontSize="26" color="#f8fafc" autoSize="none" bold="true" singleLine="true" text="标题">
+      <relation target="" sidePair="width-width"/>
+    </text>
+    <text id="dlgmsg" name="messageText" xy="48,104" size="544,140" fontSize="16" color="#cbd5e1" leading="6" autoSize="none" text="消息内容">
+      <relation target="" sidePair="width-width"/>
+    </text>
+    <component id="dlgconfirm" name="confirmButton" src="yih6b" fileName="DialogConfirmButton.xml" xy="416,284" size="120,44"/>
+    <component id="dlgcancel" name="cancelButton" src="yih6b" fileName="DialogConfirmButton.xml" xy="264,284" size="120,44"/>
+    <component id="dlgother" name="otherButton" src="yih6b" fileName="DialogConfirmButton.xml" xy="112,284" size="120,44"/>
+  </displayList>
+</component>

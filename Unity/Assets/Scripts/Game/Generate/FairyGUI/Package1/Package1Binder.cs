@@ -17,6 +17,7 @@ namespace Game.FairyGUI.Package1
             UIObjectFactory.SetPackageItemExtension(UICategoryTabButton.URL, typeof(UICategoryTabButton));
             UIObjectFactory.SetPackageItemExtension(UIActionButton.URL, typeof(UIActionButton));
             UIObjectFactory.SetPackageItemExtension(UIRuntimeInspectorView.URL, typeof(UIRuntimeInspectorView));
+            UIObjectFactory.SetPackageItemExtension(UIDialog.URL, typeof(UIDialog));
         }
     }
 }

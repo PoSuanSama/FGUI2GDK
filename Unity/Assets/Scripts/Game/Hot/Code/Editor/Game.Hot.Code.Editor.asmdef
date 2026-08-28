@@ -9,7 +9,8 @@
         "UnityGameFramework.Runtime",
         "FairyGUI",
         "UniTask",
-        "AgentBridge.Editor"
+        "AgentBridge.Editor",
+        "GameFramework"
     ],
     "includePlatforms": [
         "Editor"
