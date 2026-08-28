@@ -88,32 +88,54 @@ namespace Game
         }
 
         /// <summary>
-        /// 把 FairyGUI Stage 归位到 GameEntry 的 Builtin/UI 节点下
-        /// (与旧 UGUI Canvas 的宿主位置一致,避免 Stage 散落在场景根)。
-        /// Stage 自建时挂场景根并 DontDestroyOnLoad;这里只换父,保持 world 变换。
-        /// Builtin 组件未挂载(非 GameHot 流程)时跳过。
+        /// 把 FairyGUI Stage 归位到 GameEntry 下 Builtin(GameFramework 实例根)的 UI 节点下,
+        /// 与旧 UGUI 布局一致(UIComponent 曾挂在 Builtin/UI,Canvas 都在其下)。
+        ///
+        /// 注意:运行时有两个 Builtin 节点——
+        /// - GameEntry 直接子节点 Builtin:GameFramework 嵌套 prefab 实例根被改名而来,
+        ///   承载 DataNode/Resource/Scene 等 UGF 运行时组件;
+        /// - Game/Builtin:GameEntry.prefab 的静态节点,承载 BuiltinComponent。
+        /// 旧 UGUI 的 UI 节点在第一个 Builtin 下,故经其子组件(DataNodeComponent)
+        /// 定位实例根。非 GameHot 流程(组件未注册)时跳过。
+        /// Stage 自建时挂场景根并 DontDestroyOnLoad;这里只换父。
         /// </summary>
         private void AttachStageToBuiltinUI()
         {
-            BuiltinComponent builtin = GameEntry.Builtin;
             Stage stage = Stage.inst;
-            if (builtin == null || stage == null || stage.gameObject == null)
+            if (stage == null || stage.gameObject == null)
             {
                 return;
             }
 
-            Transform builtinTransform = builtin.transform;
-            Transform uiNode = builtinTransform.Find("UI");
+            // Game 命名空间内的 GameEntry 是 MonoBehaviour 单例,遮蔽了 UGF 静态入口;
+            // 这里必须全限定使用 UnityGameFramework.Runtime.GameEntry。
+            DataNodeComponent dataNode =
+                UnityGameFramework.Runtime.GameEntry.GetComponent<DataNodeComponent>();
+            Transform builtinRoot = dataNode != null ? dataNode.transform.parent : null;
+            if (builtinRoot == null)
+            {
+                return;
+            }
+
+            Transform uiNode = builtinRoot.Find("UI");
             if (uiNode == null)
             {
                 GameObject uiGo = new GameObject("UI");
-                uiGo.transform.SetParent(builtinTransform, false);
+                uiGo.transform.SetParent(builtinRoot, false);
                 uiNode = uiGo.transform;
             }
 
             if (!ReferenceEquals(stage.gameObject.transform.parent, uiNode))
             {
                 stage.gameObject.transform.SetParent(uiNode, false);
+            }
+
+            // 旧 UGUI 结构:UI Form Instances 也在 UI 节点下(prefab 静态残留节点,
+            // 运行时挂 Builtin 下)。FairyGUI 时代它暂无使用方,但保持原宿主位置。
+            Transform formInstances = builtinRoot.Find("UI Form Instances");
+            if (formInstances != null && !ReferenceEquals(formInstances.parent, uiNode))
+            {
+                formInstances.SetParent(uiNode, false);
             }
         }
 
