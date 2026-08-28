@@ -50,6 +50,7 @@ namespace ET.Client
 
         public void OnClose(bool isShutdown, object userData)
         {
+            UIComponent owner = m_OpenData?.Owner;
             FairyInventoryFlow.DetailCountChanged -= OnDetailCountChanged;
             if (m_View != null)
             {
@@ -65,7 +66,7 @@ namespace ET.Client
             }
 
             m_OpenData = null;
-            FairyInventoryFlow.CloseAllDetails();
+            FairyInventoryFlow.CloseAllDetails(owner);
         }
 
         public void OnPause()
@@ -194,12 +195,21 @@ namespace ET.Client
             };
         }
 
-        private static async Cysharp.Threading.Tasks.UniTaskVoid OpenDetailAsync(
+        private async Cysharp.Threading.Tasks.UniTaskVoid OpenDetailAsync(
             FairyInventoryItemData itemData)
         {
             try
             {
-                await FairyInventoryFlow.OpenDetailAsync(itemData);
+                UIComponent owner = m_OpenData?.Owner;
+                if (owner == null)
+                {
+                    return;
+                }
+
+                await FairyInventoryFlow.OpenDetailAsync(owner, itemData);
+            }
+            catch (OperationCanceledException)
+            {
             }
             catch (Exception exception)
             {
@@ -207,11 +217,20 @@ namespace ET.Client
             }
         }
 
-        private static async Cysharp.Threading.Tasks.UniTaskVoid OpenOverlayAsync()
+        private async Cysharp.Threading.Tasks.UniTaskVoid OpenOverlayAsync()
         {
             try
             {
-                await FairyInventoryFlow.OpenOverlayAsync();
+                UIComponent owner = m_OpenData?.Owner;
+                if (owner == null)
+                {
+                    return;
+                }
+
+                await FairyInventoryFlow.OpenOverlayAsync(owner);
+            }
+            catch (OperationCanceledException)
+            {
             }
             catch (Exception exception)
             {

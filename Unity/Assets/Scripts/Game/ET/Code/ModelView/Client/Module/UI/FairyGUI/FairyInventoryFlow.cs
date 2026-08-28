@@ -22,27 +22,36 @@ namespace ET.Client
 
         public static IReadOnlyCollection<FairyUIForm> OpenDetailForms => s_DetailForms.Values;
 
-        public static async UniTask OpenInventoryAsync()
+        public static async UniTask OpenInventoryAsync(UIComponent owner)
         {
+            ValidateOwner(owner);
             FairyUIForm existing = FairyUIManager.Instance.GetUIForm(InventoryDescriptor);
             if (existing != null)
             {
-                FairyUIManager.Instance.RefocusUIForm(existing);
+                if (!UIComponentFairyUIBridge.RefocusBySerialId(owner, existing.SerialId))
+                {
+                    throw new InvalidOperationException(
+                        $"FairyGUI inventory serial '{existing.SerialId}' belongs to another ET UI owner.");
+                }
+
                 return;
             }
 
-            FairyInventoryOpenData openData = new FairyInventoryOpenData();
-            FairyUIForm uiForm = await FairyUIFormService.OpenFairyUIFormAsync(
+            FairyInventoryOpenData openData = new FairyInventoryOpenData(owner);
+            FairyUIForm uiForm = await UIComponentFairyUIBridge.OpenAsync(
+                owner,
                 UGFUIFormId.FairyInventoryForm,
                 openData);
             openData.Attach(uiForm);
         }
 
-        public static async UniTask OpenDetailAsync(FairyInventoryItemData item)
+        public static async UniTask OpenDetailAsync(UIComponent owner, FairyInventoryItemData item)
         {
+            ValidateOwner(owner);
             int token = ++s_NextDetailToken;
-            FairyItemDetailOpenData openData = new FairyItemDetailOpenData(item, token);
-            FairyUIForm uiForm = await FairyUIFormService.OpenFairyUIFormAsync(
+            FairyItemDetailOpenData openData = new FairyItemDetailOpenData(owner, item, token);
+            FairyUIForm uiForm = await UIComponentFairyUIBridge.OpenAsync(
+                owner,
                 UGFUIFormId.FairyItemDetailForm,
                 openData);
             openData.Attach(uiForm);
@@ -56,17 +65,24 @@ namespace ET.Client
             DetailCountChanged?.Invoke(s_DetailForms.Count);
         }
 
-        public static async UniTask OpenOverlayAsync()
+        public static async UniTask OpenOverlayAsync(UIComponent owner)
         {
+            ValidateOwner(owner);
             FairyUIForm existing = FairyUIManager.Instance.GetUIForm(OverlayDescriptor);
             if (existing != null)
             {
-                FairyUIManager.Instance.RefocusUIForm(existing);
+                if (!UIComponentFairyUIBridge.RefocusBySerialId(owner, existing.SerialId))
+                {
+                    throw new InvalidOperationException(
+                        $"FairyGUI overlay serial '{existing.SerialId}' belongs to another ET UI owner.");
+                }
+
                 return;
             }
 
-            FairyInventoryOverlayOpenData openData = new FairyInventoryOverlayOpenData();
-            FairyUIForm uiForm = await FairyUIFormService.OpenFairyUIFormAsync(
+            FairyInventoryOverlayOpenData openData = new FairyInventoryOverlayOpenData(owner);
+            FairyUIForm uiForm = await UIComponentFairyUIBridge.OpenAsync(
+                owner,
                 UGFUIFormId.FairyInventoryOverlayForm,
                 openData);
             openData.Attach(uiForm);
@@ -75,19 +91,20 @@ namespace ET.Client
         public static void Close(FairyFormInstanceData openData)
         {
             FairyUIForm uiForm = openData?.UIForm;
-            if (uiForm != null &&
-                (FairyUIManager.Instance.HasUIForm(uiForm.SerialId) || FairyUIManager.Instance.IsLoadingUIForm(uiForm.SerialId)))
+            UIComponent owner = openData?.Owner;
+            if (uiForm != null && owner != null)
             {
-                FairyUIManager.Instance.CloseUIForm(uiForm.SerialId);
+                UIComponentFairyUIBridge.CloseBySerialId(owner, uiForm.SerialId);
             }
         }
 
         public static void Refocus(FairyItemDetailOpenData openData)
         {
             FairyUIForm uiForm = openData?.UIForm;
-            if (uiForm != null && FairyUIManager.Instance.HasUIForm(uiForm.SerialId))
+            UIComponent owner = openData?.Owner;
+            if (uiForm != null && owner != null)
             {
-                FairyUIManager.Instance.RefocusUIForm(uiForm, openData);
+                UIComponentFairyUIBridge.RefocusBySerialId(owner, uiForm.SerialId, openData);
             }
         }
 
@@ -102,9 +119,9 @@ namespace ET.Client
             DetailCountChanged?.Invoke(s_DetailForms.Count);
         }
 
-        public static void CloseAllDetails()
+        public static void CloseAllDetails(UIComponent owner)
         {
-            if (s_DetailForms.Count == 0)
+            if (owner == null || s_DetailForms.Count == 0)
             {
                 return;
             }
@@ -112,14 +129,19 @@ namespace ET.Client
             List<FairyUIForm> forms = new List<FairyUIForm>(s_DetailForms.Values);
             foreach (FairyUIForm uiForm in forms)
             {
-                if (uiForm != null && FairyUIManager.Instance.HasUIForm(uiForm.SerialId))
+                if (uiForm != null)
                 {
-                    FairyUIManager.Instance.CloseUIForm(uiForm.SerialId);
+                    UIComponentFairyUIBridge.CloseBySerialId(owner, uiForm.SerialId);
                 }
             }
+        }
 
-            s_DetailForms.Clear();
-            DetailCountChanged?.Invoke(0);
+        private static void ValidateOwner(UIComponent owner)
+        {
+            if (owner == null || owner.IsDisposed)
+            {
+                throw new ObjectDisposedException(nameof(UIComponent));
+            }
         }
     }
 }

@@ -9,6 +9,7 @@ namespace ET.Client
     [global::ET.EnableClass]
     public sealed class FairyRuntimeInspectorPresenter : IFairyUIPresenter
     {
+        private EntityRef<UIComponent> m_Owner;
         private UIRuntimeInspectorView m_View;
         private GTextField m_InfoText;
 
@@ -33,6 +34,14 @@ namespace ET.Client
 
         public void OnOpen(object userData)
         {
+            UIComponent owner = userData as UIComponent;
+            if (owner == null || owner.IsDisposed)
+            {
+                throw new InvalidOperationException(
+                    "ET FairyGUI RuntimeInspector requires a live UIComponent owner.");
+            }
+
+            m_Owner = owner;
             RefreshRuntimeInfo();
         }
 
@@ -45,6 +54,7 @@ namespace ET.Client
             }
 
             m_InfoText = null;
+            m_Owner = default;
         }
 
         public void OnPause()
@@ -103,8 +113,13 @@ namespace ET.Client
 
         private void OnCloseClick()
         {
-            FairyUIManager.Instance.CloseUIForm(
-                FairyUIManager.Instance.GetUIForm("Assets/Res/UI/FairyGUI/FairyRuntimeInspectorForm.json"));
+            UIComponent owner = m_Owner;
+            FairyUIForm form = FairyUIManager.Instance.GetUIForm(
+                "Assets/Res/UI/FairyGUI/FairyRuntimeInspectorForm.json");
+            if (owner != null && form != null)
+            {
+                UIComponentFairyUIBridge.CloseBySerialId(owner, form.SerialId);
+            }
         }
     }
 }

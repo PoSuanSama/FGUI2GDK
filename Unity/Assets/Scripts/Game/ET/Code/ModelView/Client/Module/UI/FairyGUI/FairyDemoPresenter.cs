@@ -11,6 +11,7 @@ namespace ET.Client
     public sealed class FairyDemoPresenter : IFairyUIPresenter
     {
         private int m_CheckCount;
+        private EntityRef<UIComponent> m_Owner;
         private UIMainView m_View;
         private FairyUIWidgetContainer m_WidgetContainer;
         private FairyInventoryItemWidget m_ItemWidget;
@@ -44,6 +45,13 @@ namespace ET.Client
 
         public void OnOpen(object userData)
         {
+            UIComponent owner = userData as UIComponent;
+            if (owner == null || owner.IsDisposed)
+            {
+                throw new InvalidOperationException("ET FairyGUI demo requires a live UIComponent owner.");
+            }
+
+            m_Owner = owner;
             LastOpenUserData = userData;
             Log.Info("ET FairyGUI demo presenter opened through FairyUIManager.");
         }
@@ -54,6 +62,7 @@ namespace ET.Client
             m_WidgetContainer?.Dispose();
             m_WidgetContainer = null;
             m_ItemWidget = null;
+            m_Owner = default;
             if (m_View != null)
             {
                 m_View.OpenInventoryButton.onClick.Remove(OnOpenInventoryButtonClick);
@@ -104,11 +113,20 @@ namespace ET.Client
             OpenInventoryAsync().Forget();
         }
 
-        private static async UniTaskVoid OpenInventoryAsync()
+        private async UniTaskVoid OpenInventoryAsync()
         {
             try
             {
-                await FairyInventoryFlow.OpenInventoryAsync();
+                UIComponent owner = m_Owner;
+                if (owner == null)
+                {
+                    return;
+                }
+
+                await FairyInventoryFlow.OpenInventoryAsync(owner);
+            }
+            catch (OperationCanceledException)
+            {
             }
             catch (Exception exception)
             {

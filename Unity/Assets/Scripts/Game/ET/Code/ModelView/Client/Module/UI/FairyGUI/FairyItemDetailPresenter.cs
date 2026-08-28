@@ -191,11 +191,20 @@ namespace ET.Client
             }
         }
 
-        private static async Cysharp.Threading.Tasks.UniTaskVoid OpenOverlayAsync()
+        private async Cysharp.Threading.Tasks.UniTaskVoid OpenOverlayAsync()
         {
             try
             {
-                await FairyInventoryFlow.OpenOverlayAsync();
+                UIComponent owner = m_OpenData?.Owner;
+                if (owner == null)
+                {
+                    return;
+                }
+
+                await FairyInventoryFlow.OpenOverlayAsync(owner);
+            }
+            catch (OperationCanceledException)
+            {
             }
             catch (Exception exception)
             {

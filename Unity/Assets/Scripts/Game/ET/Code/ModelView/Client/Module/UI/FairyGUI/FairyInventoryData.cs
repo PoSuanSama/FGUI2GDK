@@ -37,6 +37,24 @@ namespace ET.Client
     [global::ET.EnableClass]
     public class FairyFormInstanceData
     {
+        private EntityRef<UIComponent> m_Owner;
+
+        protected FairyFormInstanceData(UIComponent owner)
+        {
+            if (owner == null)
+            {
+                throw new ArgumentNullException(nameof(owner));
+            }
+
+            if (owner.IsDisposed)
+            {
+                throw new ObjectDisposedException(nameof(owner));
+            }
+
+            m_Owner = owner;
+        }
+
+        public UIComponent Owner => m_Owner;
         public Game.FairyUIForm UIForm { get; private set; }
 
         public void Attach(Game.FairyUIForm uiForm)
@@ -48,6 +66,10 @@ namespace ET.Client
     [global::ET.EnableClass]
     public sealed class FairyInventoryOpenData : FairyFormInstanceData
     {
+        public FairyInventoryOpenData(UIComponent owner)
+            : base(owner)
+        {
+        }
     }
 
     [global::ET.EnableClass]
@@ -55,7 +77,8 @@ namespace ET.Client
     {
         private bool m_Closed;
 
-        public FairyItemDetailOpenData(FairyInventoryItemData item, int token)
+        public FairyItemDetailOpenData(UIComponent owner, FairyInventoryItemData item, int token)
+            : base(owner)
         {
             Item = item ?? throw new ArgumentNullException(nameof(item));
             Token = token;
@@ -79,5 +102,9 @@ namespace ET.Client
     [global::ET.EnableClass]
     public sealed class FairyInventoryOverlayOpenData : FairyFormInstanceData
     {
+        public FairyInventoryOverlayOpenData(UIComponent owner)
+            : base(owner)
+        {
+        }
     }
 }

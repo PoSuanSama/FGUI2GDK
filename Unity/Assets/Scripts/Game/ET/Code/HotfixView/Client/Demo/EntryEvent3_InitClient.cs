@@ -11,11 +11,19 @@ namespace ET.Client
             //Test
             root.AddComponent<TestComponent>();
             root.AddComponent<UGFComponent>();
+            UIComponent uiComponent = root.AddComponent<UIComponent>();
+            EntityRef<UIComponent> uiComponentRef = uiComponent;
             
             GlobalComponent globalComponent = root.AddComponent<GlobalComponent>();
             await FairyGUIBootstrap.InitializeAsync();
-            await FairyUIFormService.OpenFairyUIFormAsync(UGFUIFormId.FairyDemoForm, "et-demo");
-            root.AddComponent<UIComponent>();
+            uiComponent = uiComponentRef;
+            if (uiComponent == null)
+            {
+                throw new System.OperationCanceledException(
+                    "The ET UI owner was destroyed during FairyGUI initialization.");
+            }
+
+            await uiComponent.OpenFairyUIFormAsync(UGFUIFormId.FairyDemoForm, uiComponent);
             root.AddComponent<PlayerComponent>();
             root.AddComponent<CurrentScenesComponent>();
             
