@@ -43,10 +43,14 @@ namespace ET.Analyzer
                  return;
              }
 
+             // UGFUIForm/UGFUIWidget/UGFEntity 是历史 UGUI 包装基类;FairyUIFormComponent 是
+             // FairyGUI 接入后同构的 Entity 状态基类(见 08-27-fgui-et-full-integration-remove-ugui
+             // design.md 第 8 节)。子类继承这些基类不算"绕过 Entity 直接继承"违规。
              if (namedTypeSymbol.BaseType?.ToString() != "ET.LSEntity"
                  && namedTypeSymbol.BaseType?.ToString() != "ET.UGFUIForm"
                  && namedTypeSymbol.BaseType?.ToString() != "ET.UGFUIWidget"
                  && namedTypeSymbol.BaseType?.ToString() != "ET.UGFEntity"
+                 && namedTypeSymbol.BaseType?.ToString() != "ET.Client.FairyUIFormComponent"
                  && t == Definition.EntityType)
              {
                  foreach (SyntaxReference? declaringSyntaxReference in namedTypeSymbol.DeclaringSyntaxReferences)
