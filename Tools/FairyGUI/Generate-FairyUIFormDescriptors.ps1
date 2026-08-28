@@ -255,7 +255,10 @@ foreach ($row in @($lubanRows)) {
 $written = 0
 if ($Check -and (Test-Path -LiteralPath $outputRoot -PathType Container)) {
     foreach ($actualFile in @(Get-ChildItem -LiteralPath $outputRoot -Filter '*.json' -File -Recurse)) {
-        if ($actualFile.Name -ceq 'GDKFairyManifest.json') {
+        # 本地化生成器与描述符生成器共用同一输出根;两个 manifest 与四语言 strings 属于
+        # 本地化批次,不归描述符检查管辖。
+        if ($actualFile.Name -ceq 'GDKFairyManifest.json' -or
+            $actualFile.Name -ceq 'GDKFairyLocalizationManifest.json') {
             continue
         }
         if (-not $expectedFileNames.Contains($actualFile.Name) -or
