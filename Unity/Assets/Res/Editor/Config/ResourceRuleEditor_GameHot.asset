@@ -214,3 +214,13 @@ MonoBehaviour:
     m_Packed: 0
     m_FilterType: 0
     m_SearchPatterns: '*.*'
+  - m_Valid: 1
+    m_Name: GameHot.Prefab
+    m_Variant: 
+    m_FileSystem: GameData
+    m_Groups: 
+    m_AssetsDirectoryPath: Assets/Res/Hot
+    m_LoadType: 0
+    m_Packed: 0
+    m_FilterType: 0
+    m_SearchPatterns: '*.prefab'

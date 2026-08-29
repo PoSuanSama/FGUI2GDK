@@ -255,11 +255,18 @@ namespace Game
             try
             {
                 ownerToken.ThrowIfCancellationRequested();
-                descriptorAsset = await GameEntry.Resource.LoadAssetAsync<TextAsset>(
-                    descriptorAssetName,
-                    cancellationToken: ownerToken);
+                descriptorAsset = await LoadDescriptorTextAsync(descriptorAssetName, ownerToken);
                 FairyUIFormDescriptor descriptor = FairyUIFormDescriptor.Parse(descriptorAsset.text);
                 ValidateDescriptor(descriptor, uiId, uiForm);
+
+                // descriptor 解析后原始 TextAsset 立即释放回池:GF OpenUIForm 稍后会对同一
+                // descriptorAssetName 再发起一次加载(作为窗体资产 token)。这里用无类型加载,
+                // 与 GF UIManager 的加载共享同一对象池键 (assetName, null)——Editor Resource
+                // Mode 不经过 Asset Pool 而不暴露差异;AssetBundle 模式若用有类型加载
+                // (assetName, typeof(TextAsset)) 会与 GF 的键分裂,同一个 Unity 对象被 Register
+                // 两次并抛同 key ArgumentException。解析后释放让 GF 的后续加载直接 Spawn 复用。
+                GameEntry.Resource.UnloadAsset(descriptorAsset);
+                descriptorAsset = null;
 
                 Action<FairyUIFormDescriptor> preparePackage = FairyUIPresenterRegistry.PreparePackage;
                 Func<FairyUIFormDescriptor, IFairyUIPresenter> createPresenter =
@@ -508,6 +515,96 @@ namespace Game
             }
         }
 
+
+        /// <summary>
+        /// 用 GF 无类型 LoadAsset 等待加载 descriptor TextAsset。
+        ///
+        /// 必须无类型:GF UIManager 打开窗体时对同一 assetName 发起的是无类型加载,
+        /// 对象池键为 (assetName, null)。有类型加载会产生 (assetName, typeof(TextAsset))
+        /// 的第二个池键,AssetBundle 模式下同一个 Unity 对象会被 Register 两次并抛
+        /// 同 key ArgumentException。取消语义与 Awaitable 扩展对齐:加载完成后取消会
+        /// 释放资产再抛 OperationCanceledException,取消后迟到的结果会被释放。
+        /// </summary>
+        private static UniTask<TextAsset> LoadDescriptorTextAsync(
+            string assetName,
+            CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return UniTask.FromCanceled<TextAsset>(cancellationToken);
+            }
+
+            UniTaskCompletionSource<TextAsset> completion = new UniTaskCompletionSource<TextAsset>();
+            TextAsset loadedAsset = null;
+            bool finished = false;
+            CancellationTokenRegistration cancellationRegistration = default;
+
+            void Finish()
+            {
+                if (finished)
+                {
+                    return;
+                }
+
+                finished = true;
+                cancellationRegistration.Dispose();
+            }
+
+            GameEntry.Resource.LoadAsset(
+                assetName,
+                new LoadAssetCallbacks(
+                    (loadedName, asset, duration, userData) =>
+                    {
+                        if (finished)
+                        {
+                            // await 已被取消或已失败,释放迟到结果。
+                            GameEntry.Resource.UnloadAsset(asset);
+                            return;
+                        }
+
+                        if (asset is TextAsset textAsset)
+                        {
+                            loadedAsset = textAsset;
+                            Finish();
+                            completion.TrySetResult(textAsset);
+                        }
+                        else
+                        {
+                            Finish();
+                            GameEntry.Resource.UnloadAsset(asset);
+                            completion.TrySetException(new GameFrameworkException(
+                                Utility.Text.Format(
+                                    "FairyGUI descriptor asset '{0}' has unexpected type '{1}'.",
+                                    loadedName,
+                                    asset?.GetType().FullName ?? "null")));
+                        }
+                    },
+                    (failedName, status, errorMessage, userData) =>
+                    {
+                        Finish();
+                        completion.TrySetException(new GameFrameworkException(
+                            Utility.Text.Format(
+                                "Can not load FairyGUI descriptor '{0}': {1}.",
+                                failedName,
+                                errorMessage)));
+                    },
+                    null,
+                    null));
+
+            cancellationRegistration = cancellationToken.Register(() =>
+            {
+                Finish();
+                if (loadedAsset != null)
+                {
+                    GameEntry.Resource.UnloadAsset(loadedAsset);
+                    loadedAsset = null;
+                }
+
+                completion.TrySetCanceled(cancellationToken);
+            });
+
+            return completion.Task;
+        }
 
         private static void ValidateDescriptor(FairyUIFormDescriptor descriptor, int uiId, DRUIForm uiForm)
         {

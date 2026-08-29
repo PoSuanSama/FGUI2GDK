@@ -108,6 +108,73 @@ namespace Game.Editor
             AssetDatabase.ImportAsset(ResourceCollectionPath, ImportAssetOptions.ForceUpdate);
         }
 
+        [AgentCallable("Build the Windows64 IL2CPP Player package: HybridCLR Do All -> resource build -> Launcher-scene Player build (standard one-click build flow).", 3600)]
+        public static void BuildWindows64PlayerPkg()
+        {
+            if (EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException("Windows64 Player build requires EditMode.");
+            }
+
+            // 与 Book/一键打包.md 相同的标准流程:
+            // 0. 首次构建前必须安装 HybridCLR(克隆 hybridclr/il2cpp_plus 到本机
+            //    HybridCLRData,gitignored;CheckSettings 会拦截未安装状态);
+            // 1. 资源规则补齐(否则 HotEntry.prefab 等热更入口不进包);
+            // 2. HybridCLR 准备(Define Symbol Refresh + GameHot Compile Dll + Generate/All + CopyAotDlls);
+            // 3. BuildHelper.BuildPkg(资源收集 + AssetBundle 构建 + Launcher 场景 Player 构建)。
+            HybridCLR.Editor.Installer.InstallerController installer =
+                new HybridCLR.Editor.Installer.InstallerController();
+            if (!installer.HasInstalledHybridCLR())
+            {
+                Log.Info("HybridCLR is not initialized; installing from the configured repos first.");
+                installer.InstallDefaultHybridCLR();
+            }
+
+            EnsureGameHotHotEntryResourceRule();
+            HybridCLREditor.HybridCLRDoAll();
+            BuildHelper.BuildPkg(Platform.Windows64);
+        }
+
+        [AgentCallable("Add the GameHot.Prefab resource rule for Assets/Res/Hot root prefabs (HotEntry.prefab was not collected by any rule).", 60)]
+        public static void EnsureGameHotHotEntryResourceRule()
+        {
+            const string RuleName = "GameHot.Prefab";
+            const string ConfigPath = "Assets/Res/Editor/Config/ResourceRuleEditor_GameHot.asset";
+
+            UnityGameFramework.Extension.Editor.ResourceRuleEditorData data =
+                AssetDatabase.LoadAssetAtPath<UnityGameFramework.Extension.Editor.ResourceRuleEditorData>(
+                    ConfigPath);
+            if (data == null)
+            {
+                throw new InvalidOperationException($"GameHot resource rule asset is missing: {ConfigPath}");
+            }
+
+            if (data.Rules.Exists(rule =>
+                    string.Equals(rule.Name, RuleName, StringComparison.Ordinal)))
+            {
+                Log.Info($"{RuleName} resource rule already exists.");
+                return;
+            }
+
+            data.Rules.Add(new UnityGameFramework.Extension.Editor.ResourceRule
+            {
+                Valid = true,
+                Name = RuleName,
+                FileSystem = "GameData",
+                AssetsDirectoryPath = "Assets/Res/Hot",
+                LoadType = UnityGameFramework.Editor.ResourceTools.LoadType.LoadFromFile,
+                Packed = false,
+                // SearchPatterns 只匹配 prefab:Hot 根下只有 HotEntry.prefab,
+                // Code/Luban 子目录里是 dll.bytes/luban bytes,不会被 *.prefab 命中,
+                // 与 GameHot.Code/GameHot.Luban 规则无重复收集。
+                FilterType = UnityGameFramework.Extension.Editor.ResourceFilterType.Root,
+                SearchPatterns = "*.prefab",
+            });
+            EditorUtility.SetDirty(data);
+            AssetDatabase.SaveAssets();
+            Log.Info($"Added {RuleName} resource rule for Assets/Res/Hot root prefabs.");
+        }
+
         [AgentCallable("Remove the UI.UXTool rule entry from the GameHot and ET resource rule assets (the UXTool asset directory was deleted in the zero-UGUI cleanup).", 60)]
         public static void RemoveObsoleteUXToolResourceRule()
         {

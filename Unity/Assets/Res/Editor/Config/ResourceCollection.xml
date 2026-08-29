@@ -3,7 +3,10 @@
   <ResourceCollection>
     <Resources>
       <Resource Name="Auto/Launcher" LoadType="0" Packed="True" ResourceGroups="Launcher" />
+      <Resource Name="GameHot.Code" FileSystem="GameData" LoadType="0" Packed="False" />
       <Resource Name="GameHot.Luban" FileSystem="GameData" LoadType="0" Packed="False" />
+      <Resource Name="GameHot.Prefab" FileSystem="GameData" LoadType="0" Packed="False" />
+      <Resource Name="HybridCLR" LoadType="0" Packed="False" />
       <Resource Name="Luban" FileSystem="GameData" LoadType="0" Packed="False" />
       <Resource Name="Res/Entity/Asteroid01" LoadType="0" Packed="False" />
       <Resource Name="Res/Entity/Asteroid02" LoadType="0" Packed="False" />
@@ -91,6 +94,7 @@
       <Asset Guid="1ab4013f822a3e649ba2f77830ffa153" ResourceName="Res/Mesh/prop_asteroid_01" />
       <Asset Guid="1abfbe65a6e3c034cb43df1cff7317cb" ResourceName="Luban" />
       <Asset Guid="1b4bad6cea5a94611b21f9757fe41444" ResourceName="Res/Material/fx_enemyShip_engines_mat" />
+      <Asset Guid="1b7ff0b4a36b5624f994a70368469bb9" ResourceName="GameHot.Code" />
       <Asset Guid="1be4472894949437694aead55c6da60f" ResourceName="Res/Sound/weapon_enemy" />
       <Asset Guid="1cfe02ffd0b74854ea5bcd1a3c63ac3c" ResourceName="Res/Material/part_blast_mat" />
       <Asset Guid="1d46a17a95a444c08830612bc1146d1d" ResourceName="Res/Material/part_shockwave_mat" />
@@ -121,6 +125,7 @@
       <Asset Guid="595f7cae6f82a6146b20ca287fe7c859" ResourceName="Res/Prefab/Skeleton/SkeletonController" />
       <Asset Guid="5e31c553e9e8b03408701761fa5142cd" ResourceName="UI.FairyGUI" />
       <Asset Guid="5f95d0df2dbdbf94bbd07f691207616b" ResourceName="GameHot.Luban" />
+      <Asset Guid="5ffda580b07c8f448bb351805642ee0c" ResourceName="GameHot.Code" />
       <Asset Guid="62af9e5c8f39cfa49af9e10ccf42f1da" ResourceName="Res/UI/UISprite/Common" />
       <Asset Guid="638ff8ae4a0d15047839cd265d3bc296" ResourceName="Res/Music/music_background" />
       <Asset Guid="63fe6ff9ab9e1433f8db4ebd940f2442" ResourceName="Res/Material/done_fx_bolt_cyan_mat" />
@@ -148,6 +153,7 @@
       <Asset Guid="9e27b0bdab1ad7242a009899d15c0e67" ResourceName="Res/Prefab/Skeleton/Skeleton" />
       <Asset Guid="9f847ec5e66e03e4ead1d3c5f7b510e8" ResourceName="Res/UI/UISprite/Common" />
       <Asset Guid="a019ae3af8e864616b85773c509f5285" ResourceName="Res/Sound/explosion_player" />
+      <Asset Guid="a06b195ec5af14a4a9b5f1120a3338ad" ResourceName="HybridCLR" />
       <Asset Guid="a23eef5e20ff8cb46adf33491fc443fb" ResourceName="Res/Material/part_spark_yellow_mat" />
       <Asset Guid="a5294483f20f40d449699101bb428cda" ResourceName="Res/Scene/Map1" />
       <Asset Guid="a6d58f54ce5934781962a4f887e834f3" ResourceName="Res/Entity/AsteroidExplosion" />
@@ -173,6 +179,7 @@
       <Asset Guid="db58965402f12ed47b4dad61a9e48c9d" ResourceName="Res/UI/UISprite/Icon" />
       <Asset Guid="df04e921a317167459233ce6732bd0f1" ResourceName="Res/Mesh/prop_asteroid_03" />
       <Asset Guid="dfc4233acbbd1c44fa552f08e23cd89c" ResourceName="Luban" />
+      <Asset Guid="dff598a90c710a24683413c5d9e4b7c8" ResourceName="GameHot.Prefab" />
       <Asset Guid="e5ca26c53b6ab8a46b52817008d7c7fa" ResourceName="Res/UI/UISprite/Icon" />
       <Asset Guid="e82837c9099f69a48b48fc44eb8d119d" ResourceName="Res/UI/UISprite/Common" />
       <Asset Guid="e830964cdb85ff3429bca484c16bab44" ResourceName="Res/UI/UISound/select" />
