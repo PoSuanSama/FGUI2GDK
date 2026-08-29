@@ -11,7 +11,6 @@
     <assembly fullname="UnityEngine.AssetBundleModule" preserve="all" />
     <assembly fullname="UnityEngine.CoreModule" preserve="all" />
     <assembly fullname="Unity.RenderPipelines.Universal.Runtime" preserve="all" />
-    <assembly fullname="UnityEngine.UI" preserve="all" />
 
     <assembly fullname="Unity.InputSystem" preserve="all" />
     <assembly fullname="Unity.Mathematics" preserve="all" />
