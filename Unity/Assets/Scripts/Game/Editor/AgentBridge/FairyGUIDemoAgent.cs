@@ -108,6 +108,34 @@ namespace Game.Editor
             AssetDatabase.ImportAsset(ResourceCollectionPath, ImportAssetOptions.ForceUpdate);
         }
 
+        [AgentCallable("Remove the UI.UXTool rule entry from the GameHot and ET resource rule assets (the UXTool asset directory was deleted in the zero-UGUI cleanup).", 60)]
+        public static void RemoveObsoleteUXToolResourceRule()
+        {
+            string[] ruleConfigPaths =
+            {
+                ResourceRuleTool.ResourceRuleAsset_GameHot,
+                ResourceRuleTool.ResourceRuleAsset_ET,
+            };
+
+            foreach (string configPath in ruleConfigPaths)
+            {
+                UnityGameFramework.Extension.Editor.ResourceRuleEditorData data =
+                    AssetDatabase.LoadAssetAtPath<UnityGameFramework.Extension.Editor.ResourceRuleEditorData>(
+                        configPath);
+                if (data == null)
+                {
+                    throw new InvalidOperationException($"Resource rule asset is missing: {configPath}");
+                }
+
+                int removed = data.Rules.RemoveAll(rule =>
+                    string.Equals(rule.Name, "UI.UXTool", StringComparison.Ordinal));
+                EditorUtility.SetDirty(data);
+                Log.Info($"Removed {removed} obsolete UI.UXTool rule from {configPath}.");
+            }
+
+            AssetDatabase.SaveAssets();
+        }
+
         [AgentCallable("Open and interact with the FairyGUI demo through the native FairyUIManager host.", 30)]
         public static async UniTask OpenFairyDemoForm()
         {
