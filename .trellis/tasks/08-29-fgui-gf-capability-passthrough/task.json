@@ -3,7 +3,7 @@
   "name": "fgui-gf-capability-passthrough",
   "title": "FairyGUI GF 能力透出复核与补齐",
   "description": "复核 HANDOFF §19.1 的 GF 能力透出，补齐对象池调参 4 属性与三个 GF 事件桥（Success/Update/DependencyAsset）缺口。",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,

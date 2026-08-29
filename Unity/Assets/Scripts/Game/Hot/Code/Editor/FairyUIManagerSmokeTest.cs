@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using AgentBridge;
 using Cysharp.Threading.Tasks;
 using Game.FairyGUI.Package1;
+using GameFramework.UI;
 using UnityEditor;
+using UnityEngine;
 
 namespace Game.Hot.Editor
 {
@@ -67,6 +69,111 @@ namespace Game.Hot.Editor
                 {
                     uiManager.CloseUIForm(form.SerialId);
                 }
+            }
+        }
+
+        [AgentCallable("P2 能力透出冒烟：对象池四属性回读一致、三个 GF 事件桥转发、重复 Initialize 订阅幂等。", 60)]
+        public static async UniTask RunFairyGFPassthroughSmokeTest()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException("FairyGF passthrough smoke test requires PlayMode.");
+            }
+
+            EnsurePresenterRegistry();
+
+            FairyUIManager uiManager = FairyUIManager.Instance;
+            uiManager.Initialize();
+            EnsureFairyUIGroup(uiManager, "Default", 0);
+            EnsureFairyUIGroup(uiManager, "Pop", 100);
+
+            // 1. 对象池四属性回读一致（写入后读回，再恢复原值）。
+            float originalInterval = uiManager.InstanceAutoReleaseInterval;
+            int originalCapacity = uiManager.InstanceCapacity;
+            float originalExpireTime = uiManager.InstanceExpireTime;
+            int originalPriority = uiManager.InstancePriority;
+
+            try
+            {
+                uiManager.InstanceAutoReleaseInterval = 42.5f;
+                uiManager.InstanceCapacity = 37;
+                uiManager.InstanceExpireTime = 12.5f;
+                uiManager.InstancePriority = 7;
+
+                if (!Mathf.Approximately(uiManager.InstanceAutoReleaseInterval, 42.5f))
+                    throw new InvalidOperationException("InstanceAutoReleaseInterval 回读不一致。");
+                if (uiManager.InstanceCapacity != 37)
+                    throw new InvalidOperationException("InstanceCapacity 回读不一致。");
+                if (!Mathf.Approximately(uiManager.InstanceExpireTime, 12.5f))
+                    throw new InvalidOperationException("InstanceExpireTime 回读不一致。");
+                if (uiManager.InstancePriority != 7)
+                    throw new InvalidOperationException("InstancePriority 回读不一致。");
+            }
+            finally
+            {
+                uiManager.InstanceAutoReleaseInterval = originalInterval;
+                uiManager.InstanceCapacity = originalCapacity;
+                uiManager.InstanceExpireTime = originalExpireTime;
+                uiManager.InstancePriority = originalPriority;
+            }
+
+            // 2. 三个 GF 事件桥转发 + 重复 Initialize 订阅幂等。
+            // 第二次 Initialize 不应重复订阅 GF 事件（m_EventsAttached 幂等），否则打开
+            // 一个界面会触发两次静态事件转发。Update/DependencyAsset 在 Editor 快加载下
+            // 可能不触发，故只强断言 Success（打开成功必触发）。
+            uiManager.Initialize();
+
+            // GameHot 流程进入 Menu 会异步自动打开 FairyDemoForm(103)。先等其稳定再关闭
+            // 已存在实例,避免自动打开与验证打开竞争导致 Success 事件触发两次。
+            for (int i = 0; i < 10; i++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            FairyUIForm existingForm = uiManager.GetUIForm("Assets/Res/UI/FairyGUI/FairyDemoForm.json");
+            if (existingForm != null)
+            {
+                uiManager.CloseUIForm(existingForm.SerialId);
+            }
+
+            for (int i = 0; i < 3; i++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            int successCount = 0;
+            int updateCount = 0;
+            int dependencyCount = 0;
+            EventHandler<OpenUIFormSuccessEventArgs> onSuccess = (_, _) => successCount++;
+            EventHandler<OpenUIFormUpdateEventArgs> onUpdate = (_, _) => updateCount++;
+            EventHandler<OpenUIFormDependencyAssetEventArgs> onDependency = (_, _) => dependencyCount++;
+
+            FairyUIManager.OpenUIFormSuccess += onSuccess;
+            FairyUIManager.OpenUIFormUpdate += onUpdate;
+            FairyUIManager.OpenUIFormDependencyAsset += onDependency;
+            try
+            {
+                FairyUIForm form = await uiManager.OpenFairyUIFormAsync(UIFormId.FairyDemoForm, "passthrough-smoke");
+                if (form == null)
+                {
+                    throw new InvalidOperationException("OpenFairyUIFormAsync returned null.");
+                }
+
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                uiManager.CloseUIForm(form.SerialId);
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+            finally
+            {
+                FairyUIManager.OpenUIFormSuccess -= onSuccess;
+                FairyUIManager.OpenUIFormUpdate -= onUpdate;
+                FairyUIManager.OpenUIFormDependencyAsset -= onDependency;
+            }
+
+            if (successCount != 1)
+            {
+                throw new InvalidOperationException(
+                    $"OpenUIFormSuccess 事件桥转发或订阅幂等异常：count={successCount}（应为 1）。");
             }
         }
 

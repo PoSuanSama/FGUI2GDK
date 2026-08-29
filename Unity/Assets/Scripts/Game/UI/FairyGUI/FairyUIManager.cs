@@ -35,6 +35,21 @@ namespace Game
         /// </summary>
         public static event Action<int> CloseUIFormComplete;
 
+        /// <summary>
+        /// GF 打开成功事件桥:业务可订阅打开完成的稳定回调,不再依赖打开轮询兜底。
+        /// </summary>
+        public static event EventHandler<OpenUIFormSuccessEventArgs> OpenUIFormSuccess;
+
+        /// <summary>
+        /// GF 打开更新事件桥:打开流程的进度回调。
+        /// </summary>
+        public static event EventHandler<OpenUIFormUpdateEventArgs> OpenUIFormUpdate;
+
+        /// <summary>
+        /// GF 打开依赖资源事件桥:打开流程加载依赖资源时回调。
+        /// </summary>
+        public static event EventHandler<OpenUIFormDependencyAssetEventArgs> OpenUIFormDependencyAsset;
+
         private const string DescriptorAssetRoot = "Assets/Res/UI/FairyGUI";
         private const int DesignResolutionX = 1280;
         private const int DesignResolutionY = 720;
@@ -72,7 +87,10 @@ namespace Game
 
             if (!m_EventsAttached)
             {
+                m_UIManager.OpenUIFormSuccess += OnOpenUIFormSuccess;
                 m_UIManager.OpenUIFormFailure += OnOpenUIFormFailure;
+                m_UIManager.OpenUIFormUpdate += OnOpenUIFormUpdate;
+                m_UIManager.OpenUIFormDependencyAsset += OnOpenUIFormDependencyAsset;
                 m_UIManager.CloseUIFormComplete += OnCloseUIFormComplete;
                 m_EventsAttached = true;
             }
@@ -204,6 +222,42 @@ namespace Game
         /// </summary>
         public void SetUIFormInstancePriority(object uiFormInstance, int priority) =>
             GetRequiredUIManager().SetUIFormInstancePriority(uiFormInstance, priority);
+
+        /// <summary>
+        /// GF 语义层透出:界面实例对象池自动释放间隔秒数。
+        /// </summary>
+        public float InstanceAutoReleaseInterval
+        {
+            get => GetRequiredUIManager().InstanceAutoReleaseInterval;
+            set => GetRequiredUIManager().InstanceAutoReleaseInterval = value;
+        }
+
+        /// <summary>
+        /// GF 语义层透出:界面实例对象池容量。
+        /// </summary>
+        public int InstanceCapacity
+        {
+            get => GetRequiredUIManager().InstanceCapacity;
+            set => GetRequiredUIManager().InstanceCapacity = value;
+        }
+
+        /// <summary>
+        /// GF 语义层透出:界面实例对象池对象过期秒数。
+        /// </summary>
+        public float InstanceExpireTime
+        {
+            get => GetRequiredUIManager().InstanceExpireTime;
+            set => GetRequiredUIManager().InstanceExpireTime = value;
+        }
+
+        /// <summary>
+        /// GF 语义层透出:界面实例对象池默认优先级(区别于 SetUIFormInstancePriority 的实例级优先级)。
+        /// </summary>
+        public int InstancePriority
+        {
+            get => GetRequiredUIManager().InstancePriority;
+            set => GetRequiredUIManager().InstancePriority = value;
+        }
 
         public bool IsValidUIForm(FairyUIForm form) => GetRequiredUIManager().IsValidUIForm(form);
 
@@ -467,9 +521,24 @@ namespace Game
                 "FairyUIManager is not initialized. Call Initialize before using it.");
         }
 
+        private void OnOpenUIFormSuccess(object sender, OpenUIFormSuccessEventArgs args)
+        {
+            OpenUIFormSuccess?.Invoke(sender, args);
+        }
+
         private void OnOpenUIFormFailure(object sender, OpenUIFormFailureEventArgs args)
         {
             OpenUIFormFailure?.Invoke(sender, args);
+        }
+
+        private void OnOpenUIFormUpdate(object sender, OpenUIFormUpdateEventArgs args)
+        {
+            OpenUIFormUpdate?.Invoke(sender, args);
+        }
+
+        private void OnOpenUIFormDependencyAsset(object sender, OpenUIFormDependencyAssetEventArgs args)
+        {
+            OpenUIFormDependencyAsset?.Invoke(sender, args);
         }
 
         private void OnCloseUIFormComplete(object sender, CloseUIFormCompleteEventArgs args)
