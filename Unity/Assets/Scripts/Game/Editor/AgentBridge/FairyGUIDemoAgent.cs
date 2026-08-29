@@ -345,6 +345,16 @@ namespace Game.Editor
                 throw new InvalidOperationException("FairyGUI lifecycle cycles require PlayMode.");
             }
 
+            // 本测试覆盖 GameHot 原生窗口路径(类 Presenter 注册表);ET 模式走 Component/System
+            // 工厂链,生命周期由 ET.FairyInventorySmokeTest/FairyFiberLifecycleSmokeTest 覆盖。
+            if (FairyUIPresenterRegistry.CreatePresenter == null)
+            {
+                Log.Info(
+                    "FairyUIForm lifecycle cycles are not applicable in ET mode; " +
+                    "ET ownership lifecycle is covered by the ET smoke suite.");
+                return;
+            }
+
             FairyUIForm existing = FairyUIManager.Instance.GetUIForm(DescriptorAsset);
             if (existing != null)
             {

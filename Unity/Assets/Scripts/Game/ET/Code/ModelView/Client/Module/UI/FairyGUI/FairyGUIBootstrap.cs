@@ -56,7 +56,17 @@ namespace ET.Client
             // 输入/焦点/手柄桥:方向导航 + 确认/取消映射。
             FairyInputService.Instance.Initialize();
 
+            // 双符号启动竞态:GameEntry.Base/CodeRunner 就绪不代表 TablesComponent 已注册。
+            // 有界等待 Tables 就绪,超时才抛稳定错误;避免首次调用半途失败留下半初始化状态。
             TablesComponent tables = UnityGameFramework.Runtime.GameEntry.GetComponent<TablesComponent>();
+            int waitFrames = 0;
+            while (tables == null && waitFrames < 120)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                tables = UnityGameFramework.Runtime.GameEntry.GetComponent<TablesComponent>();
+                waitFrames++;
+            }
+
             if (tables == null)
             {
                 throw new GameFrameworkException("ET FairyGUI bootstrap requires a common TablesComponent.");

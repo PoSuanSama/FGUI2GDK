@@ -31,6 +31,14 @@ namespace ET.Client
 
             if (s_Factories.TryGetValue(uiId, out Func<UIComponent, FairyUIFormComponent> existing))
             {
+                // 同一注册点(同一 Method)重复登记视为幂等:启动竞态下 bootstrap 首次
+                // 调用可能在 Tables 检查处失败,后续重试会重新走注册;只有不同来源的
+                // 工厂争夺同一 UI ID 才是真正的配置冲突。
+                if (existing.Method == factory.Method)
+                {
+                    return;
+                }
+
                 throw new InvalidOperationException(
                     $"Duplicate FairyGUI UI component factory for UI ID '{uiId}': {existing.Method.Name} vs {factory.Method.Name}.");
             }

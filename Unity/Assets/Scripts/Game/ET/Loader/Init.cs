@@ -1,7 +1,9 @@
 ﻿using System;
 using CommandLine;
 using Cysharp.Threading.Tasks;
+using Game;
 using UnityEngine;
+using UnityGameFramework.Extension;
 
 namespace ET
 {
@@ -71,6 +73,30 @@ namespace ET
             {
                 Log.Error(e.ExceptionObject.ToString());
             };
+
+            // GameEntry 的 Awake 先于场景对象 Start:GF 组件在 GameEntry.Start 后才可用。
+            // ET 与 GameHot 并存时(Standalone 双符号冒烟),这里的 Start 可能在 GameEntry.Start
+            // 之前执行,直接访问 GameEntry.CodeRunner 会空引用。有界等待 GameEntry 就绪,
+            // 失败时记录诊断而不是抛出(启动链不应被自身初始化顺序打断)。
+            int waitFrames = 0;
+            while (waitFrames < 120 &&
+                   (GameEntry.Base == null || GameEntry.CodeRunner == null))
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                waitFrames++;
+            }
+
+            if (GameEntry.Base == null || GameEntry.CodeRunner == null)
+            {
+                Log.Error("ET Init: GameEntry components are not ready within 120 frames; continue with degraded init.");
+            }
+
+            // Awaitable 扩展要求先订阅 GF 事件;双符号模式下 GameHot 的 ProcedureLaunch
+            // 可能晚于 ET 初始化执行,这里按幂等调用,避免重复订阅 handler。
+            if (!UnityGameFramework.Extension.Awaitable.IsValid)
+            {
+                UnityGameFramework.Extension.Awaitable.SubscribeEvent();
+            }
 
             // 命令行参数
             string[] args = "".Split(" ");

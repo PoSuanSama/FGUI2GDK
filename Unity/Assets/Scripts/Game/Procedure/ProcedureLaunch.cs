@@ -18,8 +18,11 @@ namespace Game
         protected override void OnEnter(ProcedureOwner procedureOwner)
         {
             base.OnEnter(procedureOwner);
-            // 注册异步需要的事件
-            Awaitable.SubscribeEvent();
+            // 注册异步需要的事件;幂等调用,避免 ET/GameHot 双符号下重复订阅 handler。
+            if (!Awaitable.IsValid)
+            {
+                Awaitable.SubscribeEvent();
+            }
             
             if (GameEntry.Debugger.ActiveWindow)
             {

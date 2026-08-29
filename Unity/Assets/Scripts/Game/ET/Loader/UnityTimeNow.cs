@@ -1,5 +1,6 @@
 using System;
 using Game;
+using UnityGameFramework.Runtime;
 
 namespace ET
 {
@@ -12,7 +13,8 @@ namespace ET
         
         public UnityTimeNow()
         {
-            this.m_GameSpeed = GameEntry.Base.GameSpeed;
+            BaseComponent baseComponent = Game.GameEntry.Base;
+            this.m_GameSpeed = baseComponent != null ? baseComponent.GameSpeed : 1f;
             this.m_UtcNowTicks = this.m_UtcRealTicks = DateTime.UtcNow.Ticks;
         }
         
@@ -24,7 +26,12 @@ namespace ET
 
         public void Update()
         {
-            this.m_GameSpeed = GameEntry.Base.GameSpeed;
+            BaseComponent baseComponent = Game.GameEntry.Base;
+            if (baseComponent != null)
+            {
+                this.m_GameSpeed = baseComponent.GameSpeed;
+            }
+
             this.m_UtcNowTicks = GetUtcNowTicks();
             this.m_UtcRealTicks = DateTime.UtcNow.Ticks;
         }
