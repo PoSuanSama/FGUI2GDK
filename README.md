@@ -1,6 +1,6 @@
 # GameDevelopmentKit
 
-GameDevelopmentKit（GDK）是一套 [Unity] 游戏开发框架。服务端基于 [ET 8.1]，客户端以 [UnityGameFramework]（GF）为底座，可选择纯 GF（GameHot）或 ET 开发模式。
+GameDevelopmentKit（GDK）是一套 [Unity] 游戏开发框架。服务端基于 [ET 8.1]，客户端以 [UnityGameFramework]（GF）为底座，可选择纯 GF（GameHot）或 ET 开发模式；**UI 视图层为 [FairyGUI]**，GDK 自有代码、资源与工具链已实现零 UGUI。
 
 ## 核心能力
 
@@ -8,13 +8,12 @@ GameDevelopmentKit（GDK）是一套 [Unity] 游戏开发框架。服务端基�
 | --- | --- |
 | 成熟稳定 | 经商业项目验证，覆盖客户端、服务端、热更新、数据、网络、UI 与构建等完整开发链路 |
 | 双端架构 | [Unity] 客户端与 [ET 8.1] 服务端共享协议、配置和基础设施；客户端支持 [纯 GF（GameHot）][模式选择] 与 ET 模式 |
+| UI | [FairyGUI] 作为唯一 Player UI 视图后端，GF `IUIManager` 继续拥有 UI ID、分组、层级、多实例、对象池与完整生命周期；GameHot 走 Presenter 工作流，ET 走 Component/System 打开链 |
 | 热更新 | [HybridCLR] 管理热更程序集、AOT 元数据与构建流程 |
-| ET 与 GF 集成 | [ETUI]、[ETEntity] 接入 ET 生命周期，[UniTask] 统一异步模型 |
+| ET 与 GF 集成 | ETUI、ETEntity 接入 ET 生命周期，[UniTask] 统一异步模型 |
 | 数据与协议 | [Luban] 导出配置，[Proto2CS] 生成 ET/MemoryPack 与 GF/Protobuf 协议代码 |
-| 数据绑定 | [ReactiveBinding]、[CodeBind] 与 [StateController] 覆盖响应式数据、组件绑定和 UI 状态 |
-| UI 与资源 | [UXTool] 提供 UI 工具，[AssetSet] 管理图片资源，[ResourceOptimize] 优化资源冗余 |
 | 网络 | [UnityWebSocket] 提供 WebSocket 通道 |
-| 编辑器工具 | [代码生成]、[包更新]、[Toolbar] 与 [一键构建] |
+| 编辑器工具 | [代码生成]、[Toolbar]、[一键构建] 与 [Unity Agent Bridge] 驱动的 AI 工作流 |
 
 ## 运行模式
 
@@ -47,20 +46,23 @@ GameDevelopmentKit（GDK）是一套 [Unity] 游戏开发框架。服务端基�
 | 主题 | 文档 |
 | --- | --- |
 | 索引与架构 | [Book 文档索引](Book/README.md)、[项目结构与模式选择](Book/Project结构.md) |
-| 业务开发 | [UI 开发](Book/UI开发.md)、[Entity 开发](Book/Entity开发.md) |
-| 资源与数据 | [AssetSet](Book/AssetSet.md)、[Luban 配置](Book/Luban配置.md) |
-| 协议 | [Proto 生成](Book/Proto生成工具.md) |
+| UI 开发 | [UI 开发](Book/UI开发.md)、[FairyGUI 接入](Book/FairyGUI接入.md) |
+| 业务开发 | [Entity 开发](Book/Entity开发.md) |
+| 配置与协议 | [Luban 配置](Book/Luban配置.md)、[Proto 生成](Book/Proto生成工具.md)、[多语言](Book/多语言.md) |
 | 热更新与构建 | [HybridCLR 热更新](Book/HybridCLR热更.md)、[一键打包](Book/一键打包.md) |
+| 开发工作流 | [Trellis AI 开发工作流](Book/Trellis工作流.md) |
 
 ## 主要依赖
 
 | 分类 | 依赖 |
 | --- | --- |
 | 核心框架 | [UnityGameFramework]、[UGFExtensions]、[ET 8.1] |
+| UI | [FairyGUI]（Unity SDK 5.2.0，MIT） |
 | 热更新与配置 | [HybridCLR]、[Luban]、[Luban Extension] |
 | 异步、序列化与网络 | [UniTask]、[MemoryPack Extension]、[Protobuf Unity]、[UnityWebSocket] |
-| UI 与绑定 | [UXTool]、[CodeBind]、[StateController]、[ReactiveBinding]、[LoopScrollRect] |
-| 编辑器工具 | [SocoTools]、[FolderTag] |
+| 编辑器工具 | [SocoTools]、[FolderTag]、[Unity Agent Bridge] |
+
+> 注：`com.unity.ugui` 仅作为 URP 的官方传递依赖保留，GDK 自有代码、asmdef、资源、配置与工具链不直接使用 UGUI。
 
 [Unity]: https://unity.com/
 [UnityGameFramework]: https://github.com/EllanJiang/UnityGameFramework
@@ -73,21 +75,15 @@ GameDevelopmentKit（GDK）是一套 [Unity] 游戏开发框架。服务端基�
 [MemoryPack Extension]: https://github.com/XuToWei/MemoryPack-Extension
 [Protobuf Unity]: https://github.com/XuToWei/Protobuf-Unity
 [UnityWebSocket]: https://github.com/psygames/UnityWebSocket
-[CodeBind]: https://github.com/XuToWei/CodeBind
-[StateController]: https://github.com/XuToWei/StateController
-[ReactiveBinding]: https://github.com/XuToWei/ReactiveBinding
-[LoopScrollRect]: https://github.com/qiankanglai/LoopScrollRect
-[UXTool]: https://uxtool.netease.com/
+[FairyGUI]: https://www.fairygui.com/
 [SocoTools]: https://github.com/crossous/SocoTools
 [FolderTag]: https://github.com/liyingsong99/FolderTag
+[Unity Agent Bridge]: https://github.com/XuToWei/UnityAgentBridge
 [模式选择]: Book/Project结构.md
 [ETUI]: Book/UI开发.md
 [ETEntity]: Book/Entity开发.md
-[ResourceOptimize]: Unity/Assets/Scripts/Library/UGF/UnityGameFramework.Extension/Editor/Resource/ResourceOptimize.cs
 [Proto2CS]: Book/Proto生成工具.md
-[AssetSet]: Book/AssetSet.md
 [代码生成]: Book/ET代码生成工具.md
-[包更新]: Unity/Assets/Scripts/Game/Editor/Tool/PackageUpdateTool.cs
 [Toolbar]: Book/自定义Toolbar.md
 [一键构建]: Book/一键打包.md
 
