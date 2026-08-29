@@ -7,7 +7,7 @@ Use `rg` to find the concept, base type, lifecycle method, attribute, generated 
 - GameHot bases and helpers under `Unity/Assets/Scripts/Game/Hot/`.
 - ET component/system patterns under `Unity/Assets/Scripts/Game/ET/Code/` and `DotNet/`.
 - UGF integrations under `Unity/Assets/Scripts/Game/ET/Loader/UGF/`.
-- Containers and awaitable extensions under `Unity/Assets/Scripts/Game/Container/`, `Entity/`, and `AssetSet/`.
+- Containers and awaitable extensions under `Unity/Assets/Scripts/Game/Container/` and `Entity/`.
 - Generators and analyzers under `Share/` and `Tools/`.
 
 ## Decide Whether To Reuse

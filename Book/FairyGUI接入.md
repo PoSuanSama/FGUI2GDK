@@ -1,6 +1,6 @@
 # FairyGUI 接入
 
-目标架构以 FairyGUI 作为 GDK 唯一 Player UI 后端，继续保留 GDK/UGF/ET 的 UI ID、分组、层级、生命周期和配套服务。当前仓库中的运行演示仍是验证阶段 POC；在后续运行时宿主子任务完成前，它还不能代表“零 UGUI”最终状态。
+FairyGUI 是 GDK Player UI 的唯一视图后端。GF `IUIManager` 继续拥有 UI ID、UIGroup、serial、多实例、深度、对象池与完整生命周期；业务层可选择 GameHot MonoBehaviour 工作流或 ET Entity/System 工作流。GDK 自有代码、asmdef、资源、配置和工具不再直接使用 UGUI（零 UGUI 静态门禁为 0）。
 
 FairyGUI XML 工程是 AI UI 流程的唯一版本化事实来源。`D:\Unity\Project\GDK_FGUI` 只是本机 FairyGUI Editor 工作副本，不能作为构建输入或长期保留未导入改动。
 
@@ -11,19 +11,70 @@ FairyGUI XML 工程是 AI UI 流程的唯一版本化事实来源。`D:\Unity\Pr
 | FairyGUI XML 事实来源 | `Design/FairyGUI/GDK_FGUI/` |
 | 稳定业务契约 | `Design/FairyGUI/GDK_FGUI/settings/GDK.json` |
 | 确定性 manifest | `Design/FairyGUI/GDK_FGUI/generated/GDKFairyManifest.json` |
+| 本地化映射 | `Design/FairyGUI/GDK_FGUI/settings/FairyLocalization.json` |
 | 外部 Editor Bridge | `D:\Unity\Project\GDK_FGUI\plugins\agent-bridge`（由 Wilson 仓库部署） |
 | 编辑器工程同步脚本 | `Tools/FairyGUI/Sync-GDKDemoToEditor.ps1` |
 | XML/manifest 检查 | `Tools/FairyGUI/Test-GDKProject.ps1` |
 | 工具回归测试 | `Tools/FairyGUI/Test-FairyGUITools.ps1` |
+| 描述符生成 | `Tools/FairyGUI/Generate-FairyUIFormDescriptors.ps1` |
+| 运行时 manifest 生成 | `Tools/FairyGUI/Generate-FairyRuntimeManifest.ps1` |
+| 本地化 XML 生成 | `Tools/FairyGUI/Generate-FairyLocalizationXml.ps1` |
 | 发布脚本 | `Tools/FairyGUI/Publish-GDKDemo.ps1` |
 | 发布产物 | `Unity/Assets/Res/UI/FairyGUI/` |
-| GDK 适配层 | `Unity/Assets/Scripts/Game/UI/FairyGUI/AFairyUIForm.cs` |
-| FairyGUI 包管理 | `Unity/Assets/Scripts/Game/UI/FairyGUI/FairyPackageManager.cs`、`FairyPackageCatalog.cs` |
-| GameHot Demo | `Unity/Assets/Scripts/Game/Hot/Code/UI/FairyDemoForm.cs` |
-| UIForm 宿主 | `Unity/Assets/Res/UI/UIForm/Hot/FairyDemoForm.prefab` |
-| 独立演示场景 | `Unity/Assets/FairyGUIDemo.unity` |
+| GDK 运行时管理层 | `Unity/Assets/Scripts/Game/UI/FairyGUI/`（FairyUIManager 等） |
+| GameHot Presenter | `Unity/Assets/Scripts/Game/Hot/Code/UI/` |
+| ET Component/System | `Unity/Assets/Scripts/Game/ET/Code/ModelView` + `HotfixView/Client/Module/UI/` |
+| 独立演示场景 | `Unity/Assets/FairyGUIDemo.unity`（GameHot）、`Unity/Assets/FairyGUIDemoET.unity`（ET 双符号验证） |
 
-SDK 固定为 FairyGUI Unity SDK `5.2.0`，上游提交为 `7f8555dd163bd17315f77b64907e07e735cf0ed0`，许可证为 MIT。导入内容位于 `Unity/Assets/Scripts/Library/FairyGUI/`；运行时 asmdef 增加了 `Unity.InputSystem` 引用和 `FAIRYGUI_INPUT_SYSTEM` 版本宏定义，以匹配本工程的新输入系统配置。
+SDK 固定为 FairyGUI Unity SDK `5.2.0`，上游提交为 `7f8555dd163bd17315f77b64907e07e735cf0ed0`，许可证为 MIT。导入内容位于 `Unity/Assets/Scripts/Library/FairyGUI/`；运行时 asmdef 增加了 `Unity.InputSystem` 引用和 `FAIRYGUI_INPUT_SYSTEM` 版本宏定义，以匹配本工程的新输入系统配置。供应商最小补丁：`UIConfig.soundRedirect` 委托（OWN001），仅新增钩子，未注入时行为不变。
+
+## 运行时架构
+
+### 打开链
+
+```text
+GameHot Procedure / ET flow
+  -> FairyUIManager.OpenFairyUIFormAsync(uiId, userData, ownerToken)
+  -> DRUIForm( Luban UI 表) + FairyUIFormDescriptor 双重校验
+  -> FairyPackageManager.AcquireAsync(包租约)
+  -> FairyLocalization.ApplyAsync(SetStringsSource)
+  -> UIPackage.CreateObject(强类型 GComponent + 绑定类型校验)
+  -> Presenter 创建(ET: Component/System 工厂;GameHot: 类 Presenter 注册表)
+  -> GF IUIManager.OpenUIForm(descriptor assetName 作为窗体资产 token)
+  -> FairyUIForm / FairyUIFormHelper / FairyUIGroupHelper
+  -> GF UIGroup、serial、深度、对象池和生命周期
+```
+
+要点：
+
+- 没有绕过 GF 维护第二套页面栈；一切走 `GameFramework.UI` 语义层。
+- FairyGUI 视图由单一 GRoot 承载，每个 UIGroup 映射为 GRoot 下的组容器（含安全区子容器）。
+- `FairyUIManager` 把 Stage 挂到 GameEntry 下 Builtin(GameFramework 实例根)的静态 `UI` 节点下，与旧 UGUI 的 UIComponent 位置一致；节点静态存在于 `GameFramework.prefab`，运行时不动态创建。
+- descriptor JSON 由 Luban UI 行 + GDK.json 映射生成（`Generate-FairyUIFormDescriptors.ps1`），打开时校验 descriptor 身份与 GF 策略未漂移。
+- owner token 在打开成功后仍持续拥有窗体；取消按 serial ID 关闭，Close/Recycle/失败路径幂等释放。
+- 包租约支持依赖拓扑、并发合并与逆序释放；最后租约释放后才 `UIPackage.RemovePackage`。
+
+### 服务桥（FairyGUI 不直接拥有 GDK 服务）
+
+| 桥 | 实现 | 行为 |
+| --- | --- | --- |
+| 本地化 | `FairyLocalization` | 打开链 AcquireAsync 后、CreateObject 前按当前语言 `SetStringsSource`，按包幂等。已知边界：vendor SDK 快照的 TranslateComponent 不翻主文本，需升级 SDK 或补丁 |
+| 声音 | `FairySound` | `UIConfig.soundRedirect` 钩子把 click=10001/select=10000 重定向到 GDK UISound 组；未映射资源只诊断一次 |
+| 安全区 | `FairyUIGroupHelper` | `Screen.safeArea` 像素经 contentScaleFactor 缩放 + Y 翻转换算到 GRoot 设计坐标；变化重算幂等；descriptor `fullScreen` 标记决定是否挂安全区容器 |
+| 输入/焦点/手柄 | `FairyInputService` | Input System 轮询方向导航 + 确认/取消映射到顶部窗体导航根；焦点恢复可测试 |
+| 色觉 | `FairyColorBlindness` | 语义颜色 lint；URP 下旧 ColorBlindnessEffect(OnPostRender) 不生效，Player 滤镜需新 URP RendererFeature（已记录为后续批次） |
+
+### GameHot 入口
+
+`HotEntry.InitializeFairyGUI()` 构建 Presenter 注册表（反射扫描 `[FairyUIPresenter]` 标记）、初始化 `FairyUIManager`、安装声音/输入桥、注册五个 UIGroup。业务经 `FairyUIFormService.OpenFairyUIFormAsync` 打开界面。
+
+### ET 入口
+
+`FairyGUIBootstrap.InitializeAsync()` 注册 UI ID -> Component 工厂（`FairyUIFormComponentRegistry`），全部界面走 Component/System 打开链。`UIComponent` 是 owner（per-open CTS、pending operation、owned serial/CTS），`Destroy` 固定执行 cancel pending -> close owned -> dispose CTS。行为全部在 HotfixView 静态 System 中，经 `EntitySystemSingleton.TypeSystems` 派发（与 UGFUIForm/UGFSystemSingleton 同构）。
+
+### 双符号验证
+
+ET 冒烟需要 GameHot 流程初始化 GameEntry 组件 + ET 流程跑 UI。`FairyGUIDemoAgent.SwitchToDualSymbols` 给 Standalone 写入 `UNITY_ET + UNITY_GAMEHOT`（仓库菜单互斥无法产生双符号状态），`RestoreDefaultSymbols` 恢复客户端平台 `UNITY_GAMEHOT`/Server `UNITY_ET` 默认布局。ET 验证场景是 `FairyGUIDemoET.unity`（含 ET 对象挂 `ET.Init` 组件）；不要把 ET 对象放进共享的 FairyGUIDemo 场景。
 
 ## AI 编辑与 XML 契约
 
@@ -58,7 +109,7 @@ AI 直接修改仓库 `assets/*/*.xml`。布局、颜色、文本和非业务节
 | 命名空间前缀 | `Game.Hot.FairyGUI` |
 | 仓库代码路径 | `../../../Unity/Assets/Scripts/Game/Hot/Code/Generate/FairyGUI` |
 
-Unity 项目类型会选择 FairyGUI 自带 `GenCode_CSharp`，所以 `codeType` 保持编辑器默认空值。发布 `Package1` 后，官方生成器会在代码路径下创建 `Package1/`，生成类使用 `Game.Hot.FairyGUI.Package1` 命名空间和 `GetChild("成员名")` 绑定。
+发布 `Package1` 后，官方生成器会在代码路径下创建 `Package1/`，生成类使用 `Game.Hot.FairyGUI.Package1` 命名空间和 `GetChild("成员名")` 绑定。
 
 ## 仓库与 Editor 同步
 
@@ -90,12 +141,6 @@ Unity 项目类型会选择 FairyGUI 自带 `GenCode_CSharp`，所以 `codeType`
 ./Tools/FairyGUI/Sync-GDKDemoToEditor.ps1 -Mode FromEditor
 ```
 
-首次已有差异时必须明确保留哪一侧。例如当前外部工程包含较新的手工布局，应先保存并关闭 FairyGUI Editor，再执行：
-
-```powershell
-./Tools/FairyGUI/Sync-GDKDemoToEditor.ps1 -Mode FromEditor -Initialize
-```
-
 任何写同步都要求 FairyGUI Editor 已关闭，避免覆盖未保存内容。预演可在 Editor 打开时执行且不会修改 XML、设置或状态文件：
 
 ```powershell
@@ -103,8 +148,6 @@ Unity 项目类型会选择 FairyGUI 自带 `GenCode_CSharp`，所以 `codeType`
 ```
 
 同步状态保存在 Editor 工程的 `.gdk-sync-state.json`。哈希计算会统一换行，并把仓库相对发布路径与 Editor 绝对路径映射为逻辑占位符。`plugins/` 与 `.agent/` 不属于同步集合，脚本不会创建、覆盖或删除任何 Editor 插件或 Bridge 运行时数据。
-
-执行写同步前，脚本会先把待导入一侧放入临时沙箱，应用仓库稳定契约与相对发布路径，再运行完整的 XML、资源引用和业务成员检查。预检失败不会修改仓库工程、Editor 工程或同步状态；应先根据错误修复源 XML，再重新检查 `Status`。单文件写入使用原子替换，但磁盘或权限故障仍可能造成多文件只完成一部分，此时必须重新运行 `Status` 并检查两侧内容，不能把同步视为跨文件事务。
 
 ## 命令行发布
 
@@ -115,17 +158,6 @@ GDK 只调用外部 `fgui-agent` CLI，不复制或管理其插件、Python、MC
 ```powershell
 $env:FGUI_AGENT_EXE = 'C:\tools\fgui-agent.exe'
 ./Tools/FairyGUI/Publish-GDKDemo.ps1 -PackageName Package1
-```
-
-也可以覆盖包、工程、输出、日志和超时参数：
-
-```powershell
-./Tools/FairyGUI/Publish-GDKDemo.ps1 `
-  -AgentExecutable 'C:\tools\fgui-agent.exe' `
-  -EditorProjectPath 'D:\Unity\Project\GDK_FGUI' `
-  -PackageName Package1 `
-  -OutputPath 'D:\Temp\GDK FairyGUI Output' `
-  -TimeoutSeconds 120
 ```
 
 脚本先执行 XML lint、manifest `-Check` 和 `Sync ... -Mode Status`，然后按顺序调用
@@ -141,17 +173,13 @@ fgui-agent --project D:\Unity\Project\GDK_FGUI publish --scope packages --packag
 - CLI 返回 JSON 且 `success` 为 `true`；
 - 输出目录存在非空的 `Package1_fui.bytes`。
 
-最终 JSON 证据包含产物绝对路径、大小、UTC mtime，以及发布前后 SHA-256。CLI 缺失、状态过期、
-包名不匹配、非零退出、JSON 无效或产物无效都会失败，不回退到 active/all 发布。
+最终 JSON 证据包含产物绝对路径、大小、UTC mtime，以及发布前后 SHA-256。
 
 默认产物为：
 
 ```text
 Unity/Assets/Res/UI/FairyGUI/Package1_fui.bytes
 ```
-
-Editor 离线或心跳过期时只报告首个可操作错误；重新打开 FairyGUI Editor 后再重试。Wilson 0.8.1
-不提供截图 capability，视觉证据由 Editor 预览和后续 Unity Agent Bridge 流程负责。
 
 ## 手工发布
 
@@ -180,45 +208,66 @@ D:\Unity\Project\GDK_FGUI\GDK_FGUI.fairy
 
 选择 `Package1` 后点击“发布”。成功标志是同时生成非空的 `Package1_fui.bytes` 和官方 C# 绑定目录。不要把 `.objs`、Editor 缓存、临时文件或 `.gdk-sync-state.json` 加入仓库。
 
-发布后若继续在 FairyGUI Editor 修改界面，关闭 Editor 并执行 `FromEditor`，再重新生成清单；否则 Git 中的仓库工程不是最新事实来源。
+发布后若继续在 FairyGUI Editor 修改界面，关闭 Editor 并执行 `FromEditor`，再重新生成清单；否则 Git 中的仓库工程不是最新事实来源。发布后必须重跑描述符与本地化检查（源哈希已变化）：
 
-## GDK 配置链路
-
-Demo 使用 GameHot 模式。先通过 `Game/Define Symbol/Add UNITY_GAMEHOT` 切换模块，再按标准流程执行 Luban 校验与导出。UI 源行位于 `Design/Excel/GameHot/Datas/Game/UI.xlsx`，ID 为 `103`，资源名为 `Hot/FairyDemoForm`。
-
-运行时链路如下：
-
-```text
-MainView.xml
-  -> FairyGUI publish
-  -> Package1_fui.bytes
-  -> FairyPackageManager + ResourceComponent
-  -> UIPackage + UIPanel lease
-  -> UGF UIForm lifecycle
+```powershell
+./Tools/FairyGUI/Generate-FairyUIFormDescriptors.ps1 -Check
+./Tools/FairyGUI/Generate-FairyLocalizationXml.ps1 -Check
 ```
 
-### 运行时包管理
+## 事实来源与派生输出
 
-`FairyPackageManager` 是 GDK 与 `UIPackage` 之间的唯一运行时边界。发布成功时，生成的
-`GDKFairyManifest.json` 会与 `<Package>_fui.bytes` 一起同步到 Unity 资源目录；运行时先解析版本化清单、
-按依赖拓扑顺序加载包，再通过 `ResourceComponent` 加载描述符和外部资源。同一包的并发获取共享一次注册，
-每个 `AFairyUIForm` 持有包含依赖的独立租约；关闭、回收或取消时按根包到依赖包的逆序释放。
-最后一个租约释放后才会调用 `UIPackage.RemovePackage`，随后卸载描述符和通过 FairyGUI 外部资源回调加载的
-图集、字体、声音等资源。清单缺失、未知依赖和依赖环在加载前失败，过期异步结果不能复活已释放的包。
+可以直接修改的事实来源：
 
-`AFairyUIForm` 创建的 `UIPanel` 逻辑归属于对应 GF UIForm，层级保持在 `UI Group/UIForm` 子树中，并由 UIForm 持有和销毁。
-UIForm 与 `UIPanel` 之间的 `FairyGUI Transform Isolation` 节点会抵消 GF Canvas 传递的世界位置、旋转和缩放，避免 FairyGUI 渲染对象离开 Stage Camera 视锥。
+- `Design/FairyGUI/GDK_FGUI/assets/**/*.xml`
+- `Design/FairyGUI/GDK_FGUI/settings/GDK.json`、`Publish.json`、`FairyLocalization.json`
+- GameHot/ET 的 `Design/Excel/**/UI.xlsx`
+- `Tools/FairyGUI/*.ps1` 和生成器模板
+- GameHot/ET Presenter、flow、component/system 源码
 
-外部资源回调只负责把请求交给 GDK `ResourceComponent`，并以 `DestroyMethod.None` 交给 FairyGUI；资源所有权仍由包管理器持有和
-释放。新增外部资源必须同步加入 GDK 资源规则并通过运行时加载验证。
+不得手工修补的派生输出：
+
+- `Design/FairyGUI/GDK_FGUI/generated/GDKFairyManifest.json`
+- `Unity/Assets/Res/UI/FairyGUI/*_fui.bytes`
+- `Unity/Assets/Res/UI/FairyGUI/*.json`（descriptor / manifest / localization manifest / strings XML）
+- `Unity/Assets/Scripts/Game/Hot/Code/Generate/FairyGUI/**`
+- `Unity/Assets/Scripts/Game/**/Generate/UGF/UIFormId.cs`
+- Luban 生成的 `DR*`、`DT*` 和 JSON/binary 数据
+
+规则：先改来源，再运行官方工具/仓库生成器；来源和派生输出作为同一逻辑批次审查。
 
 ## 运行演示
 
-在 Unity 中打开 `Assets/FairyGUIDemo.unity` 并进入播放模式。该场景保留了 `Launcher` 的完整 GDK 启动链，进入 `ProcedureMenu` 后会自动打开 `FairyDemoForm`，无需加入 `Build Settings`。
+GameHot：在 Unity 中打开 `Assets/FairyGUIDemo.unity` 并进入播放模式。该场景保留了 `Launcher` 的完整 GDK 启动链，进入 `ProcedureMenu` 后会自动打开 `FairyDemoForm`。
 
-界面出现后点击“刷新状态”可验证 FairyGUI 输入事件和 UGF 窗体生命周期。Console 会输出 `FairyGUI refresh interaction handled.`，界面计数同步递增。
+ET：切 `UNITY_ET`（或 Standalone 双符号）后打开 `Assets/FairyGUIDemoET.unity`。场景含挂 `ET.Init` 的 ET 对象；EntryEvent 装配 `UIComponent` 后经 Component/System 链打开 Demo。
 
-## POC 边界
+界面出现后点击“刷新状态”可验证 FairyGUI 输入事件和 GF 窗体生命周期。Console 会输出 `ET FairyGUI demo form opened through the Component/System chain.`（ET）或对应 GameHot 日志，界面计数同步递增。
 
-当前演示包只使用 FairyGUI 图形和文本；包管理器已支持图集、音频、字体和其他 Unity 资源的异步回调加载。生产页面仍需把这些资源
-加入 GDK 资源规则，并验证 AssetBundle 分组、AOT/IL2CPP、重复打开关闭、覆盖/恢复和取消路径。
+## 验证
+
+工具确定性：
+
+```powershell
+pwsh -NoProfile -File ./Tools/FairyGUI/Test-FairyGUITools.ps1
+pwsh -NoProfile -File ./Tools/FairyGUI/Test-GDKProject.ps1 -Check
+pwsh -NoProfile -File ./Tools/FairyGUI/Generate-FairyUIFormDescriptors.ps1 -Check
+pwsh -NoProfile -File ./Tools/FairyGUI/Generate-FairyRuntimeManifest.ps1 -Check
+pwsh -NoProfile -File ./Tools/FairyGUI/Generate-FairyLocalizationXml.ps1 -Check
+```
+
+Unity 冒烟（经 Unity Agent Bridge 的 AgentCallable）：
+
+- GameHot：`FairyUIManagerSmokeTest`、`FairyInventorySmokeTest`、`FairyDialogSmokeTest`、`ValidateFairyUIFormLifecycleCycles`（100 次）、`ValidateFairyPackageManagerLifecycle`
+- ET：`FairyInventorySmokeTest`、`FairyFiberLifecycleSmokeTest`、`FairyLocalizationSmokeTest`、`FairySoundSmokeTest`、`FairySafeAreaSmokeTest`、`FairyInputSmokeTest`、`FairyColorBlindnessSmokeTest`、`FairyUIFormSkeletonSelfCheck`（EditMode）
+
+Player：`Game.Editor.FairyGUIDemoAgent.BuildWindows64PlayerPkg` 执行 HybridCLR 安装（缺失时）→ Do All → 资源构建 → Launcher 场景 IL2CPP Player 构建，输出 `Temp/Pkg/Windows64`。构建后启动 `GameDevelopmentKit.exe` 验证热更域加载与 FairyGUI 界面打开。
+
+零 UGUI 静态门禁：
+
+```powershell
+rg -n "using UnityEngine\.UI|UnityEngine\.UI|CanvasScaler|GraphicRaycaster|RectTransform" `
+  Unity/Assets/Scripts/Game Unity/Assets/Res -g "*.cs" -g "*.asmdef" -g "*.prefab" -g "*.unity" -g "*.asset"
+```
+
+GDK 自有代码命中必须为 0（`com.unity.ugui` 作为 URP 官方传递依赖保留，见 `Unity/Packages/manifest.json`）。

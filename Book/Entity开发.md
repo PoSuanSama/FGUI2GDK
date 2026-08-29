@@ -130,87 +130,20 @@ GameEntry.Entity.TryHideEntity(serialId);
 
 ## ETEntity
 
-ETEntity 的 ET 实体保存业务状态，GF Entity 只作为视图。`UGFEntity<T>` 的 `View` 指向预制体上的 Mono 组件；Dispose ET 实体会自动取消加载并隐藏 GF Entity。
-
-### 1. 使用代码生成器
-
-打开 `ET/Code Creator`，选择 `UGFEntityCodeCreator`，输入 `Test`。工具生成：
-
-```text
-Assets/Scripts/Game/ET/Code/ModelView/Client/Game/GFEntity/Test/GFEntityTest.cs
-Assets/Scripts/Game/ET/Code/ModelView/Client/Game/GFEntity/Test/MonoGFEntityTest.cs
-Assets/Scripts/Game/ET/Code/HotfixView/Client/Game/GFEntity/Test/GFEntityTestSystem.cs
-```
-
-Entity 生成器不创建预制体。创建 `Assets/Res/Entity/Test.prefab`，把 `MonoGFEntityTest` 挂到预制体，再在 Entity 表配置对应记录。
-
-### 2. 定义 ET 实体与 Mono 视图
+UGUI 时代的 `UGFEntity<T>` 宿主层与 `UGFEntityCodeCreator` 已随零 UGUI 清理移除。ET 侧世界空间实体当前使用 `FairyEntity` 基础抽象：
 
 ```csharp
 namespace ET.Client
 {
     [ComponentOf(typeof(GFEntityComponent))]
-    public class GFEntityTest : UGFEntity<MonoGFEntityTest>,
-        IAwake, IDestroy, IUGFEntityOnShow, IUGFEntityOnHide
+    public class FairyEntityComponent : Entity, IAwake<Game.FairyEntity>, IDestroy
     {
+        public Game.FairyEntity Entity { get; set; }
     }
 }
 ```
 
-```csharp
-using CodeBind;
-
-namespace ET.Client
-{
-    [MonoBehaviourBinding]
-    public partial class MonoGFEntityTest : AETMonoUGFEntity
-    {
-    }
-}
-```
-
-用 CodeBind 把 Transform、Animator、Collider 等视图引用生成到 Mono partial 类。ET System 通过 `self.View` 使用这些引用。
-
-### 3. 编写生命周期 System
-
-```csharp
-namespace ET.Client
-{
-    [EntitySystemOf(typeof(GFEntityTest))]
-    public static partial class GFEntityTestSystem
-    {
-        [UGFEntitySystem]
-        private static void UGFEntityOnShow(this GFEntityTest self)
-        {
-        }
-
-        [UGFEntitySystem]
-        private static void UGFEntityOnHide(this GFEntityTest self, bool isShutdown)
-        {
-        }
-    }
-}
-```
-
-实体声明必须包含对应接口，System 方法才会进入 UGF 生命周期分发。例如持续更新需同时实现 `IUGFEntityOnUpdate` 并声明 `UGFEntityOnUpdate`。
-
-### 4. 创建所有者并显示
-
-确保目标 Scene 或实体上存在 `GFEntityComponent`：
-
-```csharp
-GFEntityComponent owner = scene.GetComponent<GFEntityComponent>()
-    ?? scene.AddComponent<GFEntityComponent>();
-
-GFEntityTest entity = await owner
-    .AddGFEntityChildAsync<GFEntityTest>(UGFEntityId.Test);
-```
-
-固定唯一实例可使用 `AddGFEntityComponentAsync`。允许多个同类型实例时使用 Child，因为同一所有者不能拥有两个相同类型的 Component。
-
-```csharp
-entity.Dispose(); // 自动隐藏 GF Entity
-```
+`Game.FairyEntity` 是 Game 层基础类（挂在 FairyGUI 组件容器下，随宿主上下文清理）；它只有基础抽象与示例，不是与原 UGUI Entity 行为完全对等的证明。需要世界空间 UI/实体行为的业务，应在 FairyEntity 基础上补齐等价实现并随批次验证。
 
 ## 生命周期对应关系
 
@@ -239,7 +172,7 @@ entity.Dispose(); // 自动隐藏 GF Entity
 
 ### ETEntity 的 `View` 为 null
 
-确认预制体挂有泛型参数对应的 `MonoGFEntity*`，并继承 `AETMonoUGFEntity`。资源加载成功并完成 OnShow 后再访问 View。
+确认 `FairyEntityComponent` 已 Add 且 `Game.FairyEntity` 视图在宿主上下文（FairyUIFormContext 或 FairyEntity 容器）中未被回收。
 
 ### 修改生成的 EntityId 后又被覆盖
 
@@ -255,6 +188,6 @@ GF 隐藏与 ET Dispose 是两个层次。ETEntity 应由 ET 所有者移除或 
 | --- | --- |
 | GF Entity 扩展 | `Game/Entity/EntityExtension.cs` |
 | GameHot 示例基类 | `Game/Hot/Code/Entity/EntityLogic/Entity.cs` |
-| ETEntity 桥接 | `Game/ET/Loader/UGF/Entity/UGFEntity.cs` |
-| ET 所有者扩展 | `Game/ET/Code/ModelView/Client/Module/GFEntity/GFEntityComponentSystem.cs` |
+| FairyGUI 实体基础 | `Game/UI/FairyGUI/FairyEntity.cs` |
+| ET 实体 Component | `Game/ET/Code/ModelView/Client/Module/GFEntity/FairyEntityComponent.cs` |
 | Entity 常量生成器 | `Share/Tool/ExcelExporter/Generate/GenerateUGFEntityId.cs` |

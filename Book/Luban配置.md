@@ -35,7 +35,7 @@ dotnet build Kit.sln
 | `Game/Tool/ExcelExporterForJson` | 代码 + JSON 数据 |
 | Toolbar 的 `ExportExcel` | 与 ExcelExporter 相同 |
 
-Unity 入口会在导出后刷新 AssetDatabase，并清理 UXTool 的编辑器本地化缓存。
+Unity 入口会在导出后刷新 AssetDatabase。
 
 ### AgentBridge 修改 Excel
 

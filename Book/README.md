@@ -9,7 +9,6 @@ Book 解释“怎么做、为什么这样做、产物在哪里”。主 README �
 1. [快速开始](快速开始.md)
 2. [项目结构与模式选择](Project结构.md)
 3. 按所选模式阅读 [UI 开发](UI开发.md) 与 [Entity 开发](Entity开发.md)
-4. 动态设置界面图片时阅读 [AssetSet 资源设置](AssetSet.md)
 
 ### 配置与代码生成
 
@@ -30,7 +29,6 @@ Book 解释“怎么做、为什么这样做、产物在哪里”。主 README �
 | 上手 | [快速开始](快速开始.md) | 已实现 | 环境、编译、模式选择与运行 |
 | 架构 | [项目结构与模式选择](Project结构.md) | 已实现 | 代码放哪里、模块如何切换 |
 | 开发 | [UI 开发](UI开发.md) | 已实现 | GameHot UI 与 ETUI 的完整流程 |
-| 开发 | [AssetSet 资源设置](AssetSet.md) | 已实现 | UI 图片加载、远程缓存、共享与回收 |
 | 开发 | [Entity 开发](Entity开发.md) | 已实现 | GameHot Entity 与 ETEntity 的完整流程 |
 | 配置 | [Luban 配置](Luban配置.md) | 已实现 | 多工程并行导出、生成物与排错 |
 | 配置 | [多语言](多语言.md) | 已实现 | Excel、运行时加载与编辑器预览 |
@@ -57,7 +55,6 @@ Book 解释“怎么做、为什么这样做、产物在哪里”。主 README �
 | 领域 | 入口 |
 | --- | --- |
 | Unity 启动流程 | `Unity/Assets/Scripts/Game/Procedure/` |
-| AssetSet | `Unity/Assets/Scripts/Library/UGF/UnityGameFramework.Extension/Runtime/AssetSet/` |
 | ET 加载 | `Unity/Assets/Scripts/Game/ET/Loader/Init.cs` |
 | GameHot 加载 | `Unity/Assets/Scripts/Game/Hot/Loader/Init.cs` |
 | 配置导出 | `Share/Tool/ExcelExporter/` |
