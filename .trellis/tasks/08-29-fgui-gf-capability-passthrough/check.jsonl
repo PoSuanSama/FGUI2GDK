@@ -1,0 +1,3 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"新增透出与事件桥须过 Unity 编译、空安全、Error 日志证据门禁。"}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"事件订阅/退订对称与 Initialize 幂等,避免重复订阅或泄漏。"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"核对 GF IUIManager 契约 → FairyUIManager 透出 → 业务订阅的跨层数据流。"}

@@ -1,0 +1,3 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"删除 prefab 节点属资源改动,须遵循 Unity 编译、资源/.meta 同批、Error 日志证据门禁。"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"核对 prefab 静态节点 → 运行时引用 → 零 UGUI 门禁的跨层一致性。"}
+{"file":".trellis/spec/tools/fairygui-source-generation.md","reason":"确认删除残留节点不破坏 FairyGUI 事实来源与派生输出的边界。"}

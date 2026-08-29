@@ -426,8 +426,20 @@ P0-2 剩余：五个有状态 Presenter/Flow/Bootstrap 按骨架逐个迁移（�
 - AC04：GameHot/ET 业务代码裸 `GetChild(` 扫描为 0（绑定全部走官方生成类）；
 - AC19：全域 `using UnityEngine.UI`/`CanvasScaler`/`GraphicRaycaster` 扫描为 0；
   `UXTool/UGuiExtension/CodeBind` 仅剩清理工具自身与注释提及；
+  补正：此扫描不含 `RectTransform`；`GameEntry.prefab` 的 `UI Form Instances` 节点实为
+  UGUI Canvas(含 CanvasScaler/GraphicRaycaster)，`EventSystem` 为 UGUI EventSystem，
+  Book 门禁命令（含 `RectTransform`）会命中。08-29-fgui-zero-ugui-finalize 已删除
+  两节点、修复 f3617234 误删的 stripped 根 Transform，门禁归零。
 - AC26：`com.unity.ugui` 不在 manifest dependencies；UGUI 专用包（UIEffect/SoftMask/Unmask/
   UIParticle 等）全部移除；lock 中 `com.unity.ugui` 仅为 `builtin` 传递来源（URP 官方依赖）。
+
+**G7 补正（08-29-fgui-zero-ugui-finalize）**
+- 核验发现 `f3617234`（标题「修复 GameEntry 悬挂引用」）误删了嵌套 GameFramework 实例
+  根 Transform（`1836028191286498939`）的 stripped 定义，但它仍在 GameEntry 根 `m_Children`
+  被引用，导致 Unity 导入报 `Transform child can't be loaded`（原始 HEAD 亦复现，非零 UGUI
+  删除引入）。该任务已恢复 stripped 定义并验证导入 0 error。
+- 同时删除 `GameEntry.prefab` 两处 UGUI 静态节点，使 Book 门禁命令（含 `RectTransform`）
+  实测归零；GameHot 五冒烟 + 100 次生命周期 Error 0，ET 骨架自检 + 七冒烟方法通过。
 
 ## 8. 必须优先解决的阻塞问题
 
@@ -798,7 +810,7 @@ rg -n "CodeBind|UXTool|LoopScrollRect|Coffee\.UI|RuntimeInspector" `
 | AC16 | 已完成(带边界) | 输入/焦点冒烟通过；手柄真机待设备验证 |
 | AC17 | 部分完成 | 语义颜色 lint 落地；URP Player 滤镜需新 RendererFeature + 性能实测（§7.7 边界） |
 | AC18 | 已完成 | 旧界面全部迁移（Dialog）或产品删除（c2840cff）；对照表已按删除决定收口 |
-| AC19 | 已完成 | 全域静态扫描 0（代码/asmdef/资源/工具/包依赖），86b5f27e 清残留 |
+| AC19 | 已完成 | 全域静态扫描 0（代码/asmdef/资源/工具/包依赖），86b5f27e 清残留；08-29-fgui-zero-ugui-finalize 补清 `GameEntry.prefab` 两处 UGUI 静态节点（`UI Form Instances` Canvas + `EventSystem`）并修复 f3617234 误删的嵌套实例根 stripped Transform，Book 门禁命令（含 `RectTransform`）实测归零 |
 | AC20 | 已完成 | 100 次、UIComponent Destroy、窗口打开时 shutdown、真实 Fiber Remove 通过（1578e42e、1d33b860） |
 | AC21 | 无法补采 | 旧 UGUI 界面已删除无法重采基线；记录为不可补采而非伪造。FairyGUI 侧 Profiler 报告未做（可选后续） |
 | AC22 | 已完成(带边界) | Windows64 IL2CPP Player 构建+启动+界面打开通过（1d33b860）；截图/交互矩阵未做 |
