@@ -34,7 +34,13 @@ namespace ET
                 this.socket.SendBufferSize = Kcp.OneM * 64;
                 this.socket.ReceiveBufferSize = Kcp.OneM * 64;
             }
-            
+
+            // GDK vendor 补丁:Editor 单机模式重复进入 PlayMode 时,前一次 Server 的 UDP
+            // Socket 可能尚未释放(World.Dispose 清理时序),Windows UDP 默认独占地址导致
+            // Bind 抛 WSAEADDRINUSE。设置 SO_REUSEADDR 允许端口重用,避免重复启动报
+            // bind error;单实例正常启动不受影响。
+            this.socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
             try
             {
                 this.socket.Bind(ipEndPoint);
