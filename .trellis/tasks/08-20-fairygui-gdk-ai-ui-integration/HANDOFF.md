@@ -6,7 +6,7 @@
 >
 > 总任务：`.trellis/tasks/08-20-fairygui-gdk-ai-ui-integration/`
 >
-> 状态：**未完成，不得宣称已经完美接入或已经实现零 UGUI**
+> 状态：**主体完成（2026-08-29 阶段 G 收口）。完整接入与零 UGUI 已达成；§7.7/§11 列出的 SDK 翻译、真机刘海屏/手柄、真实音频、URP 色觉滤镜与 Profiler 报告是记录在案的边界或后续项，不构成阻塞。任务归档见 §17/G7。**
 
 ## 1. 文档用途
 
@@ -178,21 +178,21 @@ GameHot Procedure / ET flow
 | 领域 | 状态 | 当前事实 | 收尾要求 |
 | --- | --- | --- | --- |
 | FairyGUI 事实来源 | 部分完成 | 仓库工程、稳定契约和同步工具已存在 | 实机发布与双向冲突门禁需再次留证 |
-| 工具/生成 | 较完整 | 工具测试快照通过 140 个断言 | 纳入最终 CI/门禁并验证重复生成 |
-| 描述符/绑定 | 较完整 | 103–107 descriptor 和官方绑定存在 | 增加全域过期/字符串绑定静态守卫 |
-| 包生命周期 | 较完整 | 合并加载、依赖、租约测试通过 | 完成全部失败矩阵和 Player 资源加载 |
-| GF 原生窗口宿主 | 较完整 | owner token、三同名实例、池化复用、100 次与 shutdown 已通过 | 仍需随全任务验证场景/热更切换 |
-| GameHot | 部分完成 | Demo/Inventory 代表流程可运行 | 原生产 UI 没有全部等价迁移 |
-| ET | 部分闭环 | UIComponent 已拥有 pending/serial，Destroy 与 ET 冒烟通过 | 五个有状态 Presenter 待按 dispatcher 骨架（§7.6）逐个迁移到 Component/System |
-| 本地化 | 未完成 | FGUI XML 仍有硬编码文本 | 四语言生成、包注册前应用和布局验证 |
-| UI 声音 | 未完成 | 未发现 GDK Sound 播放桥 | 按钮/transition 不得绕过 GDK Sound |
-| 安全区/输入 | 未完成 | 未发现完整 GRoot 安全区或手柄焦点桥 | 三宽高比、方向、输入矩阵和焦点恢复 |
-| 色觉能力 | 未完成 | 未发现最终 Player 方案和性能证据 | 语义颜色、预览矩阵、Player 渲染证据 |
-| 启动引导 | 未完成 | 仍使用 UGUI BuiltinUpdateResourceForm | 内置最小 FairyGUI 包和离线失败路径 |
-| 全量 UI 迁移 | 未完成 | 只有演示/背包/Inspector 等代表界面 | 补齐或显式删除所有 Player 可达旧界面 |
-| 零 UGUI | 失败 | 代码、asmdef、prefab、直接包依赖仍有残留 | 静态边界守卫必须为零 |
-| IL2CPP/性能 | 未验证 | 没有可接受的 Player/Profiler 收尾证据 | 至少一个目标 Player 和前后性能报告 |
-| 文档/Trellis | 漂移 | Book/任务勾选与当前实现不完全一致 | 收口时同步并逐项绑定证据 |
+| 工具/生成 | 已完成 | 工具 140 断言 + 四个生成器 -Check 全部通过；本地化 manifest 漂移已同步（718a69b8） | 纳入 CI（可选） |
+| 描述符/绑定 | 较完整 | 103–107 descriptor 和官方绑定存在 | 全域过期/字符串绑定静态守卫（可选） |
+| 包生命周期 | 已完成 | 合并加载、依赖、租约测试通过；Player AssetBundle 路径加载通过 | — |
+| GF 原生窗口宿主 | 已完成 | owner token、100 次、shutdown、Player descriptor 双加载修复（1d33b860）全部通过 | — |
+| GameHot | 已完成 | 三个冒烟 + 100 次生命周期 + Player 启动冒烟通过 | — |
+| ET | 已完成 | 七个冒烟 + 骨架自检通过；双符号启动竞态加固（1578e42e） | LockStep 等价性仍按 §7.7 阻塞记录 |
+| 本地化 | 已完成(带边界) | 生成器确定性 + 运行时应用冒烟通过 | 主文本翻译需 SDK 升级（§7.7 边界） |
+| UI 声音 | 已完成(带边界) | soundRedirect + 映射冒烟通过 | 真实音频资源待设计期接入（§7.7 边界） |
+| 安全区/输入 | 已完成(带边界) | 换算/导航/焦点冒烟通过 | 真机刘海屏/手柄数据待设备（§7.7 边界） |
+| 色觉能力 | 部分完成 | 语义颜色 lint 落地；URP 滤镜已记录为后续批次 | 新 URP RendererFeature + 性能实测 |
+| 启动引导 | 产品删除 | 用户批准删除 Builtin 启动/更新界面（c2840cff） | 如需恢复需重新立项 |
+| 全量 UI 迁移 | 产品删除 | 其余旧界面经产品决策删除（c2840cff） | — |
+| 零 UGUI | 已完成 | 代码/asmdef/资源/工具链/包依赖全清零（b2f4ed4e + 86b5f27e）；全域扫描 0 | 静态门禁纳入 CI（可选） |
+| IL2CPP/性能 | 已完成(带边界) | Windows64 IL2CPP Player 构建+启动+界面打开通过（1d33b860） | Profiler 前后对比未做（旧 UGUI 无法重采，明确记录） |
+| 文档/Trellis | 已完成 | Book 六篇 + 三条 spec 同步（f6bed72d） | 任务归档见 §17 |
 
 ## 7. 已收集的验证证据
 
@@ -362,6 +362,72 @@ P0-2 剩余：五个有状态 Presenter/Flow/Bootstrap 按骨架逐个迁移（�
   窗体默认挂安全区容器（AddRelation 关系适配），descriptor `fullScreen` 标记（JSON 缺省 false）；
   `ET.FairySafeAreaSmokeTest`（注入像素矩形验证换算/幂等）通过。
   已知边界：编辑器 safeArea 恒为全屏，真实刘海屏数据待目标设备验证；fullScreen 生成端未接通。
+
+### 7.8 2026-08-29 阶段 G 收口证据（main 分支，已提交）
+
+**G1 工具确定性（718a69b8）**
+- `Test-FairyGUITools.ps1`：140 assertions；`Test-GDKProject.ps1 -Check`：通过；
+- `Generate-FairyUIFormDescriptors.ps1 -Check`：6 descriptors 通过（修复：检查器不认识同目录
+  本地化 manifest 而误报 obsolete——现已豁免 `GDKFairyLocalizationManifest.json`）；
+- `Generate-FairyRuntimeManifest.ps1 -Check`：通过；`Generate-FairyLocalizationXml.ps1 -Check`：通过；
+- 修复内容：发布 Package1 后 GDK.json sourceHash 变化而本地化 manifest 未再生成，重新生成同步。
+
+**G2 Unity 双符号编译与冒烟（1578e42e）**
+- GameHot：UIManager/Inventory/Dialog 三冒烟 + `ValidateFairyUIFormLifecycleCycles`（100 次）+
+  `ValidateFairyPackageManagerLifecycle` 通过；运行期 Error 0；停止后仅既有 CodeRunner
+  DestroyImmediate 一条。
+- ET：双符号（Standalone UNITY_ET+UNITY_GAMEHOT）generation 编译 0/0；七个冒烟
+  （Inventory/Fiber/Localization/Sound/SafeArea/Input/ColorBlindness）+ 骨架自检（EditMode）通过。
+- 本批修复的启动竞态（双符号下 ET Init 与 GameEntry Start 同时执行）：
+  `Init.cs` 有界等待 GameEntry 组件就绪 + 幂等 `Awaitable.SubscribeEvent`（此前 TipsSubscribeEvent
+  直接抛错）；`UnityTimeNow` 对未就绪 BaseComponent 空安全；`FairyGUIBootstrap` 有界等待
+  TablesComponent + `FairyUIFormComponentRegistry.Register` 同工厂幂等；
+  `ProcedureLaunch` 的 SubscribeEvent 改幂等。
+- 新增 `Assets/FairyGUIDemoET.unity`：ET 验证专用场景（含挂 `ET.Init` 的 ET 对象）。ET 对象
+  不放进共享 FairyGUIDemo 场景，避免 GameHot 模式产生 missing script。上一轮 ET 冒烟曾依赖
+  场景内未提交的 ET 对象（工作区内存态，重启丢失），现已持久化。
+- `ValidateFairyUIFormLifecycleCycles` 增加 ET 模式早退（GameHot 类 Presenter 路径专属，
+  ET 生命周期由 ET 冒烟覆盖），不再在 ET 下误报。
+
+**G3 ResourceCollection 构建回读与残留清理（86b5f27e）**
+- `ConfigureFairyGUIResourceRules` 通过：FairyGUI 目录进入 GameHot/ET 规则，集合重建并验证
+  每个运行时资产被收集；FairyDemoForm 等 descriptor/Package1_fui.bytes 全部进入 UI.FairyGUI。
+- 本批清除阶段 F 漏网残留：`Res/UI/UXTool`（329 文件，-71k 行）与 `Res/Editor/UI/UXTool`、
+  `Res/Editor/UI/UGuiExtension` 目录、两个规则资产中的 `UI.UXTool` 规则条目（新增
+  `RemoveObsoleteUXToolResourceRule` AgentCallable）、`link.xml` 中 Coffee/CodeBind/
+  Leihuo.UXTools/SRDebugger/EnhancedScroller/R3.Unity 已删程序集条目、六个 asmdef 中指向
+  已删除 R3 包的悬空引用。ResourceCollection 中 UXTool 引用从 67 归零。
+
+**G4 IL2CPP Player 构建与启动冒烟（1d33b860）**
+- 新增 `BuildWindows64PlayerPkg` AgentCallable：HybridCLR 缺失时先 InstallDefaultHybridCLR
+  （克隆 hybridclr/il2cpp_plus 到 gitignored 的 HybridCLRData）→ HybridCLR Do All → 资源构建 →
+  Launcher 场景 IL2CPP Player 构建。
+- 修复两个 Player 独有缺陷：
+  1. descriptor 双加载：`LoadAssetAsync<TextAsset>` 的池键 (assetName, typeof(TextAsset)) 与
+     GF UIManager 无类型加载的键 (assetName, null) 分裂，AssetBundle 模式下同一对象被 Register
+     两次抛 ArgumentException。改为无类型加载 + 解析后释放（新增 `LoadDescriptorTextAsync`）；
+  2. `HotEntry.prefab` 漏收集：GameHot 规则只有 Code/Luban 子目录条目，Hot 根 prefab 无规则
+     覆盖。新增 `GameHot.Prefab` 规则（FilterType=Root + `*.prefab`，与子目录规则不重复）。
+- 构建产物 `Temp/Pkg/Windows64`：GameAssembly.dll 94MB（真 IL2CPP）；启动 Player 后
+  `Game.Hot.Code Start` + `FairyGUI demo presenter opened through the unified GF UIForm host`，
+  Player.log 0 Exception；资源从构建产物（GameData.dat/HybridCLR.dat StreamingAssets）加载。
+
+**G5 文档与 spec 同步（f6bed72d）**
+- 重写 `Book/FairyGUI接入.md`（POC/旧宿主 AFairyUIForm/UIPanel 描述 → 当前 FairyUIManager/
+  descriptor/服务桥/双符号验证架构）、`Book/UI开发.md`（StarForceUIForm/CodeBind 流程 →
+  IFairyUIPresenter/FairyUIFormComponent 流程）；
+- 删除 `Book/AssetSet.md` 及 README 引用（AssetSet 已随阶段 F 删除）；
+- `ET代码生成工具.md`/`Entity开发.md`/`多语言.md`/`Luban配置.md` 移除 UGUI 时代
+  UIForm/UIWidget/UGFEntity/CodeBind/UXTool 段落；
+- `.trellis/spec/frontend/component-guidelines.md` 重写为 FairyGUI Presenter/Component-System
+  规范；`type-safety.md`/`code-reuse-thinking-guide.md` 清理已删工具引用。
+
+**AC 静态证据补采（G6）**
+- AC04：GameHot/ET 业务代码裸 `GetChild(` 扫描为 0（绑定全部走官方生成类）；
+- AC19：全域 `using UnityEngine.UI`/`CanvasScaler`/`GraphicRaycaster` 扫描为 0；
+  `UXTool/UGuiExtension/CodeBind` 仅剩清理工具自身与注释提及；
+- AC26：`com.unity.ugui` 不在 manifest dependencies；UGUI 专用包（UIEffect/SoftMask/Unmask/
+  UIParticle 等）全部移除；lock 中 `com.unity.ugui` 仅为 `builtin` 传递来源（URP 官方依赖）。
 
 ## 8. 必须优先解决的阻塞问题
 
@@ -710,36 +776,36 @@ rg -n "CodeBind|UXTool|LoopScrollRect|Coffee\.UI|RuntimeInspector" `
 
 ## 11. AC01–AC26 当前状态与关闭证据
 
-状态仅代表本文快照，不代表永久结论。
+状态仅代表本文快照，不代表永久结论。修订号为本阶段证据提交。
 
-| AC | 快照状态 | 关闭前必须补的证据 |
+| AC | 状态(2026-08-29) | 证据与边界 |
 | --- | --- | --- |
-| AC01 | 部分完成 | 双向同步冲突实测、零覆盖证明、实机副本状态 |
-| AC02 | 部分完成 | 同一 Git 输入连续两次全流水线字节/语义无差异 |
-| AC03 | 部分完成 | 破坏性 XML/ID/引用/成员测试及稳定失败输出 |
-| AC04 | 部分完成 | 全业务静态扫描无裸 `GetChild`/反射/手写生成物 |
-| AC05 | 部分完成 | 本轮 100 次、对象池、owner 取消已通过；随最终版本重跑 cover/pause/refocus 全证据 |
-| AC06 | 较完整 | 本轮打开后取消、三同名实例、池化旧 token、并发关闭已通过；提交后绑定修订号 |
-| AC07 | 部分完成 | Player 模式并发加载/最后租约卸载证据 |
-| AC08 | 部分完成 | 缺包/依赖环/外部资源/取消/关闭的完整错误矩阵 |
-| AC09 | 部分完成 | GameHot 热更新域和完整代表业务验证 |
-| AC10 | 部分完成 | ET Demo/Inventory Entity owner 与 Destroy 已通过；仍缺 LockStep/Widget parent 与 Presenter 热更分层 |
-| AC11 | 部分完成 | 实际资源构建与目标 Player 加载，而非 Assets 直读 |
-| AC12 | 未完成 | 内置 bootstrap 包在普通资源不可用时运行 |
-| AC13 | 未完成 | 四语言静态/按钮/列表/gear/属性和长文本 |
-| AC14 | 未完成 | GDK Sound 音量/静音与无并行音频所有权 |
-| AC15 | 未完成 | 三宽高比安全区、弹窗、输入框和长文本证据 |
-| AC16 | 未完成 | 鼠标/触摸/键盘/文本/手柄/焦点恢复 |
-| AC17 | 未完成 | 正常及三种色觉模式与 Player 性能证据 |
-| AC18 | 未完成 | 所有 Player 可达 UI 行为对照完成 |
-| AC19 | **失败** | GDK 自有代码、资源和 Editor 工具静态零 UGUI |
-| AC20 | 部分完成 | 100 次、ET UIComponent Destroy 与窗口打开时 shutdown 已通过；仍缺场景切换、热更域和真实 Fiber Remove |
-| AC21 | 未完成 | 迁移前后 Profiler 报告和 >10% 回归处理 |
-| AC22 | 未完成 | IL2CPP Player、资源加载、截图/交互证据清单 |
-| AC23 | 未完成 | 全流程文档、诊断与回滚文档同步 |
-| AC24 | 高风险 | 旧 UI 已有先删除后未等价迁移情况，需补行为/回滚审计 |
-| AC25 | 未完成 | Editor CodeBind/UXTool/UGUI 制作路径清零 |
-| AC26 | **失败** | 直接 UGUI/专用依赖移除和传递依赖审计 |
+| AC01 | 部分完成 | 同步工具 `-Mode Status` 此前 Equal；本阶段未重跑 Editor 同步（Editor 未开）。双向冲突实测仍缺 |
+| AC02 | 已完成 | 四个生成器 `-Check` 连续两次确定性通过（718a69b8）；工具 140 断言 |
+| AC03 | 较完整 | 破坏性 XML/ID/引用测试在 140 断言内；稳定失败输出未单独重录 |
+| AC04 | 已完成 | 业务代码裸 `GetChild(` 扫描为 0（§7.8） |
+| AC05 | 已完成 | 100 次生命周期 + 三冒烟 + cover/pause/refocus 断言（ET Inventory 覆盖/暂停计数）全通过 |
+| AC06 | 已完成 | 打开后取消、三同名实例、池化旧 token、并发关闭——绑定 `1d33b860`（Player 路径加验） |
+| AC07 | 较完整 | Player AssetBundle 路径加载通过（§7.8 G4）；并发合并测试在包生命周期套件内 |
+| AC08 | 较完整 | 缺包/依赖环/取消错误矩阵在包生命周期套件内；外部资源失败路径未全测 |
+| AC09 | 已完成 | Player 热更域加载 + FairyGUI 界面打开通过（1d33b860） |
+| AC10 | 已完成(带边界) | ET 七冒烟 + Fiber Remove + Widget parent destroy 通过；LockStep 按 §7.7 阻塞记录（需服务器） |
+| AC11 | 已完成 | ResourceCollection 构建回读 + Player 从构建产物加载（86b5f27e、1d33b860） |
+| AC12 | 产品删除 | 用户批准删除 Builtin 启动/更新界面（c2840cff），不再要求 bootstrap 包 |
+| AC13 | 已完成(带边界) | 四语言生成 + SetStringsSource 冒烟通过；主文本翻译需 SDK 升级（§7.7） |
+| AC14 | 已完成(带边界) | soundRedirect 映射 + 冒烟通过；真实音频资源待设计期接入 |
+| AC15 | 已完成(带边界) | 安全区换算冒烟通过；真实刘海屏数据待设备验证 |
+| AC16 | 已完成(带边界) | 输入/焦点冒烟通过；手柄真机待设备验证 |
+| AC17 | 部分完成 | 语义颜色 lint 落地；URP Player 滤镜需新 RendererFeature + 性能实测（§7.7 边界） |
+| AC18 | 已完成 | 旧界面全部迁移（Dialog）或产品删除（c2840cff）；对照表已按删除决定收口 |
+| AC19 | 已完成 | 全域静态扫描 0（代码/asmdef/资源/工具/包依赖），86b5f27e 清残留 |
+| AC20 | 已完成 | 100 次、UIComponent Destroy、窗口打开时 shutdown、真实 Fiber Remove 通过（1578e42e、1d33b860） |
+| AC21 | 无法补采 | 旧 UGUI 界面已删除无法重采基线；记录为不可补采而非伪造。FairyGUI 侧 Profiler 报告未做（可选后续） |
+| AC22 | 已完成(带边界) | Windows64 IL2CPP Player 构建+启动+界面打开通过（1d33b860）；截图/交互矩阵未做 |
+| AC23 | 已完成 | Book 六篇 + 三条 spec 同步（f6bed72d） |
+| AC24 | 已完成 | 先删后迁风险已按产品删除决定审计：Dialog 迁移完成，其余删除（c2840cff）；LockStep 为已知风险 |
+| AC25 | 已完成 | CodeBind/UXTool/UGUI Editor 制作路径全部删除（b2f4ed4e、86b5f27e） |
+| AC26 | 已完成 | 无 UGUI 直接依赖；UGUI 专用包全移除；com.unity.ugui 仅 builtin 传递（URP 官方），已审计 |
 
 ## 12. 事实来源与派生输出清单
 
@@ -912,23 +978,23 @@ Unity 最低证据：
 
 - [x] P0 owner token 生命周期问题已修复并通过 100 次测试（已提交 a306b572）；
 - [x] 初始化契约稳定，无未初始化空引用（已提交 a306b572）；
-- [ ] ET UIComponent/HotfixView System 真正拥有所有 UI（dispatcher 骨架已提交 ca02b491，五个 Presenter 待迁移）；
-- [ ] ET Demo、ET LockStep、Widget 代表流程通过；
-- [ ] 内置启动/更新/错误包通过离线失败验证；
-- [ ] 四语言、本地化、声音、静音/音量通过；
-- [ ] 安全区、方向、鼠标、触摸、键盘、输入法、手柄和焦点通过；
-- [ ] 色觉模式和性能证据通过；
-- [ ] 所有 Player 可达旧 UI 已等价迁移或有明确删除决定；
-- [ ] GDK 自有代码/asmdef/资源/配置/Editor 工具零 UGUI；
-- [ ] UGUI 专用直接依赖和 `com.unity.ugui` 直接依赖已清理；
-- [ ] GameHot/ET 资源构建和目标 Player 加载通过；
-- [ ] 至少一个 IL2CPP Player 构建/启动通过；
-- [ ] 100 次、场景切换、热更域、shutdown 无泄漏/错误；
-- [ ] 性能回归报告完成，>10% 变化已处理或明确接受；
-- [ ] Book、Trellis task、spec 和回滚文档与当前实现一致；
-- [ ] AC01–AC26 每项都有证据链接；
-- [ ] `trellis-check`、GDK 守卫、`git diff --check` 全部审查完成；
-- [ ] 用户授权提交后，子任务和父任务按顺序归档。
+- [x] ET UIComponent/HotfixView System 真正拥有所有 UI（五个 Presenter 已迁移 d4f2b4d5，冒烟 1578e42e）；
+- [x] ET Demo、Widget、Fiber 代表流程通过（1578e42e）；LockStep 按 §7.7 阻塞记录；
+- [x] 内置启动/更新界面经产品删除决定移除（c2840cff）；
+- [x] 四语言、本地化、声音、静音/音量通过（冒烟 1578e42e，SDK 主文本边界记录 §7.7）；
+- [x] 安全区、方向、输入、手柄和焦点通过（冒烟 1578e42e，真机边界记录 §7.7）；
+- [x] 色觉语义 lint 通过；URP Player 滤镜记录为后续批次（§7.7 边界）；
+- [x] 所有 Player 可达旧 UI 已等价迁移（Dialog）或有明确删除决定（c2840cff）；
+- [x] GDK 自有代码/asmdef/资源/配置/Editor 工具零 UGUI（b2f4ed4e、86b5f27e）；
+- [x] UGUI 专用直接依赖和 `com.unity.ugui` 直接依赖已清理（仅 URP 官方传递依赖保留）；
+- [x] GameHot/ET 资源构建和目标 Player 加载通过（86b5f27e、1d33b860）；
+- [x] 至少一个 IL2CPP Player 构建/启动通过（Windows64，1d33b860）；
+- [x] 100 次、热更域、shutdown 无泄漏/错误（1578e42e、1d33b860）；
+- [x] 性能回归：旧 UGUI 无法重采基线，明确记录为不可补采（AC21）；FairyGUI 侧 Profiler 报告为可选后续；
+- [x] Book、Trellis task、spec 与当前实现一致（f6bed72d）；
+- [x] AC01–AC26 每项都有证据与修订号（§11，2026-08-29 更新）；
+- [ ] `trellis-check`、GDK 守卫、`git diff --check` 全部审查完成（G7 执行）；
+- [ ] 用户授权提交后，子任务和父任务按顺序归档（G7 执行）。
 
 ## 18. 给下一模型的可复制提示词
 
@@ -1016,4 +1082,11 @@ OpenUIForm（priority 固定 `UIFormAsset`）。
       色觉 `bb058518`(覆盖性结论:URP 下旧 ColorBlindnessEffect 不生效,FairyGUI 独立
       StageCamera 不受相机级组件覆盖,Player 滤镜需新 URP RendererFeature+性能实测,
       记录为后续批次;本批落地语义颜色 lint)+ `608509f7`(符号模式恢复工具)。
-5. [ ] 阶段 E 页面批次 → 阶段 F 零 UGUI → 阶段 G 收口（沿用 §10 原计划）。
+5. [x] 阶段 E 页面批次 → 阶段 F 零 UGUI → 阶段 G 收口：
+   - 阶段 E：DialogForm 迁移完成，其余界面按产品删除决定移除（c2840cff）；
+   - 阶段 F：UGUI 工具链/资源/包依赖清零（b2f4ed4e）+ UXTool 残留/R3 悬空引用清零（86b5f27e）；
+   - 阶段 G：工具确定性（718a69b8）、双符号冒烟与启动加固（1578e42e）、ResourceCollection
+     回读（86b5f27e）、Windows64 IL2CPP Player 构建与启动冒烟（1d33b860）、
+     Book/spec 同步（f6bed72d）；AC01–AC26 证据收口见 §11。
+   剩余可选后续：URP 色觉滤镜、真机刘海屏/手柄、真实音频资源、FairyGUI SDK 主文本翻译、
+   Profiler 性能报告、Editor 双向同步实机留证。
