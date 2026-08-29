@@ -81,15 +81,24 @@ namespace Game
 
             if (gamepad != null)
             {
-                Vector2 stick = gamepad.leftStick.ReadValue();
-                if (Mathf.Abs(stick.x) > 0.5f && horizontal == 0)
+                // 摇杆方向用边沿触发(wasPressedThisFrame):持续按住不逐帧移动焦点,
+                // 回中后再次推动才再次触发,避免手柄导航每帧跳焦点。
+                if (gamepad.leftStick.left.wasPressedThisFrame)
                 {
-                    horizontal = stick.x > 0f ? 1 : -1;
+                    horizontal = -1;
+                }
+                else if (gamepad.leftStick.right.wasPressedThisFrame)
+                {
+                    horizontal = 1;
                 }
 
-                if (Mathf.Abs(stick.y) > 0.5f && vertical == 0)
+                if (gamepad.leftStick.up.wasPressedThisFrame)
                 {
-                    vertical = stick.y > 0f ? 1 : -1;
+                    vertical = -1;
+                }
+                else if (gamepad.leftStick.down.wasPressedThisFrame)
+                {
+                    vertical = 1;
                 }
             }
 
@@ -202,16 +211,33 @@ namespace Game
         /// </summary>
         public bool CancelTopForm()
         {
-            FairyUIManager manager = FairyUIManager.Instance;
-            FairyUIForm[] forms = manager.GetAllLoadedUIForms();
-            if (forms == null || forms.Length == 0)
+            FairyUIForm top = FindTopForm();
+            if (top == null)
             {
                 return false;
             }
 
-            // 最上层:DepthInUIGroup 最大者;深度相同时取 serial 更大
-            // (GF serial 单调递增,后打开的窗体 serial 更大,即视觉更上层)。
+            FairyUIManager.Instance.CloseUIForm(top.SerialId);
+            return true;
+        }
+
+        /// <summary>
+        /// 找当前视觉最上层的已加载窗体。
+        /// 判定:UIGroup.Depth 降序 → 组内 DepthInUIGroup 降序 → serial 降序
+        /// (GF serial 单调递增,后打开的窗体 serial 更大)。跨组比较必须以组深度优先,
+        /// 否则 Default 组内高 DepthInUIGroup 的窗体会被误判覆盖 Pop 组。
+        /// </summary>
+        private static FairyUIForm FindTopForm()
+        {
+            FairyUIManager manager = FairyUIManager.Instance;
+            FairyUIForm[] forms = manager.GetAllLoadedUIForms();
+            if (forms == null || forms.Length == 0)
+            {
+                return null;
+            }
+
             FairyUIForm top = null;
+            int topGroupDepth = int.MinValue;
             int topDepth = int.MinValue;
             foreach (FairyUIForm form in forms)
             {
@@ -220,22 +246,20 @@ namespace Game
                     continue;
                 }
 
+                int groupDepth = form.UIGroup.Depth;
                 int depth = form.DepthInUIGroup;
-                if (top == null || depth > topDepth ||
-                    (depth == topDepth && form.SerialId > top.SerialId))
+                if (top == null ||
+                    groupDepth > topGroupDepth ||
+                    (groupDepth == topGroupDepth && depth > topDepth) ||
+                    (groupDepth == topGroupDepth && depth == topDepth && form.SerialId > top.SerialId))
                 {
                     top = form;
+                    topGroupDepth = groupDepth;
                     topDepth = depth;
                 }
             }
 
-            if (top == null)
-            {
-                return false;
-            }
-
-            manager.CloseUIForm(top.SerialId);
-            return true;
+            return top;
         }
 
         private static Container FindNavRoot(DisplayObject from)
@@ -256,37 +280,31 @@ namespace Game
 
         private static Container FindTopFormNavRoot()
         {
-            FairyUIForm[] forms = FairyUIManager.Instance.GetAllLoadedUIForms();
-            if (forms == null)
+            // 取真正视觉最上层的窗体(与 CancelTopForm 同口径),而不是 GetAllLoadedUIForms
+            // 返回顺序里的第一个。
+            FairyUIForm top = FindTopForm();
+            if (top?.View == null)
             {
                 return null;
             }
 
-            foreach (FairyUIForm form in forms)
+            // 焦点根可以是视图自身,也可以是视图祖先链上带 tabStopChildren 的容器
+            // (安全区容器/组容器都可能处于链条中间)。
+            DisplayObject view = top.View.displayObject;
+            if (view == null || view.stage == null)
             {
-                if (form?.View == null)
+                return null;
+            }
+
+            DisplayObject element = view;
+            while (element != null)
+            {
+                if (element is Container container && container.tabStopChildren)
                 {
-                    continue;
+                    return container;
                 }
 
-                // 焦点根可以是视图自身,也可以是视图祖先链上带 tabStopChildren 的容器
-                // (安全区容器/组容器都可能处于链条中间)。
-                DisplayObject view = form.View.displayObject;
-                if (view == null || view.stage == null)
-                {
-                    continue;
-                }
-
-                DisplayObject element = view;
-                while (element != null)
-                {
-                    if (element is Container container && container.tabStopChildren)
-                    {
-                        return container;
-                    }
-
-                    element = element.parent;
-                }
+                element = element.parent;
             }
 
             return null;

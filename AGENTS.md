@@ -170,21 +170,17 @@ Unity/Assets/Scripts/
 
 **Module Switching**: The framework supports flexible switching between ET logic and GF logic, and between hot-reload and non-hot-reload modes. This affects link.xml optimization for build size.
 
-**Code Binding**: Uses custom CodeBind tool for resource-to-code mapping. Recommended for UI development.
+**FairyGUI UI**: FairyGUI is the sole view backend for GDK Player UI. GF `IUIManager` keeps UI ID/group/serial/pool/lifecycle; business picks GameHot MonoBehaviour (`IFairyUIPresenter`) or ET Entity/System (`FairyUIFormComponent`). See `Book/FairyGUI接入.md`.
 
-**State Controller**: Add macro `STATE_CONTROLLER_CODE_BIND` to auto-generate state data code during code binding.
-
-**ETUI**: GF-based UI system integrated with ET (see `Unity/Assets/Scripts/Game/ET/Loader/UGF/UIForm`)
-
-**ETEntity**: GF-based Entity system integrated with ET (see `Unity/Assets/Scripts/Game/ET/Loader/UGF/Entity`)
+**FairyEntity**: FairyGUI-based Entity host for world-space/HUD (see `Game/UI/FairyGUI/FairyEntity.cs`).
 
 ## UI创建流程
 
 ### 创建新UI的步骤
 
-#### 第一步：创建预制体
+#### 第一步：设计 FairyGUI 组件
 
-在`Unity/Assets/Res/UI/UIForm/Hot/`目录下创建预制体（如TestForm.prefab）
+在 `Design/FairyGUI/GDK_FGUI/assets/Package1/` 下创建组件 XML，经 FairyGUI Editor 发布获得强类型绑定（`Game.FairyGUI.Package1` 命名空间）
 
 #### 第二步：添加UI配置到Luban
 
@@ -203,53 +199,59 @@ Unity/Assets/Scripts/
 
 **GameHot模式**
 
-创建UI逻辑类（`Game/Hot/Code/UI/`）：
+创建 Presenter（`Game/Hot/Code/UI/`）：
 ```csharp
-public class TestForm : StarForceUIForm
+[FairyUIPresenter(UIFormId.TestForm)]
+public sealed class TestForm : IFairyUIPresenter
 {
-    [SerializeField]
-    private Button m_TestButton = null;
+    private UIMainView m_View;
 
-    public void OnTestButtonClick()
+    public void OnViewReady(FairyUIFormContext context)
     {
-        // 按钮点击逻辑
+        m_View = context.View as UIMainView;
+        m_View.testButton.onClick.Add(OnTestButtonClick);
     }
 
-    protected override void OnOpen(object userData)
+    public void OnOpen(object userData) { }
+
+    public void OnClose(bool isShutdown, object userData)
     {
-        base.OnOpen(userData);
+        m_View.testButton.onClick.Remove(OnTestButtonClick);
+        m_View = null;
     }
 
-    protected override void OnClose(bool isShutdown, object userData)
+    private void OnTestButtonClick(EventContext context)
     {
-        base.OnClose(isShutdown, userData);
+        FairyUIFormService.CloseOwnedForm(m_View);
     }
 }
 ```
 
-将脚本挂载到预制体，打开UI：
+`HotEntry.InitializeFairyGUI()` 反射扫描 `[FairyUIPresenter]` 构建注册表。打开UI：
 ```csharp
-GameEntry.UI.OpenUIForm(UIFormId.TestForm);
+FairyUIForm form = await FairyUIFormService.OpenFairyUIFormAsync(UIFormId.TestForm);
 ```
 
-**ET框架模式（ETUI）**
+**ET框架模式**
 
-创建Model层（`ET/Code/ModelView/Client/`）：
+创建Model层 Component（`ET/Code/ModelView/Client/`）：
 ```csharp
-[ComponentOf(typeof(UIComponent))]
-public class UIFormTestComponent : UGFUIForm<MonoUIFormTest>,
-    IAwake, IUGFUIFormOnOpen, IUGFUIFormOnClose
+[ChildOf(typeof(UIComponent))]
+public class UIFormTestComponent : FairyUIFormComponent,
+    IAwake, IFairyUIFormOnViewReady, IFairyUIFormOnOpen, IFairyUIFormOnClose
 {
+    public int ClickCount;
 }
 ```
 
-创建Hotfix层（`ET/Code/HotfixView/Client/`）：
+创建Hotfix层 System（`ET/Code/HotfixView/Client/`）：
 ```csharp
 [EntitySystemOf(typeof(UIFormTestComponent))]
+[FriendOf(typeof(UIFormTestComponent))]
 public static partial class UIFormTestComponentSystem
 {
-    [UGFUIFormSystem]
-    private static void UGFUIFormOnOpen(this UIFormTestComponent self)
+    [EntitySystem]
+    private static void FairyUIFormOnOpen(this UIFormTestComponent self)
     {
         // 打开逻辑
     }
@@ -271,9 +273,10 @@ public static partial class UIFormTestComponentSystem
 |------|------|
 | UIFormId定义 | `Game/Hot/Code/Generate/UGF/UIFormId.cs` |
 | Luban配置 | `Res/Editor/Luban/dtuiform.json` |
-| UI预制体 | `Res/UI/UIForm/Hot/*.prefab` |
+| FairyGUI 包事实来源 | `Design/FairyGUI/GDK_FGUI/assets/**/*.xml` |
+| descriptor | `Res/UI/FairyGUI/*.json` |
 | UI代码 | `Game/Hot/Code/UI/*.cs` |
-| ET UI框架 | `Game/ET/Loader/UGF/UIForm/` |
+| ET UI框架 | `Game/UI/FairyGUI/` + `ET/Code/*/Module/UI/FairyGUI/` |
 
 ## Entity创建流程
 

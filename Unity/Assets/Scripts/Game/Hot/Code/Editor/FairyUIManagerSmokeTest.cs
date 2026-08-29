@@ -177,6 +177,68 @@ namespace Game.Hot.Editor
             }
         }
 
+        [AgentCallable("R1/R2 冒烟：FairySound 未映射不回退 + CancelTopForm 关闭最上层窗体。", 60)]
+        public static async UniTask RunFairyInputSoundFixSmokeTest()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException("FairyInputSound fix smoke test requires PlayMode.");
+            }
+
+            EnsurePresenterRegistry();
+
+            FairyUIManager uiManager = FairyUIManager.Instance;
+            uiManager.Initialize();
+            EnsureFairyUIGroup(uiManager, "Default", 0);
+            EnsureFairyUIGroup(uiManager, "Pop", 100);
+
+            // R2: 未映射声音应返回 true(已处理,静默跳过),不回退 FairyGUI 原生 AudioSource。
+            if (!FairySound.TryPlay("__unmapped_sound__", 1.0f))
+            {
+                throw new InvalidOperationException(
+                    "FairySound.TryPlay 未映射声音应返回 true(不回退原生),实际返回 false。");
+            }
+
+            // R1: CancelTopForm 关闭当前最上层窗体。
+            // 先等 GameHot 自动打开稳定并清理,避免与验证打开竞争。
+            for (int i = 0; i < 10; i++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            FairyUIForm existing = uiManager.GetUIForm("Assets/Res/UI/FairyGUI/FairyDemoForm.json");
+            if (existing != null)
+            {
+                uiManager.CloseUIForm(existing.SerialId);
+            }
+
+            for (int i = 0; i < 3; i++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            FairyUIForm form = await uiManager.OpenFairyUIFormAsync(UIFormId.FairyDemoForm, "input-sound-fix-smoke");
+            if (form == null)
+            {
+                throw new InvalidOperationException("OpenFairyUIFormAsync returned null.");
+            }
+
+            await UniTask.Yield(PlayerLoopTiming.Update);
+
+            FairyInputService input = FairyInputService.Instance;
+            input.Initialize();
+            if (!input.CancelTopForm())
+            {
+                throw new InvalidOperationException("CancelTopForm 应关闭已打开窗体,返回 false。");
+            }
+
+            await UniTask.Yield(PlayerLoopTiming.Update);
+            if (uiManager.HasUIForm(form.SerialId))
+            {
+                throw new InvalidOperationException("CancelTopForm 未关闭目标窗体。");
+            }
+        }
+
         private static void EnsureFairyUIGroup(FairyUIManager uiManager, string name, int depth)
         {
             if (uiManager.HasUIGroup(name))

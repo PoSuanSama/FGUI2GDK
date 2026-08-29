@@ -57,14 +57,17 @@ namespace Game
         }
 
         /// <summary>
-        /// 把 FairyGUI 声音请求重定向到 GDK Sound 组。返回 true 表示已被 GDK 处理;
-        /// false 表示未命中映射(调用方可回退原路径)。
+        /// 把 FairyGUI 声音请求重定向到 GDK Sound 组。始终返回 true(已处理):
+        /// 命中映射则经 GDK UISound 组播放,未命中/未就绪则静默跳过并记录诊断,
+        /// 从不回退 FairyGUI 原生 AudioSource 路径,保证「所有 UI 声音统一由 GDK Sound 持有」。
         /// </summary>
         public static bool TryPlay(string soundName, float volumeScale)
         {
+            // volumeScale 是 FairyGUI transition 内缩放,与 GDK 的 Luban DRUISound.Volume
+            // 统一音量语义不同,有意忽略(由声音组音量统一控制,不叠加)。
             if (string.IsNullOrEmpty(soundName))
             {
-                return false;
+                return true;
             }
 
             if (!s_Mappings.TryGetValue(soundName, out int uiSoundId))
@@ -72,11 +75,11 @@ namespace Game
                 if (s_LoggedMisses.Add(soundName))
                 {
                     GameFrameworkLog.Warning(
-                        "FairyGUI sound '{0}' has no GDK UISound mapping; it would fall back to the raw FairyGUI audio path.",
+                        "FairyGUI sound '{0}' has no GDK UISound mapping; it is skipped instead of falling back to the raw FairyGUI audio path.",
                         soundName);
                 }
 
-                return false;
+                return true;
             }
 
             if (GameEntry.Sound == null)
@@ -84,14 +87,12 @@ namespace Game
                 GameFrameworkLog.Warning(
                     "FairyGUI sound '{0}' cannot play because the GDK sound component is not ready.",
                     soundName);
-                return false;
+                return true;
             }
 
-            // GDK UISound 的优先级/音量由 Luban DRUISound 与 Setting 驱动;
-            // FairyGUI 的 volumeScale 是 transition 内缩放,与 GDK 音量语义不同,
-            // 由声音组统一控制,这里不叠加。
-            int? serialId = GameEntry.Sound.PlayUISound(uiSoundId);
-            return serialId.HasValue;
+            // GDK UISound 的优先级/音量由 Luban DRUISound 与 Setting 驱动。
+            GameEntry.Sound.PlayUISound(uiSoundId);
+            return true;
         }
     }
 }

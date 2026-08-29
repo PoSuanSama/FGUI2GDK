@@ -108,10 +108,10 @@ AI 直接修改仓库 `assets/*/*.xml`。布局、颜色、文本和非业务节
 | 忽略无名称节点 | 开启 |
 | 类名前缀 | `UI_` |
 | 成员前缀 | `m_` |
-| 命名空间前缀 | `Game.Hot.FairyGUI` |
+| 命名空间前缀 | `Game.FairyGUI` |
 | 仓库代码路径 | `../../../Unity/Assets/Scripts/Game/Hot/Code/Generate/FairyGUI` |
 
-发布 `Package1` 后，官方生成器会在代码路径下创建 `Package1/`，生成类使用 `Game.Hot.FairyGUI.Package1` 命名空间和 `GetChild("成员名")` 绑定。
+发布 `Package1` 后，官方生成器会在代码路径下创建 `Package1/`，生成类使用 `Game.FairyGUI.Package1` 命名空间和 `GetChild("成员名")` 绑定。
 
 ## 仓库与 Editor 同步
 

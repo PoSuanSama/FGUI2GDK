@@ -3,7 +3,7 @@
   "name": "fgui-input-sound-doc-fixes",
   "title": "FairyGUI 输入/声音桥修复与文档口径对齐",
   "description": "修复 FairyInputService 顶层窗口判断、FairySound 绕过 GDK、以及 AGENTS.md/接入文档的漂移。",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
