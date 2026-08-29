@@ -64,6 +64,10 @@ Publish/
 global.json
 Unity/ProjectSettings/EditorBuildSettings.asset
 Unity/ProjectSettings/EditorBuildSettings.asset
+# 用户本机配置(HANDOFF §3 保护文件):机器路径/插件凭证/构建期自动改写,不入库
+Unity/ProjectSettings/ProjectSettings.asset
+Unity/ProjectSettings/HybridCLRSettings.asset
+Unity/ProjectSettings/GraphicsSettings.asset
 
 /Unity/Assets/StreamingAssets/*
 nul
