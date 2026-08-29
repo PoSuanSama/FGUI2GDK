@@ -1046,6 +1046,10 @@ OpenUIForm（priority 固定 `UIFormAsset`）。
 | 五个 GF 事件（Success/Failure/Update/DependencyAsset/CloseComplete） | `IUIManager.cs:67-87` | 可订阅 | 不订阅不转发 | 中（打开失败只靠轮询兜底） |
 | `GetAllUIGroups`/`UIGroupCount`/`IsValidUIForm` | `IUIManager.cs:123-235` | 有 | 无透出 | 低（诊断用） |
 
+补正（2026-08-29）：上表「现状」列仅为 `8b39d6cc` 快照。随后 `dd72f24c` 透出实例锁/优先级、
+批量关闭、诊断三件套与 Failure/CloseComplete 事件桥；`712845a3`（08-29-fgui-gf-capability-passthrough）
+补齐最后两项——对象池调参四属性 + Success/Update/DependencyAsset 三个事件桥。至此 §19.1 全部缺口已补齐。
+
 可疑实现：`FairyUIManager.Initialize()` 每次调用都重建 `FairyUIFormHelper` 并 `SetUIFormHelper`，
 `m_Groups` 跨 Initialize 不清空；重复 bootstrap/域重载后的幂等性依赖 GF 端行为，需实测。
 
