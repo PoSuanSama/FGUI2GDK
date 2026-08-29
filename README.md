@@ -11,6 +11,7 @@ GameDevelopmentKit（GDK）是一套 [Unity] 游戏开发框架。服务端基�
 | 成熟稳定 | 经商业项目验证，覆盖客户端、服务端、热更新、数据、网络、UI 与构建等完整开发链路 |
 | 双端架构 | [Unity] 客户端与 [ET 8.1] 服务端共享协议、配置和基础设施；客户端支持 [纯 GF（GameHot）][模式选择] 与 ET 模式 |
 | UI | [FairyGUI] 作为唯一 Player UI 视图后端，GF `IUIManager` 继续拥有 UI ID、分组、层级、多实例、对象池与完整生命周期；GameHot 走 Presenter 工作流，ET 走 Component/System 打开链 |
+| UI 工具链 | [FGUI Agent Bridge]（`External/fgui-agent-bridge/`）随仓库内置：Editor 插件、免安装 CLI 与 AI Skill 开箱即用，配合 [FairyGUI 接入](Book/FairyGUI接入.md) 完成 XML 编辑、发布与 AI UI 闭环 |
 | 热更新 | [HybridCLR] 管理热更程序集、AOT 元数据与构建流程 |
 | ET 与 GF 集成 | ETUI、ETEntity 接入 ET 生命周期，[UniTask] 统一异步模型 |
 | 数据与协议 | [Luban] 导出配置，[Proto2CS] 生成 ET/MemoryPack 与 GF/Protobuf 协议代码 |
@@ -59,7 +60,7 @@ GameDevelopmentKit（GDK）是一套 [Unity] 游戏开发框架。服务端基�
 | 分类 | 依赖 |
 | --- | --- |
 | 核心框架 | [UnityGameFramework]、[UGFExtensions]、[ET 8.1] |
-| UI | [FairyGUI]（Unity SDK 5.2.0，MIT） |
+| UI | [FairyGUI]（Unity SDK 5.2.0，MIT）、[FGUI Agent Bridge]（0.8.1 内置，MIT） |
 | 热更新与配置 | [HybridCLR]、[Luban]、[Luban Extension] |
 | 异步、序列化与网络 | [UniTask]、[MemoryPack Extension]、[Protobuf Unity]、[UnityWebSocket] |
 | 编辑器工具 | [SocoTools]、[FolderTag]、[Unity Agent Bridge] |
@@ -78,6 +79,7 @@ GameDevelopmentKit（GDK）是一套 [Unity] 游戏开发框架。服务端基�
 [Protobuf Unity]: https://github.com/XuToWei/Protobuf-Unity
 [UnityWebSocket]: https://github.com/psygames/UnityWebSocket
 [FairyGUI]: https://www.fairygui.com/
+[FGUI Agent Bridge]: https://github.com/Wilson520403/fgui-agent-bridge
 [SocoTools]: https://github.com/crossous/SocoTools
 [FolderTag]: https://github.com/liyingsong99/FolderTag
 [Unity Agent Bridge]: https://github.com/XuToWei/UnityAgentBridge

@@ -49,7 +49,22 @@ function Invoke-AgentJson {
     )
 
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-    $startInfo.FileName = $Executable
+    # 支持随仓库内置的免安装 CLI(External/fgui-agent-bridge/fgui-agent.py):
+    # .py 脚本不能直接作为 CreateProcess 的可执行文件,改用 python 启动并把脚本
+    # 路径前置到参数列表;.exe/命令路径保持原行为。
+    if ([System.IO.Path]::GetExtension($Executable) -eq '.py') {
+        $python = (Get-Command 'python' -CommandType Application -ErrorAction SilentlyContinue)
+        if ($null -eq $python) {
+            throw "fgui-agent '$Stage' requires python on PATH to run '$Executable'."
+        }
+
+        $startInfo.FileName = $python.Source
+        $startInfo.ArgumentList.Add($Executable)
+    }
+    else {
+        $startInfo.FileName = $Executable
+    }
+
     $startInfo.UseShellExecute = $false
     $startInfo.CreateNoWindow = $true
     $startInfo.RedirectStandardOutput = $true

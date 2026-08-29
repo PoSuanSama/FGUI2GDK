@@ -12,7 +12,9 @@ FairyGUI XML 工程是 AI UI 流程的唯一版本化事实来源。`D:\Unity\Pr
 | 稳定业务契约 | `Design/FairyGUI/GDK_FGUI/settings/GDK.json` |
 | 确定性 manifest | `Design/FairyGUI/GDK_FGUI/generated/GDKFairyManifest.json` |
 | 本地化映射 | `Design/FairyGUI/GDK_FGUI/settings/FairyLocalization.json` |
-| 外部 Editor Bridge | `D:\Unity\Project\GDK_FGUI\plugins\agent-bridge`（由 Wilson 仓库部署） |
+| FGUI Agent Bridge 源码 | `External/fgui-agent-bridge/`（vendored Wilson520403 0.8.1，MIT） |
+| 免安装 CLI 启动器 | `External/fgui-agent-bridge/fgui-agent.py` |
+| Editor 侧插件副本 | `External/fgui-agent-bridge/plugin/`（安装到 FairyGUI 工程 `plugins/agent-bridge`） |
 | 编辑器工程同步脚本 | `Tools/FairyGUI/Sync-GDKDemoToEditor.ps1` |
 | XML/manifest 检查 | `Tools/FairyGUI/Test-GDKProject.ps1` |
 | 工具回归测试 | `Tools/FairyGUI/Test-FairyGUITools.ps1` |
@@ -149,15 +151,71 @@ AI 直接修改仓库 `assets/*/*.xml`。布局、颜色、文本和非业务节
 
 同步状态保存在 Editor 工程的 `.gdk-sync-state.json`。哈希计算会统一换行，并把仓库相对发布路径与 Editor 绝对路径映射为逻辑占位符。`plugins/` 与 `.agent/` 不属于同步集合，脚本不会创建、覆盖或删除任何 Editor 插件或 Bridge 运行时数据。
 
+## FGUI Agent Bridge（随仓库内置，开箱即用）
+
+发布由 [FGUI Agent Bridge](https://github.com/Wilson520403/fgui-agent-bridge) 执行。
+Bridge 仓库（Wilson520403/fgui-agent-bridge 0.8.1，MIT）已完整内置在
+`External/fgui-agent-bridge/`：Python CLI/MCP 源码、FairyGUI Editor 插件、安装同步脚本
+与 AI Skill。不需要外部克隆、`uv` 虚拟环境或全局安装。
+
+### 1. 安装 Editor 侧插件
+
+把内置插件目录复制到 FairyGUI 工程（或直接运行 bridge 自带的同步脚本）：
+
+```powershell
+# 方式 A:复制(目标工程路径按实际调整)
+Copy-Item -Recurse -Force `
+  External/fgui-agent-bridge/plugin `
+  D:\Unity\Project\GDK_FGUI\plugins\agent-bridge
+
+# 方式 B:用 bridge 自带的同步脚本(自动做文件对比与更新)
+python External/fgui-agent-bridge/scripts/sync_to_project.py --project D:\Unity\Project\GDK_FGUI
+```
+
+安装后重新打开 FairyGUI Editor（已验证 6.1.4），插件会在工程下创建 `.agent/` 队列目录并轮询指令。
+
+### 2. 使用免安装 CLI
+
+`External/fgui-agent-bridge/fgui-agent.py` 免安装启动 CLI：把 `src/fairygui_agent`
+加入 `sys.path` 直接运行 `cli.main`，CLI 路径只依赖 Python 3.10+ 标准库
+（MCP 服务 `mcp_server.py` 才需要 `mcp` 包，按 bridge README 用 `uv sync` 安装）。
+可用 `FGUI_AGENT_EXE` 环境变量或 `-AgentExecutable` 参数指向：
+
+```powershell
+$env:FGUI_AGENT_EXE = "$(Resolve-Path .)\External\fgui-agent-bridge\fgui-agent.py"
+./Tools/FairyGUI/Publish-GDKDemo.ps1 -PackageName Package1
+```
+
+直接调用时把本文件作为脚本传给 python（`--project` 是全局参数，须在子命令之前）：
+
+```text
+python External/fgui-agent-bridge/fgui-agent.py --project D:\Unity\Project\GDK_FGUI status
+```
+
+### 3. AI 工作流 Skill（可选）
+
+bridge 自带 `.agents/skills/fgui-agent-bridge/SKILL.md`（含命令参考与能力清单）。
+需要 AI 直接操作 FairyGUI Editor 的会话可把该 Skill 复制到宿主 `.claude/skills/` 或
+`.agents/skills/`，让 AI 按技能说明调用 CLI。
+
 ## 命令行发布
 
-发布由已部署的 [FGUI Agent Bridge](https://github.com/Wilson520403/fgui-agent-bridge) 执行。
-GDK 只调用外部 `fgui-agent` CLI，不复制或管理其插件、Python、MCP 注册和 `.agent` 队列。
 先确认 FairyGUI Editor 正在运行且 Bridge 心跳新鲜，再运行：
 
 ```powershell
-$env:FGUI_AGENT_EXE = 'C:\tools\fgui-agent.exe'
+$env:FGUI_AGENT_EXE = "$(Resolve-Path .)\External\fgui-agent-bridge\fgui-agent.py"
 ./Tools/FairyGUI/Publish-GDKDemo.ps1 -PackageName Package1
+```
+
+也可以覆盖包、工程、输出、日志和超时参数：
+
+```powershell
+./Tools/FairyGUI/Publish-GDKDemo.ps1 `
+  -AgentExecutable 'External/fgui-agent-bridge/fgui-agent.py' `
+  -EditorProjectPath 'D:\Unity\Project\GDK_FGUI' `
+  -PackageName Package1 `
+  -OutputPath 'D:\Temp\GDK FairyGUI Output' `
+  -TimeoutSeconds 120
 ```
 
 脚本先执行 XML lint、manifest `-Check` 和 `Sync ... -Mode Status`，然后按顺序调用
@@ -173,13 +231,16 @@ fgui-agent --project D:\Unity\Project\GDK_FGUI publish --scope packages --packag
 - CLI 返回 JSON 且 `success` 为 `true`；
 - 输出目录存在非空的 `Package1_fui.bytes`。
 
-最终 JSON 证据包含产物绝对路径、大小、UTC mtime，以及发布前后 SHA-256。
+最终 JSON 证据包含产物绝对路径、大小、UTC mtime，以及发布前后 SHA-256。CLI 缺失、状态过期、
+包名不匹配、非零退出、JSON 无效或产物无效都会失败，不回退到 active/all 发布。
 
 默认产物为：
 
 ```text
 Unity/Assets/Res/UI/FairyGUI/Package1_fui.bytes
 ```
+
+Editor 离线或心跳过期时只报告首个可操作错误；重新打开 FairyGUI Editor 后再重试。
 
 ## 手工发布
 
