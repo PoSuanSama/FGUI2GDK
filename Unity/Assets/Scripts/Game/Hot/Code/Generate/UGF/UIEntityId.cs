@@ -8,10 +8,5 @@ namespace Game.Hot
     public static class UIEntityId
     {
         public const int Undefined = 0;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public const int WidgetTest = 1;
     }
 }

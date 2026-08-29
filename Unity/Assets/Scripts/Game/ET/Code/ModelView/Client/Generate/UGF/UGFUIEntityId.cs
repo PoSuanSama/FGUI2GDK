@@ -8,10 +8,5 @@ namespace ET.Client
     public static class UGFUIEntityId
     {
         public const int Undefined = 0;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public const int WidgetTest = 1;
     }
 }

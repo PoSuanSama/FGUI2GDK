@@ -100,6 +100,14 @@ public sealed class DRUIForm :  Luban.EditorBeanBase
             }
         }
         
+        { 
+            var _fieldJson = _json["FullScreen"];
+            if (_fieldJson != null)
+            {
+                if(!_fieldJson.IsBoolean) { throw new SerializationException(); }  FullScreen = _fieldJson;
+            }
+        }
+        
     }
 
     public override void SaveJson(JSONObject _json)
@@ -142,6 +150,9 @@ public sealed class DRUIForm :  Luban.EditorBeanBase
 
             if (ComponentName == null) { throw new System.ArgumentNullException(); }
             _json["ComponentName"] = new JSONString(ComponentName);
+        }
+        {
+            _json["FullScreen"] = new JSONBool(FullScreen);
         }
     }
 
@@ -201,6 +212,11 @@ public sealed class DRUIForm :  Luban.EditorBeanBase
     /// 组件名
     /// </summary>
     public string ComponentName;
+
+    /// <summary>
+    /// 是否全屏
+    /// </summary>
+    public bool FullScreen;
 
 }
 }

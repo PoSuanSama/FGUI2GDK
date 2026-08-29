@@ -8,7 +8,8 @@
     "AllowMultiInstance": false,
     "PauseCoveredUIForm": true,
     "PackageName": "Package1",
-    "ComponentName": "MainView"
+    "ComponentName": "MainView",
+    "FullScreen": false
   },
   {
     "Id": 104,
@@ -19,7 +20,8 @@
     "AllowMultiInstance": false,
     "PauseCoveredUIForm": false,
     "PackageName": "Package1",
-    "ComponentName": "InventoryView"
+    "ComponentName": "InventoryView",
+    "FullScreen": false
   },
   {
     "Id": 105,
@@ -30,7 +32,8 @@
     "AllowMultiInstance": true,
     "PauseCoveredUIForm": false,
     "PackageName": "Package1",
-    "ComponentName": "ItemDetailWindow"
+    "ComponentName": "ItemDetailWindow",
+    "FullScreen": false
   },
   {
     "Id": 106,
@@ -41,7 +44,8 @@
     "AllowMultiInstance": false,
     "PauseCoveredUIForm": true,
     "PackageName": "Package1",
-    "ComponentName": "InventoryOverlayView"
+    "ComponentName": "InventoryOverlayView",
+    "FullScreen": true
   },
   {
     "Id": 107,
@@ -52,7 +56,8 @@
     "AllowMultiInstance": false,
     "PauseCoveredUIForm": true,
     "PackageName": "Package1",
-    "ComponentName": "RuntimeInspectorView"
+    "ComponentName": "RuntimeInspectorView",
+    "FullScreen": false
   },
   {
     "Id": 1,
@@ -63,6 +68,7 @@
     "AllowMultiInstance": true,
     "PauseCoveredUIForm": true,
     "PackageName": "Package1",
-    "ComponentName": "Dialog"
+    "ComponentName": "Dialog",
+    "FullScreen": false
   }
 ]

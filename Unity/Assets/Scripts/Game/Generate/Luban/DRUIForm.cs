@@ -22,6 +22,7 @@ public sealed partial class DRUIForm : Luban.BeanBase
         PauseCoveredUIForm = _buf.ReadBool();
         PackageName = _buf.ReadString();
         ComponentName = _buf.ReadString();
+        FullScreen = _buf.ReadBool();
         PostInit();
     }
 
@@ -58,6 +59,10 @@ public sealed partial class DRUIForm : Luban.BeanBase
     /// 组件名
     /// </summary>
     public readonly string ComponentName;
+    /// <summary>
+    /// 是否全屏
+    /// </summary>
+    public readonly bool FullScreen;
     public const int __ID__ = 515966854;
     public override int GetTypeId() => __ID__;
 
@@ -76,6 +81,7 @@ public sealed partial class DRUIForm : Luban.BeanBase
         + "PauseCoveredUIForm:" + PauseCoveredUIForm + ","
         + "PackageName:" + PackageName + ","
         + "ComponentName:" + ComponentName + ","
+        + "FullScreen:" + FullScreen + ","
         + "}";
     }
 
