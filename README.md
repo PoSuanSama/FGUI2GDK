@@ -1,5 +1,7 @@
 # GameDevelopmentKit
 
+> **🔗 本仓库基于 [GameDevelopmentKit（GDK）](https://github.com/XuToWei/GameDevelopmentKit) 二次开发**，在其之上完成 FairyGUI 完整接入与零 UGUI 改造（本仓库：`PoSuanSama/FGUI2GDK`）。
+
 GameDevelopmentKit（GDK）是一套 [Unity] 游戏开发框架。服务端基于 [ET 8.1]，客户端以 [UnityGameFramework]（GF）为底座，可选择纯 GF（GameHot）或 ET 开发模式；**UI 视图层为 [FairyGUI]**，GDK 自有代码、资源与工具链已实现零 UGUI。
 
 ## 核心能力
