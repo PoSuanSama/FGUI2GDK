@@ -40,6 +40,15 @@ namespace Game
 #if UNITY_EDITOR
         private void Check()
         {
+            // 双符号模式下 GameHot 流程启动时 GameEntry.Tables 可能尚未就绪,防御性
+            // 跳过检查,避免 DTEntity.DataList 空引用。
+            if (GameEntry.Tables == null ||
+                GameEntry.Tables.DTEntity == null ||
+                GameEntry.Tables.DTEntity.DataList == null)
+            {
+                return;
+            }
+
             foreach (var drEntity in GameEntry.Tables.DTEntity.DataList)
             {
                 GameFramework.Entity.IEntityGroup entityGroup = GameEntry.Entity.GetEntityGroup(drEntity.EntityGroupName);
