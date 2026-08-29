@@ -61,3 +61,12 @@ FairyGUI 真实 CLI 发布只在专业版环境验证；社区版许可阻塞必
 - 真实双副本同步前：仅工具与配置变更，可直接恢复该子任务文件。
 - `FromEditor -Initialize` 前：先保留只读状态证据；冲突或检查失败时不导入。
 - 清单是派生输出，必须与契约和 XML 同批回滚，不能单独修补。
+
+## 收口证据（2026-08-29 阶段 G）
+
+1-8 项全部落地：GDK.json 稳定契约、Publish.json 官方绑定、manifest 确定性生成、
+双向同步（Status=Equal 已验证）、XML 检查与 `-Check` 幂等。阶段 G 重跑
+`Test-FairyGUITools.ps1`（140 断言）、`Test-GDKProject.ps1 -Check`、
+`Generate-FairyUIFormDescriptors.ps1 -Check`（6 descriptors）、
+`Generate-FairyRuntimeManifest.ps1 -Check`、`Generate-FairyLocalizationXml.ps1 -Check`
+全部通过（提交 718a69b8）。

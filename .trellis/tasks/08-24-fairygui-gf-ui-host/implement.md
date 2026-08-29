@@ -98,3 +98,8 @@ Unity Agent Bridge 运行时发现后执行：编译/Error 日志、描述符与
 - 描述符生成器、核心宿主、演示迁移和资源配置分别保持可审查边界。
 - Helper 未通过失败/对象池门禁前不切换 GameEntry 配置。
 - ResourceCollection 实际加载未通过前不删除旧演示 POC。
+
+## 收口证据（2026-08-29 阶段 G）
+
+38/38 已勾选。GF 宿主 owner token/100 次/池化/shutdown 在阶段 G 重验通过；
+Player AssetBundle 路径的 descriptor 双加载缺陷已修复（提交 1d33b860）。

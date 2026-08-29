@@ -35,3 +35,9 @@ git diff --stat
 - GDK 变更守卫为 0 错误、386 个任务范围外警告；四个任务文件的聚焦空白字符/差异检查通过。
 - 全仓 `git diff --check` 仍因任务范围外的 `AGENTS.md`、`CLAUDE.md` 文件末尾空行失败。
 - 真实成功发布与非空 `Package1_fui.bytes` 仍需在持有 FairyGUI 专业版许可的环境验证。
+
+## 收口证据（2026-08-29 阶段 G）
+
+1-8 项全部落地并经工具回归验证：`GDKCliPublish` 插件与 `main.js` 存在；
+`Publish-GDKDemo.ps1` 走 FGUI Agent Bridge（Wilson 0.8.1）发布链路；
+`Test-FairyGUITools.ps1` 140 断言 + `Test-GDKProject.ps1 -Check` 通过（提交 718a69b8 前后）。

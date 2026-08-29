@@ -59,3 +59,8 @@ git diff --check
 - `Package1_fui.bytes` 为 6887 bytes，mtime 从 `2026-08-21T09:01:24.6401230Z` 更新为
   `2026-08-21T11:20:57.0311363Z`；发布前后 SHA-256 均为
   `db9ea28f9ed10979524d64bdf8e8df6120afb0d71905e2ff6c6663adca45ac07`。
+
+## 收口证据（2026-08-29 阶段 G）
+
+11/11 已勾选。FGUI Agent Bridge 0.8.1 发布链路在阶段 E 前已验证（Package1 发布、
+绑定生成、Status=Equal）；阶段 G 工具确定性重跑通过（提交 718a69b8）。
