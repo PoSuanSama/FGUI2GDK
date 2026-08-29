@@ -19,7 +19,6 @@ namespace ET
             private static readonly string s_LocalizationOutPutDir = Path.GetFullPath("../Unity/Assets/Res/Localization");
             private static readonly string s_AssetUtilityCodeFile = Path.GetFullPath("../Unity/Assets/Scripts/Game/Generate/Localization/AssetUtility.Localization.cs");
             private static readonly string s_LocalizationReadyLanguageCodeFile = Path.GetFullPath("../Unity/Assets/Scripts/Game/Editor/Generate/Localization/LocalizationReadyLanguage.cs");
-            private static readonly string s_UXToolEditorLocalizationToolCodeFile = Path.GetFullPath("../Unity/Assets/Scripts/Library/UXTool/Editor/Common/EditorLocalization/EditorLocalizationTool.Generate.cs");
 
             private struct LanguageTableInfo
             {
@@ -207,8 +206,6 @@ namespace ET
                 GenerateAssetUtilityCode(extensionName);
                 Language[] readyLanguages = resultDict.Keys.ToArray();
                 GenerateReadyLanguageCode(readyLanguages);
-                //生成一份给UXTool使用
-                GenerateUXToolCode(readyLanguages, extensionName);
                 //生成多语言Key的代码
                 if (ExcelExporter_Luban.IsEnableET)
                 {
@@ -291,39 +288,6 @@ namespace ET
                 {
                     File.WriteAllText(s_LocalizationReadyLanguageCodeFile, codeContent);
                     Log.Info($"Generate code : {s_LocalizationReadyLanguageCodeFile}!");
-                }
-            }
-
-            private static void GenerateUXToolCode(Language[] readyLanguages, string extensionName)
-            {
-                StringBuilder stringBuilder = new();
-                stringBuilder.AppendLine("// This is an automatically generated class by Share.Tool. Please do not modify it.");
-                stringBuilder.AppendLine("");
-                stringBuilder.AppendLine("namespace ThunderFireUITool");
-                stringBuilder.AppendLine("{");
-                stringBuilder.AppendLine("    public static partial class EditorLocalizationTool");
-                stringBuilder.AppendLine("    {");
-                stringBuilder.AppendLine($"        public const string ExporterExtensionName = \"{extensionName}\";");
-                stringBuilder.AppendLine("");
-                stringBuilder.AppendLine("        public static LocalizationHelper.LanguageType[] ReadyLanguageTypes => new LocalizationHelper.LanguageType[]");
-                stringBuilder.AppendLine("        {");
-                foreach (Language language in readyLanguages)
-                {
-                    stringBuilder.AppendLine($"            LocalizationHelper.LanguageType.{language},");
-                }
-                stringBuilder.AppendLine("        };");
-                stringBuilder.AppendLine("");
-                stringBuilder.AppendLine("        public static string GetLocalizationAsset(LocalizationHelper.LanguageType languageType)");
-                stringBuilder.AppendLine("        {");
-                stringBuilder.AppendLine("            return $\"Assets/Res/Localization/{languageType}/Localization.extensionName\";".Replace("extensionName", extensionName));
-                stringBuilder.AppendLine("        }");
-                stringBuilder.AppendLine("    }");
-                stringBuilder.AppendLine("}");
-                string codeContent = stringBuilder.ToString();
-                if (!File.Exists(s_UXToolEditorLocalizationToolCodeFile) || !string.Equals(codeContent, File.ReadAllText(s_UXToolEditorLocalizationToolCodeFile)))
-                {
-                    File.WriteAllText(s_UXToolEditorLocalizationToolCodeFile, codeContent);
-                    Log.Info($"Generate code : {s_UXToolEditorLocalizationToolCodeFile}!");
                 }
             }
 

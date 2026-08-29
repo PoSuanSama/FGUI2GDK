@@ -44,6 +44,21 @@ namespace Game.Hot
         public const string Key_Dialog_OtherButton = "Dialog.OtherButton";
 
         /// <summary>
+        /// 运行时状态
+        /// </summary>
+        public const string Key_FairyDemo_StatusLabel = "FairyDemo.StatusLabel";
+
+        /// <summary>
+        /// 本地化桥已接通
+        /// </summary>
+        public const string Key_FairyDemo_Subtitle = "FairyDemo.Subtitle";
+
+        /// <summary>
+        /// GDK 多语言标题
+        /// </summary>
+        public const string Key_FairyDemo_Title = "FairyDemo.Title";
+
+        /// <summary>
         /// 当前游戏版本过旧，是否前往更新？
         /// </summary>
         public const string Key_ForceUpdate_Message = "ForceUpdate.Message";
