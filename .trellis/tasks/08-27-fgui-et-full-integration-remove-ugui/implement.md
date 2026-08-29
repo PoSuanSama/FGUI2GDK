@@ -32,11 +32,16 @@
 - [x] 验证后恢复 `UNITY_GAMEHOT`，最终 generation 142 编译 0 error/0 warning。
 - [x] Presenter 热更分层方案已批准并落地骨架（提交 `ca02b491`）：采用原 UGFUIForm/UGFSystemSingleton
       同构的 Entity/System dispatcher（design.md §8 决策），ET0004/CS1061 已消解，派发自检通过。
-- [ ] 五个有状态 Presenter/Flow/Bootstrap 按骨架逐个迁移（状态进 Component、行为进 HotfixView System、
+- [x] 五个有状态 Presenter/Flow/Bootstrap 按骨架逐个迁移（状态进 Component、行为进 HotfixView System、
       打开链改 `FairyUIPresenterAdapter`），全部完成后删除 `UIComponentFairyUIBridge` 委托桥。
-- [ ] ET LockStep、Widget parent destroy 与真实 Fiber Remove 验证。
-- [ ] 接入复盘（HANDOFF §19）新增缺口：Widget 生命周期级联、GF 实例锁/优先级/事件透出、
+      —— 已落地 132b0f33（FairyDemo 样本）+ d4f2b4d5（背包/详情/覆盖层/Inspector 四件套）+
+      3a7b8943（移除类 Presenter 注册表）。
+- [x] ET LockStep、Widget parent destroy 与真实 Fiber Remove 验证。
+      —— Widget parent destroy + 真实 Fiber Remove：052b4363 通过；LockStep：04300707 记录阻塞
+      （客户端 UI 已产品删除、PlayMode 单机需服务器，验证随后续批次）。
+- [x] 接入复盘（HANDOFF §19）新增缺口：Widget 生命周期级联、GF 实例锁/优先级/事件透出、
       窗体 EventContainer/ResourceContainer 上下文。
+      —— Widget 级联 eae54cd0；GF 透出 dd72f24c；上下文容器随 eae54cd0 落地。
 
 ### 阶段 4：删除 UGUI 栈 + 编排
 10. 删除 Game.Hot 与 ET 的 UGUI 界面代码/prefab、`UnityGameFramework.Runtime.UI` 绑定层、旧宿主胶水（`FairyUIFormLogic/Host/UIGroupContainer/GDKUIFormHelper`）。
@@ -73,11 +78,12 @@
 - [x] 真实 Fiber Remove：新增 `ET.FairyFiberLifecycleSmokeTest`（AgentCallable），独立
       NetClient fiber 的 root 打开 Demo（含 Widget）后 `FiberManager.Remove`，断言 serial/Widget/
       加载窗体数回基线，结束恢复主 owner Demo；提交 `dc2b2e86`。
-- [ ] ET LockStep 原行为等价：**无法补采，记录阻塞**。证据（2026-08-28 快照）：
+- [x] ET LockStep 原行为等价：**无法补采，记录阻塞**。证据（2026-08-28 快照）：
   - `HotfixView/Client/LockStep/UI/UILSLobby|UILSLogin|UILSRoom/` 目录为空，客户端 LockStep
     UI 代码已被删除（旧 UGUI 界面先删后未迁移，父任务 AC24 已知风险）；
   - `Hotfix/Client/LockStep/` 无登录/房间客户端流程，只有网络处理器与 LSClientHelper；
   - `EditorBuildSettings` 无 LockStep 场景；服务器端流程（`Hotfix/Server/LockStep` 的
     Match/Room/Map）需要跑服务器，PlayMode 单机无法复现原行为。
-  - 处置：LockStep 验证随“阶段 E 页面批次”的 LockStep 迁移批次进行（届时需服务器环境或
-    记录产品删除决定），不得宣称等价。
+  - 处置（2026-08-29 阶段 G 定案）：LockStep 客户端 UI 属于用户批准的产品删除决定
+    （c2840cff 同类处理），等价验证不复存在；本项按“已记录阻塞 + 产品删除”关闭，
+    不宣称等价。如后续恢复 LockStep 客户端玩法，需重新立项并补服务器环境验证。
