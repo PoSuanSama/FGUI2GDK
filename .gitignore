@@ -75,3 +75,6 @@ nul
 # JVM crash / replay logs (Unity Editor)
 hs_err_pid*.log
 replay_pid*.log
+
+# Trellis 多平台技能符号链接（指向 .claude/skills，机制自动维护，不入库）
+.agents/skills/trellis-*
