@@ -13,3 +13,9 @@
 - `invoke_agent_method ET.FairyInventorySmokeTest::RunFairyInventorySmokeTest`
 - `python .agents/skills/gdk-development-workflow/scripts/validate_changes.py`
 - `git diff --cached --check`
+
+## 收口证据
+
+1-7 项全部落地（提交 8b39d6cc 及阶段 F 批次 b2f4ed4e/86b5f27e）：
+UGUI 基础层/UIForm/UIWidget/生成工具全部删除；ET/GameHot 双模式编译 0/0；
+ET 冒烟与零 UGUI 静态扫描通过。
