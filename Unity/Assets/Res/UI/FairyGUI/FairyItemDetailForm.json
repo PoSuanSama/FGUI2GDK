@@ -6,6 +6,7 @@
   "uiGroupName": "Pop",
   "allowMultiInstance": true,
   "pauseCoveredUIForm": false,
+  "fullScreen": false,
   "packageId": "oozeu71h",
   "packageName": "Package1",
   "componentId": "i20a3",

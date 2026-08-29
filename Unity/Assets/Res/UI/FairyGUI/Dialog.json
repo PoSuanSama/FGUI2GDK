@@ -6,6 +6,7 @@
   "uiGroupName": "Default",
   "allowMultiInstance": true,
   "pauseCoveredUIForm": true,
+  "fullScreen": false,
   "packageId": "oozeu71h",
   "packageName": "Package1",
   "componentId": "yih6a",

@@ -109,6 +109,24 @@ function Get-OptionalString {
     return [string]$value
 }
 
+function Get-OptionalBoolean {
+    param(
+        [Parameter(Mandatory)]$InputObject,
+        [Parameter(Mandatory)][string]$Name
+    )
+
+    if (-not (Test-JsonProperty $InputObject $Name)) {
+        return $false
+    }
+
+    $value = $InputObject.PSObject.Properties[$Name].Value
+    if ($null -eq $value) {
+        return $false
+    }
+
+    return [bool]$value
+}
+
 $sourceRoot = [System.IO.Path]::GetFullPath($SourceProjectPath)
 $manifestFull = [System.IO.Path]::GetFullPath($ManifestPath)
 $lubanFull = [System.IO.Path]::GetFullPath($LubanUIFormPath)
@@ -186,6 +204,7 @@ foreach ($row in @($lubanRows)) {
     $uiGroupName = Get-RequiredString $row 'UIGroupName' "Luban UI row '$csName'"
     $allowMultiInstance = Get-RequiredBoolean $row 'AllowMultiInstance' "Luban UI row '$csName'"
     $pauseCoveredUIForm = Get-RequiredBoolean $row 'PauseCoveredUIForm' "Luban UI row '$csName'"
+    $fullScreen = Get-OptionalBoolean $row 'FullScreen'
 
     $packageName = Get-OptionalString $row 'PackageName'
     $componentName = Get-OptionalString $row 'ComponentName'
@@ -230,6 +249,7 @@ foreach ($row in @($lubanRows)) {
         uiGroupName         = $uiGroupName
         allowMultiInstance  = $allowMultiInstance
         pauseCoveredUIForm  = $pauseCoveredUIForm
+        fullScreen          = $fullScreen
         packageId           = [string]$pkg.id
         packageName         = $packageName
         componentId         = $componentId

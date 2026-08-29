@@ -6,6 +6,7 @@
   "uiGroupName": "RuntimeInspector",
   "allowMultiInstance": false,
   "pauseCoveredUIForm": true,
+  "fullScreen": false,
   "packageId": "oozeu71h",
   "packageName": "Package1",
   "componentId": "q84t8",

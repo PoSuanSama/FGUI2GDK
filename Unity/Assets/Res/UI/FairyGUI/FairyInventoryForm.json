@@ -6,6 +6,7 @@
   "uiGroupName": "Default",
   "allowMultiInstance": false,
   "pauseCoveredUIForm": false,
+  "fullScreen": false,
   "packageId": "oozeu71h",
   "packageName": "Package1",
   "componentId": "i20a2",
