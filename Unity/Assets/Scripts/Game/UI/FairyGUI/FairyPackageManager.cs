@@ -60,6 +60,7 @@ namespace Game
         private static FairyPackageCatalog s_Catalog;
         private static UniTaskCompletionSource<FairyPackageCatalog> s_CatalogLoading;
         private static long s_NextGeneration;
+        private static long s_CatalogGeneration;
 
         internal static async UniTask<FairyPackageLease> AcquireAsync(
             string packageName,
@@ -153,6 +154,8 @@ namespace Game
             s_States.Clear();
             s_LastErrors.Clear();
             s_Catalog = null;
+            s_CatalogGeneration++;
+            s_CatalogLoading?.TrySetCanceled();
             s_CatalogLoading = null;
         }
 
@@ -252,7 +255,7 @@ namespace Game
                 loading =
                     new UniTaskCompletionSource<FairyPackageCatalog>();
                 s_CatalogLoading = loading;
-                LoadCatalogAsync(loading).Forget();
+                LoadCatalogAsync(loading, s_CatalogGeneration).Forget();
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -263,7 +266,8 @@ namespace Game
         }
 
         private static async UniTaskVoid LoadCatalogAsync(
-            UniTaskCompletionSource<FairyPackageCatalog> loading)
+            UniTaskCompletionSource<FairyPackageCatalog> loading,
+            long generation)
         {
             TextAsset manifest = null;
             try
@@ -276,8 +280,15 @@ namespace Game
                 }
 
                 FairyPackageCatalog catalog = FairyPackageCatalog.Parse(manifest.text);
-                s_Catalog = catalog;
-                loading.TrySetResult(catalog);
+                if (generation != s_CatalogGeneration)
+                {
+                    loading.TrySetCanceled();
+                }
+                else
+                {
+                    s_Catalog = catalog;
+                    loading.TrySetResult(catalog);
+                }
             }
             catch (Exception exception)
             {

@@ -28,6 +28,7 @@ namespace Game
         private static bool s_HasApplyTail;
         private static string s_ActivePackageName;
         private static Language s_ActiveLanguage = Language.Unspecified;
+        private static long s_Generation;
 
         public static Language CurrentLanguage
         {
@@ -58,11 +59,13 @@ namespace Game
 
             UniTask previous;
             bool hasPrevious;
+            long generation;
             UniTaskCompletionSource<bool> completion = new UniTaskCompletionSource<bool>();
             lock (s_Gate)
             {
                 previous = s_ApplyTail;
                 hasPrevious = s_HasApplyTail;
+                generation = s_Generation;
                 s_ApplyTail = completion.Task;
                 s_HasApplyTail = true;
             }
@@ -79,6 +82,7 @@ namespace Game
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
+                ThrowIfGenerationChanged(generation);
                 Language language = CurrentLanguage;
                 if (language == Language.Unspecified)
                 {
@@ -95,9 +99,14 @@ namespace Game
                     }
                 }
 
-                await ApplyStringsAsync(packageName, GetStringsAssetName(packageName, language), cancellationToken);
+                await ApplyStringsAsync(
+                    packageName,
+                    GetStringsAssetName(packageName, language),
+                    cancellationToken,
+                    generation);
                 lock (s_Gate)
                 {
+                    ThrowIfGenerationChanged(generation);
                     s_ActivePackageName = packageName;
                     s_ActiveLanguage = language;
                 }
@@ -117,6 +126,7 @@ namespace Game
         {
             lock (s_Gate)
             {
+                s_Generation++;
                 s_ActivePackageName = null;
                 s_ActiveLanguage = Language.Unspecified;
             }
@@ -129,7 +139,8 @@ namespace Game
         private static async UniTask ApplyStringsAsync(
             string packageName,
             string assetName,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            long generation)
         {
             if (GameEntry.Resource == null)
             {
@@ -152,7 +163,11 @@ namespace Game
                     packageName,
                     assetPath: assetName,
                     bytes: stringsAsset.bytes);
-                UIPackage.SetStringsSource(new XML(stringsAsset.text));
+                lock (s_Gate)
+                {
+                    ThrowIfGenerationChanged(generation);
+                    UIPackage.SetStringsSource(new XML(stringsAsset.text));
+                }
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -163,6 +178,15 @@ namespace Game
             {
                 // SetStringsSource 会立即把 XML 解析成内存字典,文本资产可以马上释放。
                 GameEntry.Resource.UnloadAsset(stringsAsset);
+            }
+        }
+
+        private static void ThrowIfGenerationChanged(long generation)
+        {
+            if (generation != s_Generation)
+            {
+                throw new OperationCanceledException(
+                    "FairyGUI localization operation belongs to a previous runtime generation.");
             }
         }
 
