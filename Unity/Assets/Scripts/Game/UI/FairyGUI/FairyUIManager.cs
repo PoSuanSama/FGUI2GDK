@@ -60,6 +60,7 @@ namespace Game
             new Dictionary<string, FairyUIGroupHelper>(StringComparer.Ordinal);
         private bool m_EventsAttached;
         private bool m_Initialized;
+        private long m_NextOperationId;
 
         public void Initialize()
         {
@@ -360,6 +361,7 @@ namespace Game
             FairyPackageLease packageLease = null;
             GComponent pendingView = null;
             FairyUIFormPendingState pendingState = null;
+            long operationId = Interlocked.Increment(ref m_NextOperationId);
             try
             {
                 ownerToken.ThrowIfCancellationRequested();
@@ -435,10 +437,12 @@ namespace Game
                 FairyUIFormContext context = new FairyUIFormContext
                 {
                     View = pendingView,
-                    UIId = uiId
+                    UIId = uiId,
+                    OperationId = operationId,
                 };
                 string descriptorKey = Path.GetFileNameWithoutExtension(descriptorAssetName);
                 pendingState = new FairyUIFormPendingState(
+                    operationId,
                     descriptorKey,
                     descriptor,
                     packageLease,

@@ -3,7 +3,7 @@
 ## 阶段 0：基线和诊断
 
 - [ ] 代码修改前重新阅读当前任务文件和适用的 GDK/Trellis 规范。
-- [ ] 增加 operation、serial、package 诊断信息，不改变现有行为。
+- [x] 增加 operation、serial、package 诊断信息，不改变现有行为。
 - [ ] 使用现有 GameHot、ET 冒烟流程和 package diagnostics 采集基线，并记录 git 状态。
 - [ ] 任何 Unity 查询或修改前，确认当前 Unity Agent Bridge 是否可用。
 

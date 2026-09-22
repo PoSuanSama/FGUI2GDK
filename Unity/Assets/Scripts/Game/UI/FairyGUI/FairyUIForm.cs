@@ -12,6 +12,7 @@ namespace Game
     internal sealed class FairyUIFormPendingState
     {
         public FairyUIFormPendingState(
+            long operationId,
             string descriptorKey,
             FairyUIFormDescriptor descriptor,
             FairyPackageLease packageLease,
@@ -20,6 +21,7 @@ namespace Game
             FairyUIFormContext context,
             object userData)
         {
+            OperationId = operationId;
             DescriptorKey = descriptorKey;
             Descriptor = descriptor;
             PackageLease = packageLease;
@@ -30,6 +32,7 @@ namespace Game
         }
 
         public string DescriptorKey { get; }
+        public long OperationId { get; }
         public FairyUIFormDescriptor Descriptor { get; }
         public FairyPackageLease PackageLease { get; }
         public GComponent View { get; }
@@ -45,7 +48,7 @@ namespace Game
             if (IsAdopted)
             {
                 throw new GameFrameworkException(
-                    $"FairyGUI pending state '{DescriptorKey}' was adopted more than once.");
+                    $"FairyGUI pending state '{DescriptorKey}' (operation {OperationId}) was adopted more than once.");
             }
 
             IsAdopted = true;
@@ -55,7 +58,7 @@ namespace Game
         public void MarkOpenFailure(Exception exception)
         {
             OpenFailure ??= exception ?? new GameFrameworkException(
-                $"FairyGUI UI form '{DescriptorKey}' failed to open.");
+                $"FairyGUI UI form '{DescriptorKey}' (operation {OperationId}) failed to open.");
         }
     }
 
@@ -180,6 +183,7 @@ namespace Game
             {
                 m_Context.Form = this;
                 m_Context.SerialId = serialId;
+                m_Context.OperationId = m_PendingState.OperationId;
                 m_Context.UIGroupName = uiGroup.Name;
                 m_Context.PauseCoveredUIForm = pauseCoveredUIForm;
             }

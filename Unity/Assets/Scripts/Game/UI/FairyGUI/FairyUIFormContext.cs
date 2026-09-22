@@ -39,6 +39,11 @@ namespace Game
         /// </summary>
         public int SerialId { get; internal set; }
 
+        /// <summary>
+        /// 本次打开事务的稳定诊断 ID;窗体采纳前后保持不变。
+        /// </summary>
+        public long OperationId { get; internal set; }
+
         public string UIGroupName { get; internal set; }
 
         public bool PauseCoveredUIForm { get; internal set; }
@@ -159,6 +164,7 @@ namespace Game
             Form = null;
             UIId = 0;
             SerialId = 0;
+            OperationId = 0;
             UIGroupName = null;
             PauseCoveredUIForm = true;
 

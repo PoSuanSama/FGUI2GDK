@@ -40,7 +40,7 @@ namespace Game
                 if (!s_OwnedStates.Add(state))
                 {
                     throw new GameFrameworkException(
-                        $"FairyGUI pending state '{state.DescriptorKey}' is already registered.");
+                        $"FairyGUI pending state '{state.DescriptorKey}' (operation {state.OperationId}) is already registered.");
                 }
 
                 s_SynchronousOpenState = state;
@@ -72,7 +72,7 @@ namespace Game
             lock (s_Gate)
             {
                 Exception exception = new GameFrameworkException(
-                    $"FairyGUI UI form open failed for serial '{serialId}': {errorMessage}");
+                    $"FairyGUI UI form open failed for serial '{serialId}' (operation {GetOperationId(serialId)}): {errorMessage}");
                 if (s_StatesBySerialId.TryGetValue(serialId, out FairyUIFormPendingState state))
                 {
                     state.MarkOpenFailure(exception);
@@ -225,6 +225,17 @@ namespace Game
             {
                 s_FailuresBySerialId.Remove(serialId);
             }
+        }
+
+        private static long GetOperationId(int serialId)
+        {
+            if (s_StatesBySerialId.TryGetValue(serialId, out FairyUIFormPendingState state) ||
+                s_AdoptedStatesBySerialId.TryGetValue(serialId, out state))
+            {
+                return state.OperationId;
+            }
+
+            return 0;
         }
 
         private static void RemoveSerialBinding(FairyUIFormPendingState state)
