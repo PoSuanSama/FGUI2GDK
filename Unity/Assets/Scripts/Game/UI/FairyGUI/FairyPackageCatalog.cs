@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using GameFramework;
 using Newtonsoft.Json;
 
@@ -75,7 +76,8 @@ namespace Game
                 PackageDefinition definition = new PackageDefinition(
                     packageData.Id,
                     packageData.Name,
-                    packageData.DescriptorAsset);
+                    packageData.DescriptorAsset,
+                    NormalizeHash(packageData.DescriptorSha256, packageData.Name, packageData.DescriptorAsset));
                 if (!packagesById.TryAdd(definition.Id, definition))
                 {
                     throw new GameFrameworkException(
@@ -99,7 +101,11 @@ namespace Game
                     string fileName = Path.GetFileName(runtimeAsset.Path.Replace('\\', '/'));
                     ValidateRuntimePath(runtimeAsset.Path, definition.Name);
                     if (string.IsNullOrWhiteSpace(fileName) ||
-                        !definition.RuntimeAssetsByFileName.TryAdd(fileName, runtimeAsset.Path))
+                        !definition.RuntimeAssetsByFileName.TryAdd(
+                            fileName,
+                            new RuntimeAssetDefinition(
+                                runtimeAsset.Path,
+                                NormalizeHash(runtimeAsset.Sha256, definition.Name, runtimeAsset.Path))))
                     {
                         throw new GameFrameworkException(
                             $"FairyGUI package '{definition.Name}' contains duplicate runtime asset basename '{fileName}'.");
@@ -207,13 +213,70 @@ namespace Game
                 "{0}{1}",
                 Path.GetFileName(loaderName.Replace('\\', '/')),
                 extension);
-            if (!package.RuntimeAssetsByFileName.TryGetValue(fileName, out string assetPath))
+            if (!package.RuntimeAssetsByFileName.TryGetValue(
+                    fileName,
+                    out RuntimeAssetDefinition runtimeAsset))
             {
                 throw new GameFrameworkException(
                     $"FairyGUI package '{packageName}' requested undeclared runtime asset '{fileName}'.");
             }
 
-            return assetPath;
+            return runtimeAsset.Path;
+        }
+
+        internal string GetExpectedHash(string packageName, string assetPath)
+        {
+            if (!m_PackagesByName.TryGetValue(packageName, out PackageDefinition package))
+            {
+                throw new GameFrameworkException(
+                    $"FairyGUI package '{packageName}' is not declared in the runtime manifest.");
+            }
+
+            if (string.Equals(package.DescriptorAsset, assetPath, StringComparison.Ordinal))
+            {
+                return package.DescriptorSha256;
+            }
+
+            foreach (RuntimeAssetDefinition runtimeAsset in package.RuntimeAssetsByFileName.Values)
+            {
+                if (string.Equals(runtimeAsset.Path, assetPath, StringComparison.Ordinal))
+                {
+                    return runtimeAsset.Sha256;
+                }
+            }
+
+            throw new GameFrameworkException(
+                $"FairyGUI package '{packageName}' has no manifest entry for asset '{assetPath}'.");
+        }
+
+        internal void VerifyAssetHash(string packageName, string assetPath, byte[] bytes)
+        {
+            if (bytes == null)
+            {
+                throw new GameFrameworkException(
+                    $"FairyGUI asset '{assetPath}' for package '{packageName}' has no bytes to verify.");
+            }
+
+            string expectedHash = GetExpectedHash(packageName, assetPath);
+            if (string.IsNullOrEmpty(expectedHash))
+            {
+                return;
+            }
+
+            using SHA256 sha256 = SHA256.Create();
+            string actualHash = BitConverter.ToString(sha256.ComputeHash(bytes))
+                .Replace("-", string.Empty)
+                .ToLowerInvariant();
+            if (!string.Equals(actualHash, expectedHash, StringComparison.Ordinal))
+            {
+                throw new GameFrameworkException(
+                    Utility.Text.Format(
+                        "FairyGUI asset hash mismatch for package '{0}', asset '{1}': expected '{2}', actual '{3}'.",
+                        packageName,
+                        assetPath,
+                        expectedHash,
+                        actualHash));
+            }
         }
 
         private void ValidateAcyclic()
@@ -241,6 +304,33 @@ namespace Game
                 throw new GameFrameworkException(
                     $"FairyGUI package '{definitionName}' contains a runtime path outside '{RuntimeAssetRoot}'.");
             }
+        }
+
+        private static string NormalizeHash(string hash, string packageName, string assetPath)
+        {
+            if (string.IsNullOrWhiteSpace(hash))
+            {
+                return null;
+            }
+
+            string normalized = hash.Trim().ToLowerInvariant();
+            if (normalized.Length != 64)
+            {
+                throw new GameFrameworkException(
+                    $"FairyGUI package '{packageName}' has an invalid SHA-256 for '{assetPath}'.");
+            }
+
+            for (int i = 0; i < normalized.Length; i++)
+            {
+                char value = normalized[i];
+                if ((value < '0' || value > '9') && (value < 'a' || value > 'f'))
+                {
+                    throw new GameFrameworkException(
+                        $"FairyGUI package '{packageName}' has an invalid SHA-256 for '{assetPath}'.");
+                }
+            }
+
+            return normalized;
         }
 
         private static void Visit(
@@ -302,15 +392,33 @@ namespace Game
             internal readonly string Id;
             internal readonly string Name;
             internal readonly string DescriptorAsset;
+            internal readonly string DescriptorSha256;
             internal readonly List<PackageDefinition> Dependencies = new List<PackageDefinition>();
-            internal readonly Dictionary<string, string> RuntimeAssetsByFileName =
-                new Dictionary<string, string>(StringComparer.Ordinal);
+            internal readonly Dictionary<string, RuntimeAssetDefinition> RuntimeAssetsByFileName =
+                new Dictionary<string, RuntimeAssetDefinition>(StringComparer.Ordinal);
 
-            internal PackageDefinition(string id, string name, string descriptorAsset)
+            internal PackageDefinition(
+                string id,
+                string name,
+                string descriptorAsset,
+                string descriptorSha256)
             {
                 Id = id;
                 Name = name;
                 DescriptorAsset = descriptorAsset;
+                DescriptorSha256 = descriptorSha256;
+            }
+        }
+
+        internal sealed class RuntimeAssetDefinition
+        {
+            internal readonly string Path;
+            internal readonly string Sha256;
+
+            internal RuntimeAssetDefinition(string path, string sha256)
+            {
+                Path = path;
+                Sha256 = sha256;
             }
         }
 
@@ -344,6 +452,9 @@ namespace Game
             [JsonProperty("descriptorAsset")]
             public string DescriptorAsset;
 
+            [JsonProperty("descriptorSha256")]
+            public string DescriptorSha256;
+
             [JsonProperty("runtimeAssets")]
             public RuntimeAssetData[] RuntimeAssets;
         }
@@ -352,6 +463,9 @@ namespace Game
         {
             [JsonProperty("path")]
             public string Path;
+
+            [JsonProperty("sha256")]
+            public string Sha256;
         }
     }
 }

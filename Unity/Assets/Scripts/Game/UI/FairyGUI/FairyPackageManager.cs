@@ -179,6 +179,44 @@ namespace Game
             s_Catalog.ValidateDescriptorIdentity(descriptor);
         }
 
+        internal static void VerifyAssetHash(
+            string packageName,
+            string assetPath,
+            byte[] bytes)
+        {
+            if (s_Catalog == null)
+            {
+                throw new GameFrameworkException("FairyGUI package catalog is not loaded.");
+            }
+
+            s_Catalog.VerifyAssetHash(packageName, assetPath, bytes);
+        }
+
+        internal static void VerifyAssetHash(
+            string packageName,
+            string assetPath,
+            UnityEngine.Object asset)
+        {
+            if (asset is TextAsset textAsset)
+            {
+                VerifyAssetHash(packageName, assetPath, textAsset.bytes);
+                return;
+            }
+
+            string expectedHash = s_Catalog?.GetExpectedHash(packageName, assetPath);
+            if (string.IsNullOrEmpty(expectedHash))
+            {
+                return;
+            }
+
+            throw new GameFrameworkException(
+                Utility.Text.Format(
+                    "FairyGUI asset '{0}' for package '{1}' declares a hash, but imported type '{2}' cannot expose source bytes.",
+                    assetPath,
+                    packageName,
+                    asset?.GetType().Name ?? "null"));
+        }
+
         internal static void Release(PackageState state)
         {
             if (state == null || state.ReferenceCount <= 0)
@@ -231,6 +269,12 @@ namespace Game
             try
             {
                 manifest = await GameEntry.Resource.LoadAssetAsync<TextAsset>(ManifestAssetPath);
+                if (manifest == null)
+                {
+                    throw new GameFrameworkException(
+                        $"FairyGUI runtime manifest asset is missing: {ManifestAssetPath}.");
+                }
+
                 FairyPackageCatalog catalog = FairyPackageCatalog.Parse(manifest.text);
                 s_Catalog = catalog;
                 loading.TrySetResult(catalog);
@@ -311,13 +355,20 @@ namespace Game
                 TextAsset descriptor = await GameEntry.Resource.LoadAssetAsync<TextAsset>(
                     descriptorPath,
                     cancellationToken: state.LoadCancellation.Token);
+                state.Descriptor = descriptor;
+                if (descriptor == null)
+                {
+                    throw new GameFrameworkException(
+                        $"FairyGUI package descriptor asset is missing: {descriptorPath}.");
+                }
+
                 if (!IsCurrent(state))
                 {
-                    GameEntry.Resource.UnloadAsset(descriptor);
                     throw new OperationCanceledException(state.LoadCancellation.Token);
                 }
 
-                state.Descriptor = descriptor;
+                VerifyAssetHash(state.Name, descriptorPath, descriptor.bytes);
+
                 string assetNamePrefix = $"{PackageAssetRoot}/{state.Name}";
                 UIPackage package = UIPackage.AddPackage(
                     descriptor.bytes,
@@ -519,6 +570,7 @@ namespace Game
                     assetPath,
                     type,
                     state.LoadCancellation.Token);
+                VerifyAssetHash(state.Name, assetPath, asset);
                 if (!IsCurrent(state) || state.Package == null)
                 {
                     GameEntry.Resource.UnloadAsset(asset);

@@ -30,7 +30,7 @@
 ## 阶段 3：完整性和 Shutdown
 
 - [x] 校验 descriptor 的 package/component/dependency 身份与 catalog、生成契约一致。
-- [x] 通过 ResourceComponent 校验允许的资源根目录；manifest binary asset hash 仍待运行时验证。
+- [x] 通过 ResourceComponent 校验允许的资源根目录，并在包 descriptor、外部 TextAsset 和本地化 XML 应用前验证 manifest SHA-256。
 - [x] 为 PlayerLoop、事件桥、声音钩子、package registry、Stage 和组辅助器增加明确的 FairyGUI Shutdown/重载处理。
 - [x] 让 HotEntry 和 ET Runner 从已有生命周期钩子调用 Shutdown。
 - [ ] 增加重复初始化、场景重载、域/热更重载和 hash 不匹配测试。

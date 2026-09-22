@@ -95,7 +95,7 @@ namespace Game
                     }
                 }
 
-                await ApplyStringsAsync(GetStringsAssetName(packageName, language), cancellationToken);
+                await ApplyStringsAsync(packageName, GetStringsAssetName(packageName, language), cancellationToken);
                 lock (s_Gate)
                 {
                     s_ActivePackageName = packageName;
@@ -127,6 +127,7 @@ namespace Game
         /// (生成端未运行或语言未导出),不静默回退。
         /// </summary>
         private static async UniTask ApplyStringsAsync(
+            string packageName,
             string assetName,
             CancellationToken cancellationToken)
         {
@@ -147,6 +148,10 @@ namespace Game
                         $"FairyGUI localization strings asset is missing: {assetName}. Run the FairyGUI localization generator first.");
                 }
 
+                FairyPackageManager.VerifyAssetHash(
+                    packageName,
+                    assetPath: assetName,
+                    bytes: stringsAsset.bytes);
                 UIPackage.SetStringsSource(new XML(stringsAsset.text));
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
@@ -160,5 +165,6 @@ namespace Game
                 GameEntry.Resource.UnloadAsset(stringsAsset);
             }
         }
+
     }
 }

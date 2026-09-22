@@ -432,6 +432,31 @@ namespace Game.Editor
             }
         }
 
+        [AgentCallable("Validate FairyGUI manifest SHA-256 acceptance and mismatch rejection without loading Unity assets.", 30)]
+        public static void ValidateFairyPackageHashContract()
+        {
+            const string EmptySha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+            string manifest =
+                $"{{\"schemaVersion\":2,\"packages\":[{{\"id\":\"a\",\"name\":\"PackageA\",\"descriptorAsset\":\"Assets/Res/UI/FairyGUI/A.bytes\",\"descriptorSha256\":\"{EmptySha256}\",\"runtimeAssets\":[],\"dependencies\":[]}}]}}";
+            FairyPackageCatalog catalog = FairyPackageCatalog.Parse(manifest);
+            catalog.VerifyAssetHash("PackageA", "Assets/Res/UI/FairyGUI/A.bytes", Array.Empty<byte>());
+
+            bool rejected = false;
+            try
+            {
+                catalog.VerifyAssetHash("PackageA", "Assets/Res/UI/FairyGUI/A.bytes", new byte[] { 1 });
+            }
+            catch (GameFrameworkException exception) when (exception.Message.Contains("hash mismatch"))
+            {
+                rejected = true;
+            }
+
+            if (!rejected)
+            {
+                throw new InvalidOperationException("FairyGUI manifest hash mismatch was not rejected.");
+            }
+        }
+
         [AgentCallable("Open, refocus, owner-cancel or close, and recycle the native FairyGUI form 100 times, then verify runtime diagnostics return to baseline.", 300)]
         public static async UniTask ValidateFairyUIFormLifecycleCycles()
         {
