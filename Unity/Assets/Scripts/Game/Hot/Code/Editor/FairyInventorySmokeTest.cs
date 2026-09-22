@@ -23,6 +23,10 @@ namespace Game.Hot.Editor
 
             try
             {
+                FairyUIManager uiManager = FairyUIManager.Instance;
+                uiManager.Initialize();
+                uiManager.AddUIGroup("Default", 0);
+                uiManager.AddUIGroup("Pop", 100);
                 await VerifyInventoryAndMultiWindowFlow();
             }
             finally
