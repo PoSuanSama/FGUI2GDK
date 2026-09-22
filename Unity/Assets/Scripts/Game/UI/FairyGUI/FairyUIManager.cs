@@ -59,9 +59,15 @@ namespace Game
         private readonly Dictionary<string, FairyUIGroupHelper> m_Groups =
             new Dictionary<string, FairyUIGroupHelper>(StringComparer.Ordinal);
         private bool m_EventsAttached;
+        private bool m_Initialized;
 
         public void Initialize()
         {
+            if (m_Initialized)
+            {
+                return;
+            }
+
             m_UIManager = GameFrameworkEntry.GetModule<IUIManager>();
             if (m_UIManager == null)
             {
@@ -102,6 +108,14 @@ namespace Game
                 UIContentScaler.ScreenMatchMode.MatchWidthOrHeight);
 
             AttachStageToBuiltinUI();
+
+            foreach (FairyUIGroupHelper group in m_Groups.Values)
+            {
+                group.AttachToRoot(GRoot.inst);
+            }
+
+            ReorderGroups();
+            m_Initialized = true;
 
         }
 
@@ -278,6 +292,8 @@ namespace Game
                 return;
             }
 
+            m_Initialized = false;
+
             IUIForm[] forms = m_UIManager.GetAllLoadedUIForms();
             foreach (IUIForm form in forms)
             {
@@ -295,6 +311,16 @@ namespace Game
             }
 
             m_UIManager.CloseAllLoadingUIForms();
+            if (m_EventsAttached)
+            {
+                m_UIManager.OpenUIFormSuccess -= OnOpenUIFormSuccess;
+                m_UIManager.OpenUIFormFailure -= OnOpenUIFormFailure;
+                m_UIManager.OpenUIFormUpdate -= OnOpenUIFormUpdate;
+                m_UIManager.OpenUIFormDependencyAsset -= OnOpenUIFormDependencyAsset;
+                m_UIManager.CloseUIFormComplete -= OnCloseUIFormComplete;
+                m_EventsAttached = false;
+            }
+
             FairyInputService.Instance.Shutdown();
             FairySound.Shutdown();
             FairyLocalization.Reset();
@@ -498,8 +524,7 @@ namespace Game
                     FairyUIFormPendingRegistry.TryRemove(pendingState);
                     if (!pendingState.IsAdopted)
                     {
-                        pendingState.PackageLease?.Dispose();
-                        pendingState.View?.Dispose();
+                        ReleasePendingState(pendingState);
                     }
                 }
 
@@ -509,6 +534,47 @@ namespace Game
                 {
                     GameEntry.Resource.UnloadAsset(descriptorAsset);
                 }
+            }
+        }
+
+        private static void ReleasePendingState(FairyUIFormPendingState pendingState)
+        {
+            if (pendingState == null)
+            {
+                return;
+            }
+
+            TryRelease(
+                () => pendingState.Presenter?.OnClose(false, pendingState.UserData),
+                pendingState.DescriptorKey,
+                "presenter");
+            TryRelease(
+                () => pendingState.Context?.Clear(),
+                pendingState.DescriptorKey,
+                "context");
+            TryRelease(
+                () => pendingState.View?.Dispose(),
+                pendingState.DescriptorKey,
+                "view");
+            TryRelease(
+                () => pendingState.PackageLease?.Dispose(),
+                pendingState.DescriptorKey,
+                "package lease");
+        }
+
+        private static void TryRelease(Action release, string descriptorKey, string resourceKind)
+        {
+            try
+            {
+                release();
+            }
+            catch (Exception exception)
+            {
+                Log.Error(
+                    "Failed to release FairyGUI pending {0} for '{1}': {2}",
+                    resourceKind,
+                    descriptorKey,
+                    exception);
             }
         }
 
@@ -553,7 +619,9 @@ namespace Game
 
         private IUIManager GetRequiredUIManager()
         {
-            return m_UIManager ?? throw new GameFrameworkException(
+            return m_Initialized && m_UIManager != null
+                ? m_UIManager
+                : throw new GameFrameworkException(
                 "FairyUIManager is not initialized. Call Initialize before using it.");
         }
 
