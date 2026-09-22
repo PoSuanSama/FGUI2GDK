@@ -39,12 +39,12 @@ namespace Game
         public sealed class PresenterFactory
         {
             private readonly System.Func<IFairyUIPresenter> m_Create;
-            private readonly System.Action m_Dispose;
+            private readonly System.Action<IFairyUIPresenter> m_Dispose;
             private IFairyUIPresenter m_Created;
 
             public PresenterFactory(
                 System.Func<IFairyUIPresenter> create,
-                System.Action dispose)
+                System.Action<IFairyUIPresenter> dispose)
             {
                 m_Create = create;
                 m_Dispose = dispose;
@@ -74,8 +74,9 @@ namespace Game
                     return;
                 }
 
+                IFairyUIPresenter created = m_Created;
                 m_Created = null;
-                m_Dispose?.Invoke();
+                m_Dispose?.Invoke(created);
             }
         }
     }

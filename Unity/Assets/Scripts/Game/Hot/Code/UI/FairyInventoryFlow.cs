@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 
 namespace Game.Hot
@@ -21,7 +22,7 @@ namespace Game.Hot
         /// </summary>
         public static IReadOnlyCollection<FairyUIForm> OpenDetailForms => s_DetailForms.Values;
 
-        public static async UniTask OpenInventoryAsync()
+        public static async UniTask OpenInventoryAsync(CancellationToken cancellationToken = default)
         {
             FairyUIForm existing = FairyUIManager.Instance.GetUIForm(InventoryDescriptor);
             if (existing != null)
@@ -33,17 +34,21 @@ namespace Game.Hot
             FairyInventoryOpenData openData = new FairyInventoryOpenData();
             FairyUIForm uiForm = await FairyUIFormService.OpenFairyUIFormAsync(
                 UIFormId.FairyInventoryForm,
-                openData);
+                openData,
+                cancellationToken);
             openData.Attach(uiForm);
         }
 
-        public static async UniTask OpenDetailAsync(FairyInventoryItemData item)
+        public static async UniTask OpenDetailAsync(
+            FairyInventoryItemData item,
+            CancellationToken cancellationToken = default)
         {
             int token = ++s_NextDetailToken;
             FairyItemDetailOpenData openData = new FairyItemDetailOpenData(item, token);
             FairyUIForm uiForm = await FairyUIFormService.OpenFairyUIFormAsync(
                 UIFormId.FairyItemDetailForm,
-                openData);
+                openData,
+                cancellationToken);
             openData.Attach(uiForm);
 
             if (!FairyUIManager.Instance.HasUIForm(uiForm.SerialId))
@@ -55,7 +60,7 @@ namespace Game.Hot
             DetailCountChanged?.Invoke(s_DetailForms.Count);
         }
 
-        public static async UniTask OpenOverlayAsync()
+        public static async UniTask OpenOverlayAsync(CancellationToken cancellationToken = default)
         {
             FairyUIForm existing = FairyUIManager.Instance.GetUIForm(OverlayDescriptor);
             if (existing != null)
@@ -67,7 +72,8 @@ namespace Game.Hot
             FairyInventoryOverlayOpenData openData = new FairyInventoryOverlayOpenData();
             FairyUIForm uiForm = await FairyUIFormService.OpenFairyUIFormAsync(
                 UIFormId.FairyInventoryOverlayForm,
-                openData);
+                openData,
+                cancellationToken);
             openData.Attach(uiForm);
         }
 

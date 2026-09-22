@@ -37,8 +37,10 @@ namespace Game
         public FairyUIFormContext Context { get; }
         public object UserData { get; }
         public bool IsAdopted { get; private set; }
+        public FairyUIForm AdoptedForm { get; private set; }
+        public Exception OpenFailure { get; private set; }
 
-        public void MarkAdopted()
+        public void MarkAdopted(FairyUIForm form)
         {
             if (IsAdopted)
             {
@@ -47,6 +49,13 @@ namespace Game
             }
 
             IsAdopted = true;
+            AdoptedForm = form;
+        }
+
+        public void MarkOpenFailure(Exception exception)
+        {
+            OpenFailure ??= exception ?? new GameFrameworkException(
+                $"FairyGUI UI form '{DescriptorKey}' failed to open.");
         }
     }
 
@@ -93,7 +102,7 @@ namespace Game
                 throw new GameFrameworkException("FairyUI form already adopted a pending state.");
             }
 
-            pendingState.MarkAdopted();
+            pendingState.MarkAdopted(this);
             m_PendingState = pendingState;
             m_Descriptor = pendingState.Descriptor;
             m_View = pendingState.View;
@@ -287,15 +296,17 @@ namespace Game
             m_Disposed = true;
             Exception firstException = null;
 
+            FairyUIFormContext context = m_Context;
+            TryCleanup(() => context?.CancelLifetime(), ref firstException);
+
             IFairyUIPresenter presenter = m_Presenter;
             m_Presenter = null;
-            if (presenter != null && m_Opened)
+            if (presenter != null)
             {
                 TryCleanup(() => presenter.OnClose(isShutdown, userData), ref firstException);
             }
 
             // Widget/事件/资源上下文在视图释放前清理:RecycleWidget 需要视图仍挂在父节点下。
-            FairyUIFormContext context = m_Context;
             m_Context = null;
             if (context != null)
             {
@@ -325,12 +336,18 @@ namespace Game
             }
 
             m_PendingState = null;
+            FairyUIFormPendingRegistry.RemoveAdopted(SerialId);
             m_Opened = false;
 
             if (firstException != null)
             {
                 throw firstException;
             }
+        }
+
+        internal void ReleaseAfterFailedOpen()
+        {
+            Release(isShutdown: false, userData: m_UserData);
         }
 
         private void DisposeOwnerCancellationRegistration()

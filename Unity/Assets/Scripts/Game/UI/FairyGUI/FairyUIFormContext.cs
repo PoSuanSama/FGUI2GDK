@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using FairyGUI;
 using GameFramework.UI;
 
@@ -21,6 +22,8 @@ namespace Game
         private FairyUIWidgetContainer m_Widgets;
         private EventContainer m_Events;
         private ResourceContainer m_Resources;
+        private CancellationTokenSource m_LifetimeCancellationSource;
+        private bool m_Cleared;
 
         public GComponent View { get; internal set; }
 
@@ -40,6 +43,18 @@ namespace Game
 
         public bool PauseCoveredUIForm { get; internal set; }
 
+        public bool IsAlive => !m_Cleared;
+
+        public CancellationToken LifetimeToken
+        {
+            get
+            {
+                EnsureAlive();
+                m_LifetimeCancellationSource ??= new CancellationTokenSource();
+                return m_LifetimeCancellationSource.Token;
+            }
+        }
+
         /// <summary>
         /// 窗体的 Widget 容器(懒创建,owner 为当前视图)。宿主在生命周期回调里自动级联。
         /// </summary>
@@ -47,6 +62,7 @@ namespace Game
         {
             get
             {
+                EnsureAlive();
                 if (m_Widgets == null)
                 {
                     if (View == null)
@@ -69,6 +85,7 @@ namespace Game
         {
             get
             {
+                EnsureAlive();
                 m_Events ??= EventContainer.Create(this);
                 return m_Events;
             }
@@ -81,12 +98,23 @@ namespace Game
         {
             get
             {
+                EnsureAlive();
                 m_Resources ??= ResourceContainer.Create(this);
                 return m_Resources;
             }
         }
 
-        public bool HasWidgets => m_Widgets != null;
+        public bool HasWidgets => !m_Cleared && m_Widgets != null;
+
+        internal void CancelLifetime()
+        {
+            if (m_Cleared)
+            {
+                return;
+            }
+
+            m_LifetimeCancellationSource?.Cancel();
+        }
 
         /// <summary>
         /// 宿主 Release 时调用:回收 Widget、退订事件、释放资源,并清空元数据。
@@ -94,27 +122,38 @@ namespace Game
         /// </summary>
         internal void Clear()
         {
+            if (m_Cleared)
+            {
+                return;
+            }
+
+            Exception firstException = null;
+            m_Cleared = true;
+            TryCleanup(() => m_LifetimeCancellationSource?.Cancel(), ref firstException);
             // 释放顺序与 FairyEntity.OnRecycle 一致:先业务清理,再清引用。
             if (m_Widgets != null)
             {
-                m_Widgets.RecycleAllWidgets();
-                m_Widgets.Dispose();
+                TryCleanup(m_Widgets.RecycleAllWidgets, ref firstException);
+                TryCleanup(m_Widgets.Dispose, ref firstException);
                 m_Widgets = null;
             }
 
             if (m_Events != null)
             {
-                m_Events.UnsubscribeAll(false);
-                m_Events.Clear();
+                TryCleanup(() => m_Events.UnsubscribeAll(false), ref firstException);
+                TryCleanup(m_Events.Clear, ref firstException);
                 m_Events = null;
             }
 
             if (m_Resources != null)
             {
-                m_Resources.UnloadAllAssets(false);
-                m_Resources.Clear();
+                TryCleanup(() => m_Resources.UnloadAllAssets(false), ref firstException);
+                TryCleanup(m_Resources.Clear, ref firstException);
                 m_Resources = null;
             }
+
+            TryCleanup(() => m_LifetimeCancellationSource?.Dispose(), ref firstException);
+            m_LifetimeCancellationSource = null;
 
             View = null;
             Form = null;
@@ -122,6 +161,31 @@ namespace Game
             SerialId = 0;
             UIGroupName = null;
             PauseCoveredUIForm = true;
+
+            if (firstException != null)
+            {
+                throw firstException;
+            }
+        }
+
+        private void EnsureAlive()
+        {
+            if (m_Cleared)
+            {
+                throw new ObjectDisposedException(nameof(FairyUIFormContext));
+            }
+        }
+
+        private static void TryCleanup(Action cleanup, ref Exception firstException)
+        {
+            try
+            {
+                cleanup();
+            }
+            catch (Exception exception)
+            {
+                firstException ??= exception;
+            }
         }
     }
 }

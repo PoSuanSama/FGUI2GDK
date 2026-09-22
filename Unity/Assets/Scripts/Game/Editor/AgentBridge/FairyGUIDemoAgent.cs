@@ -271,7 +271,7 @@ namespace Game.Editor
                 UnityGameFramework.Extension.Awaitable.SubscribeEvent();
             }
 
-            const string ValidManifest = "{\"schemaVersion\":2,\"packages\":[{\"id\":\"a\",\"name\":\"PackageA\",\"descriptorAsset\":\"Assets/A.bytes\",\"runtimeAssets\":[],\"dependencies\":[\"b\"]},{\"id\":\"b\",\"name\":\"PackageB\",\"descriptorAsset\":\"Assets/B.bytes\",\"runtimeAssets\":[],\"dependencies\":[]}]}";
+            const string ValidManifest = "{\"schemaVersion\":2,\"packages\":[{\"id\":\"a\",\"name\":\"PackageA\",\"descriptorAsset\":\"Assets/Res/UI/FairyGUI/A.bytes\",\"runtimeAssets\":[],\"dependencies\":[\"b\"]},{\"id\":\"b\",\"name\":\"PackageB\",\"descriptorAsset\":\"Assets/Res/UI/FairyGUI/B.bytes\",\"runtimeAssets\":[],\"dependencies\":[]}]}";
             IReadOnlyList<string> loadOrder = FairyPackageManager.ValidateCatalogAndGetLoadOrder(
                 ValidManifest,
                 "PackageA");
@@ -281,7 +281,7 @@ namespace Game.Editor
                     $"FairyGUI dependency order is invalid: {string.Join(", ", loadOrder)}.");
             }
 
-            const string CycleManifest = "{\"schemaVersion\":2,\"packages\":[{\"id\":\"a\",\"name\":\"PackageA\",\"descriptorAsset\":\"Assets/A.bytes\",\"runtimeAssets\":[],\"dependencies\":[\"b\"]},{\"id\":\"b\",\"name\":\"PackageB\",\"descriptorAsset\":\"Assets/B.bytes\",\"runtimeAssets\":[],\"dependencies\":[\"a\"]}]}";
+            const string CycleManifest = "{\"schemaVersion\":2,\"packages\":[{\"id\":\"a\",\"name\":\"PackageA\",\"descriptorAsset\":\"Assets/Res/UI/FairyGUI/A.bytes\",\"runtimeAssets\":[],\"dependencies\":[\"b\"]},{\"id\":\"b\",\"name\":\"PackageB\",\"descriptorAsset\":\"Assets/Res/UI/FairyGUI/B.bytes\",\"runtimeAssets\":[],\"dependencies\":[\"a\"]}]}";
             bool cycleRejected = false;
             try
             {

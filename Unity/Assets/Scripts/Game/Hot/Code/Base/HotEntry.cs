@@ -33,6 +33,7 @@ namespace Game.Hot
 
         private void OnDestroy()
         {
+            FairyUIManager.Instance.Shutdown();
             FairyUIPresenterRegistry.PreparePackage = null;
             FairyUIPresenterRegistry.CreatePresenter = null;
             HotComponentEntry.Shutdown();

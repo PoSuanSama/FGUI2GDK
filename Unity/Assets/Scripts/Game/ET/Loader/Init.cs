@@ -27,6 +27,7 @@ namespace ET
 
             private void OnDestroy()
             {
+                FairyUIManager.Instance.Shutdown();
                 EventSystem.Instance.Invoke(new OnShutdown());
                 World.Instance.Dispose();
             }

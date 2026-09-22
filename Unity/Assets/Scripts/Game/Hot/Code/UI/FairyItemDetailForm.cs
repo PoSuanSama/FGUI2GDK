@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using FairyGUI;
 using Game.FairyGUI.Package1;
 using UnityEngine;
@@ -12,6 +13,7 @@ namespace Game.Hot
         private readonly List<GObject> m_WindowParts = new List<GObject>();
         private FairyItemDetailOpenData m_OpenData;
         private UIItemDetailWindow m_View;
+        private CancellationToken m_LifetimeToken;
         private float m_LastDragX;
         private float m_LastDragY;
 
@@ -29,6 +31,8 @@ namespace Game.Hot
                 throw new InvalidOperationException(
                     $"FairyGUI item detail requires '{typeof(UIItemDetailWindow).FullName}', found '{context?.View?.GetType().FullName}'.");
             }
+
+            m_LifetimeToken = context.LifetimeToken;
 
             CollectWindowParts();
             m_View.WindowFrame.draggable = true;
@@ -74,6 +78,7 @@ namespace Game.Hot
             }
 
             m_WindowParts.Clear();
+            m_LifetimeToken = default;
 
             FairyItemDetailOpenData openData = m_OpenData;
             m_OpenData = null;
@@ -173,7 +178,7 @@ namespace Game.Hot
 
         private void OnOpenOverlayClick()
         {
-            OpenOverlayAsync().Forget();
+            OpenOverlayAsync(m_LifetimeToken).Forget();
         }
 
         private void OnCloseClick()
@@ -189,11 +194,15 @@ namespace Game.Hot
             }
         }
 
-        private static async Cysharp.Threading.Tasks.UniTaskVoid OpenOverlayAsync()
+        private static async Cysharp.Threading.Tasks.UniTaskVoid OpenOverlayAsync(
+            CancellationToken cancellationToken)
         {
             try
             {
-                await FairyInventoryFlow.OpenOverlayAsync();
+                await FairyInventoryFlow.OpenOverlayAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
             }
             catch (Exception exception)
             {

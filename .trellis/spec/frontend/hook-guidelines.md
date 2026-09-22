@@ -161,6 +161,15 @@ Calling `FairyUIFormService` from ET business code without recording ownership o
 - Bad: Entry opens through the global service and adds `UIComponent` afterwards.
 - Bad: ModelView code references HotfixView extension methods directly; the assembly dependency is one-way.
 
+## Current FairyGUI transaction invariant
+
+The current native host prepares a FairyUIFormPendingState before entering GF OpenUIForm. GF may invoke
+OnInit synchronously from a pooled instance or later from an async resource callback, and GF may report an
+OnOpen failure without calling the FairyGUI cleanup path. Therefore the pending registry must correlate both
+the returned serial and the synchronous handoff, retain adopted state until the form closes, and route every GF
+failure through one idempotent cleanup path. A successful C# build does not prove this behavior; run the focused
+Unity lifecycle smoke and inspect Error logs after the async work settles.
+
 ### 6. Tests Required
 
 - Compile with `UNITY_ET` in Unity Editor; a GameHot-only compile is not evidence.

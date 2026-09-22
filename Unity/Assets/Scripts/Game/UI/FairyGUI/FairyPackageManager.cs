@@ -134,6 +134,28 @@ namespace Game
             return exception;
         }
 
+        internal static void Shutdown()
+        {
+            List<PackageState> states = new List<PackageState>(s_States.Values);
+            foreach (PackageState state in states)
+            {
+                state.ReferenceCount = Math.Max(1, state.ReferenceCount);
+                if (state.Status == FairyPackageStatus.Loading)
+                {
+                    InvalidateLoadingState(state);
+                }
+                else
+                {
+                    ReleaseReadyState(state);
+                }
+            }
+
+            s_States.Clear();
+            s_LastErrors.Clear();
+            s_Catalog = null;
+            s_CatalogLoading = null;
+        }
+
         internal static IReadOnlyList<string> ValidateCatalogAndGetLoadOrder(string json, string packageName)
         {
             IReadOnlyList<FairyPackageCatalog.PackageDefinition> definitions =
@@ -145,6 +167,16 @@ namespace Game
             }
 
             return names;
+        }
+
+        internal static void ValidateDescriptorIdentity(FairyUIFormDescriptor descriptor)
+        {
+            if (s_Catalog == null)
+            {
+                throw new GameFrameworkException("FairyGUI package catalog is not loaded.");
+            }
+
+            s_Catalog.ValidateDescriptorIdentity(descriptor);
         }
 
         internal static void Release(PackageState state)

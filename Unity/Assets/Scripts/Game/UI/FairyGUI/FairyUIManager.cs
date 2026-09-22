@@ -271,6 +271,36 @@ namespace Game
 
         public void CloseAllLoadingUIForms() => GetRequiredUIManager().CloseAllLoadingUIForms();
 
+        public void Shutdown()
+        {
+            if (m_UIManager == null)
+            {
+                return;
+            }
+
+            IUIForm[] forms = m_UIManager.GetAllLoadedUIForms();
+            foreach (IUIForm form in forms)
+            {
+                if (form != null && m_UIManager.HasUIForm(form.SerialId))
+                {
+                    try
+                    {
+                        m_UIManager.CloseUIForm(form.SerialId);
+                    }
+                    catch (Exception exception)
+                    {
+                        Log.Error("Failed to close FairyGUI form '{0}' during shutdown: {1}", form.SerialId, exception);
+                    }
+                }
+            }
+
+            m_UIManager.CloseAllLoadingUIForms();
+            FairyInputService.Instance.Shutdown();
+            FairySound.Shutdown();
+            FairyLocalization.Reset();
+            FairyPackageManager.Shutdown();
+        }
+
         public async UniTask<FairyUIForm> OpenFairyUIFormAsync(
             int uiId,
             object userData = null,
@@ -286,9 +316,7 @@ namespace Game
             Func<FairyUIFormDescriptor, IFairyUIPresenter> presenterFactory)
         {
             IUIManager uiManager = GetRequiredUIManager();
-            DRUIForm uiForm = UIFormTableProvider != null
-                ? UIFormTableProvider(uiId)
-                : GameEntry.Tables.DTUIForm.GetOrDefault(uiId);
+            DRUIForm uiForm = await ResolveUIFormAsync(uiId, ownerToken);
             if (uiForm == null)
             {
                 throw new GameFrameworkException($"Can not load UI form '{uiId}' from data table.");
@@ -338,6 +366,7 @@ namespace Game
                 }
 
                 packageLease = await FairyPackageManager.AcquireAsync(descriptor.PackageName, ownerToken);
+                FairyPackageManager.ValidateDescriptorIdentity(descriptor);
                 await FairyLocalization.ApplyAsync(descriptor.PackageName, ownerToken);
                 preparePackage(descriptor);
                 pendingView = UIPackage.CreateObject(
@@ -418,6 +447,13 @@ namespace Game
 
                 while (true)
                 {
+                    if (FairyUIFormPendingRegistry.TryGetFailure(serialId, out Exception openFailure))
+                    {
+                        CleanupFailedOpen(serialId, pendingState, uiManager);
+                        pendingState = null;
+                        throw openFailure;
+                    }
+
                     if (ownerToken.IsCancellationRequested)
                     {
                         if (uiManager.HasUIForm(serialId) || uiManager.IsLoadingUIForm(serialId))
@@ -528,7 +564,60 @@ namespace Game
 
         private void OnOpenUIFormFailure(object sender, OpenUIFormFailureEventArgs args)
         {
+            FairyUIFormPendingRegistry.MarkFailure(
+                args.SerialId,
+                args.UIFormAssetName,
+                args.ErrorMessage);
             OpenUIFormFailure?.Invoke(sender, args);
+        }
+
+        private static async UniTask<DRUIForm> ResolveUIFormAsync(
+            int uiId,
+            CancellationToken cancellationToken)
+        {
+            if (UIFormTableProvider != null)
+            {
+                return UIFormTableProvider(uiId);
+            }
+
+            TablesComponent tables = GameEntry.Tables;
+            int waitFrames = 0;
+            while ((tables == null || tables.DTUIForm == null) && waitFrames < 120)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                tables = GameEntry.Tables ??
+                    UnityGameFramework.Runtime.GameEntry.GetComponent<TablesComponent>();
+                waitFrames++;
+            }
+
+            if (tables == null || tables.DTUIForm == null)
+            {
+                throw new GameFrameworkException(
+                    "FairyGUI UI form table is not ready within 120 frames. Initialize TablesComponent or set UIFormTableProvider before opening a form.");
+            }
+
+            return tables.DTUIForm.GetOrDefault(uiId);
+        }
+
+        private static void CleanupFailedOpen(
+            int serialId,
+            FairyUIFormPendingState pendingState,
+            IUIManager uiManager)
+        {
+            if (uiManager.HasUIForm(serialId))
+            {
+                uiManager.CloseUIForm(serialId);
+                return;
+            }
+
+            if (pendingState?.AdoptedForm != null)
+            {
+                pendingState.AdoptedForm.ReleaseAfterFailedOpen();
+                return;
+            }
+
+            FairyUIFormPendingRegistry.TryRemove(pendingState);
         }
 
         private void OnOpenUIFormUpdate(object sender, OpenUIFormUpdateEventArgs args)

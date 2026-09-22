@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using GameFramework;
 
 namespace Game
@@ -15,6 +16,10 @@ namespace Game
             new Dictionary<int, FairyUIFormPendingState>();
         private static readonly HashSet<FairyUIFormPendingState> s_OwnedStates =
             new HashSet<FairyUIFormPendingState>();
+        private static readonly Dictionary<int, Exception> s_FailuresBySerialId =
+            new Dictionary<int, Exception>();
+        private static readonly Dictionary<int, FairyUIFormPendingState> s_AdoptedStatesBySerialId =
+            new Dictionary<int, FairyUIFormPendingState>();
         private static FairyUIFormPendingState s_SynchronousOpenState;
 
         internal static IDisposable BeginOpen(FairyUIFormPendingState state)
@@ -62,6 +67,63 @@ namespace Game
             }
         }
 
+        internal static void MarkFailure(int serialId, string uiFormAssetName, string errorMessage)
+        {
+            lock (s_Gate)
+            {
+                Exception exception = new GameFrameworkException(
+                    $"FairyGUI UI form open failed for serial '{serialId}': {errorMessage}");
+                if (s_StatesBySerialId.TryGetValue(serialId, out FairyUIFormPendingState state))
+                {
+                    state.MarkOpenFailure(exception);
+                    return;
+                }
+
+                if (s_AdoptedStatesBySerialId.TryGetValue(serialId, out state))
+                {
+                    state.MarkOpenFailure(exception);
+                    return;
+                }
+
+                string descriptorKey = Path.GetFileNameWithoutExtension(uiFormAssetName);
+                if (s_SynchronousOpenState != null &&
+                    string.Equals(s_SynchronousOpenState.DescriptorKey, descriptorKey, StringComparison.Ordinal))
+                {
+                    s_SynchronousOpenState.MarkOpenFailure(exception);
+                    s_FailuresBySerialId[serialId] = exception;
+                }
+            }
+        }
+
+        internal static bool TryGetFailure(int serialId, out Exception exception)
+        {
+            lock (s_Gate)
+            {
+                if (s_StatesBySerialId.TryGetValue(serialId, out FairyUIFormPendingState state) &&
+                    state.OpenFailure != null)
+                {
+                    exception = state.OpenFailure;
+                    return true;
+                }
+
+                if (s_AdoptedStatesBySerialId.TryGetValue(serialId, out state) &&
+                    state.OpenFailure != null)
+                {
+                    exception = state.OpenFailure;
+                    return true;
+                }
+
+                if (s_FailuresBySerialId.TryGetValue(serialId, out exception))
+                {
+                    s_FailuresBySerialId.Remove(serialId);
+                    return true;
+                }
+
+                exception = null;
+                return false;
+            }
+        }
+
         internal static FairyUIFormPendingState ConsumeNewInstance(
             int serialId,
             string descriptorKey,
@@ -99,6 +161,7 @@ namespace Game
                 }
 
                 RemoveSerialBinding(state);
+                RemoveFailureBindings(state);
                 return true;
             }
         }
@@ -128,7 +191,40 @@ namespace Game
 
             s_OwnedStates.Remove(state);
             RemoveSerialBinding(state);
+            RemoveFailureBindings(state);
+            s_AdoptedStatesBySerialId[serialId] = state;
             return state;
+        }
+
+        internal static void RemoveAdopted(int serialId)
+        {
+            lock (s_Gate)
+            {
+                s_AdoptedStatesBySerialId.Remove(serialId);
+                s_FailuresBySerialId.Remove(serialId);
+            }
+        }
+
+        private static void RemoveFailureBindings(FairyUIFormPendingState state)
+        {
+            if (state == null)
+            {
+                return;
+            }
+
+            List<int> serialIds = new List<int>();
+            foreach (KeyValuePair<int, FairyUIFormPendingState> pair in s_StatesBySerialId)
+            {
+                if (ReferenceEquals(pair.Value, state))
+                {
+                    serialIds.Add(pair.Key);
+                }
+            }
+
+            foreach (int serialId in serialIds)
+            {
+                s_FailuresBySerialId.Remove(serialId);
+            }
         }
 
         private static void RemoveSerialBinding(FairyUIFormPendingState state)

@@ -79,11 +79,12 @@ namespace ET.Client
             EntityRef<UIComponent> ownerRef = self;
             FairyUIForm openedForm = null;
             bool ownershipTransferred = false;
+            FairyUIFormService.PresenterFactory presenterFactory =
+                new FairyUIFormService.PresenterFactory(
+                    () => CreateComponentPresenter(self, ownerRef, uiId),
+                    presenter => (presenter as FairyUIPresenterAdapter)?.Component.Dispose());
             try
             {
-                FairyUIFormService.PresenterFactory presenterFactory = new FairyUIFormService.PresenterFactory(
-                    () => CreateComponentPresenter(self, ownerRef, uiId),
-                    () => { /* per-open Component 失败清理在 Create 内部处理 */ });
                 openedForm = await FairyUIFormService.OpenFairyUIFormAsync(
                     uiId, userData, presenterFactory.Create, ownerToken);
                 presenterFactory.Consume();
@@ -125,6 +126,7 @@ namespace ET.Client
                     UIComponent currentOwner = ownerRef;
                     currentOwner?.PendingFairyUIOpens?.Remove(operationId);
                     ownerCancellation.Dispose();
+                    presenterFactory.Dispose();
                 }
             }
         }

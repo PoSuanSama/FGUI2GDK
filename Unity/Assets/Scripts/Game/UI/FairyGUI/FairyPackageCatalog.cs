@@ -9,6 +9,7 @@ namespace Game
     internal sealed class FairyPackageCatalog
     {
         internal const int SupportedSchemaVersion = 2;
+        internal const string RuntimeAssetRoot = "Assets/Res/UI/FairyGUI";
 
         private readonly Dictionary<string, PackageDefinition> m_PackagesByName;
 
@@ -69,6 +70,8 @@ namespace Game
                         $"FairyGUI runtime manifest package '{packageData.Name}' has no descriptorAsset.");
                 }
 
+                ValidateRuntimePath(packageData.DescriptorAsset, definitionName: packageData.Name);
+
                 PackageDefinition definition = new PackageDefinition(
                     packageData.Id,
                     packageData.Name,
@@ -94,6 +97,7 @@ namespace Game
                     }
 
                     string fileName = Path.GetFileName(runtimeAsset.Path.Replace('\\', '/'));
+                    ValidateRuntimePath(runtimeAsset.Path, definition.Name);
                     if (string.IsNullOrWhiteSpace(fileName) ||
                         !definition.RuntimeAssetsByFileName.TryAdd(fileName, runtimeAsset.Path))
                     {
@@ -150,6 +154,47 @@ namespace Game
             return loadOrder;
         }
 
+        internal void ValidateDescriptorIdentity(FairyUIFormDescriptor descriptor)
+        {
+            if (descriptor == null)
+            {
+                throw new ArgumentNullException(nameof(descriptor));
+            }
+
+            if (!m_PackagesByName.TryGetValue(descriptor.PackageName, out PackageDefinition package))
+            {
+                throw new GameFrameworkException(
+                    $"FairyGUI descriptor references undeclared package '{descriptor.PackageName}'.");
+            }
+
+            if (string.IsNullOrWhiteSpace(descriptor.PackageId) ||
+                !string.Equals(descriptor.PackageId, package.Id, StringComparison.Ordinal))
+            {
+                throw new GameFrameworkException(
+                    $"FairyGUI descriptor package id '{descriptor.PackageId}' does not match manifest package '{package.Name}'.");
+            }
+
+            if (string.IsNullOrWhiteSpace(descriptor.ComponentId))
+            {
+                throw new GameFrameworkException(
+                    $"FairyGUI descriptor for package '{package.Name}' has no component id.");
+            }
+
+            HashSet<string> expectedDependencies = new HashSet<string>(StringComparer.Ordinal);
+            foreach (PackageDefinition dependency in package.Dependencies)
+            {
+                expectedDependencies.Add(dependency.Id);
+            }
+
+            HashSet<string> descriptorDependencies =
+                new HashSet<string>(descriptor.Dependencies ?? Array.Empty<string>(), StringComparer.Ordinal);
+            if (!expectedDependencies.SetEquals(descriptorDependencies))
+            {
+                throw new GameFrameworkException(
+                    $"FairyGUI descriptor dependencies do not match manifest package '{package.Name}'.");
+            }
+        }
+
         internal string ResolveRuntimeAsset(string packageName, string loaderName, string extension)
         {
             if (!m_PackagesByName.TryGetValue(packageName, out PackageDefinition package))
@@ -179,6 +224,22 @@ namespace Game
             foreach (PackageDefinition package in m_PackagesByName.Values)
             {
                 Visit(package, visitStates, stack);
+            }
+        }
+
+        private static void ValidateRuntimePath(string path, string definitionName)
+        {
+            string normalized = path?.Replace('\\', '/');
+            if (string.IsNullOrWhiteSpace(normalized) ||
+                !normalized.StartsWith(
+                    Utility.Text.Format("{0}/", RuntimeAssetRoot),
+                    StringComparison.Ordinal) ||
+                normalized.Contains("/../", StringComparison.Ordinal) ||
+                normalized.Contains("/./", StringComparison.Ordinal) ||
+                normalized.Contains(":", StringComparison.Ordinal))
+            {
+                throw new GameFrameworkException(
+                    $"FairyGUI package '{definitionName}' contains a runtime path outside '{RuntimeAssetRoot}'.");
             }
         }
 

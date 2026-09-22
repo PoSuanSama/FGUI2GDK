@@ -56,6 +56,14 @@ namespace Game
             }
         }
 
+        public static void Shutdown()
+        {
+            if (UIConfig.soundRedirect == TryPlay)
+            {
+                UIConfig.soundRedirect = null;
+            }
+        }
+
         /// <summary>
         /// 把 FairyGUI 声音请求重定向到 GDK Sound 组。始终返回 true(已处理):
         /// 命中映射则经 GDK UISound 组播放,未命中/未就绪则静默跳过并记录诊断,

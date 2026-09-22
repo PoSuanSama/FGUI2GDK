@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using FairyGUI;
 using Game.FairyGUI.Package1;
@@ -11,6 +12,7 @@ namespace Game.Hot
     {
         private int m_CheckCount;
         private UIMainView m_View;
+        private CancellationToken m_LifetimeToken;
 
         public int PauseCount { get; private set; }
         public int ResumeCount { get; private set; }
@@ -28,6 +30,8 @@ namespace Game.Hot
                 throw new InvalidOperationException(
                     $"FairyGUI demo requires '{typeof(UIMainView).FullName}', found '{context?.View?.GetType().FullName}'.");
             }
+
+            m_LifetimeToken = context.LifetimeToken;
 
             m_CheckCount = 0;
             m_View.OpenInventoryButton.onClick.Add(OnOpenInventoryButtonClick);
@@ -48,6 +52,7 @@ namespace Game.Hot
                 m_View.OpenInventoryButton.onClick.Remove(OnOpenInventoryButtonClick);
                 m_View.RefreshButton.onClick.Remove(OnRefreshButtonClick);
                 m_View = null;
+                m_LifetimeToken = default;
             }
         }
 
@@ -90,14 +95,17 @@ namespace Game.Hot
 
         private void OnOpenInventoryButtonClick()
         {
-            OpenInventoryAsync().Forget();
+            OpenInventoryAsync(m_LifetimeToken).Forget();
         }
 
-        private static async UniTaskVoid OpenInventoryAsync()
+        private static async UniTaskVoid OpenInventoryAsync(CancellationToken cancellationToken)
         {
             try
             {
-                await FairyInventoryFlow.OpenInventoryAsync();
+                await FairyInventoryFlow.OpenInventoryAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
             }
             catch (Exception exception)
             {

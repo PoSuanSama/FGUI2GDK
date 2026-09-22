@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using FairyGUI;
 using Game.FairyGUI.Package1;
 using UnityGameFramework.Runtime;
@@ -10,6 +11,7 @@ namespace Game.Hot
     {
         private FairyInventoryOpenData m_OpenData;
         private UIInventoryView m_View;
+        private CancellationToken m_LifetimeToken;
 
         public int PauseCount { get; private set; }
         public int ResumeCount { get; private set; }
@@ -24,6 +26,8 @@ namespace Game.Hot
                 throw new InvalidOperationException(
                     $"FairyGUI inventory requires '{typeof(UIInventoryView).FullName}', found '{context?.View?.GetType().FullName}'.");
             }
+
+            m_LifetimeToken = context.LifetimeToken;
 
             m_View.AllButton.onClick.Add(OnAllClick);
             m_View.EquipmentButton.onClick.Add(OnEquipmentClick);
@@ -64,6 +68,7 @@ namespace Game.Hot
             }
 
             m_OpenData = null;
+            m_LifetimeToken = default;
             FairyInventoryFlow.CloseAllDetails();
         }
 
@@ -123,12 +128,12 @@ namespace Game.Hot
                 return;
             }
 
-            OpenDetailAsync(itemData).Forget();
+            OpenDetailAsync(itemData, m_LifetimeToken).Forget();
         }
 
         private void OnOpenOverlayClick()
         {
-            OpenOverlayAsync().Forget();
+            OpenOverlayAsync(m_LifetimeToken).Forget();
         }
 
         private void OnCloseClick()
@@ -194,11 +199,15 @@ namespace Game.Hot
         }
 
         private static async Cysharp.Threading.Tasks.UniTaskVoid OpenDetailAsync(
-            FairyInventoryItemData itemData)
+            FairyInventoryItemData itemData,
+            CancellationToken cancellationToken)
         {
             try
             {
-                await FairyInventoryFlow.OpenDetailAsync(itemData);
+                await FairyInventoryFlow.OpenDetailAsync(itemData, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
             }
             catch (Exception exception)
             {
@@ -206,11 +215,15 @@ namespace Game.Hot
             }
         }
 
-        private static async Cysharp.Threading.Tasks.UniTaskVoid OpenOverlayAsync()
+        private static async Cysharp.Threading.Tasks.UniTaskVoid OpenOverlayAsync(
+            CancellationToken cancellationToken)
         {
             try
             {
-                await FairyInventoryFlow.OpenOverlayAsync();
+                await FairyInventoryFlow.OpenOverlayAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
             }
             catch (Exception exception)
             {

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using FairyGUI;
@@ -22,10 +21,13 @@ namespace Game
     public static class FairyLocalization
     {
         /// <summary>
-        /// 包名 -> 已设置的语言(幂等守卫,同一语言重复调用直接跳过)。
+        /// FairyGUI 的 strings source 是全局状态，只记录当前实际应用的 package+language。
         /// </summary>
-        private static readonly Dictionary<string, Language> s_AppliedLanguages =
-            new Dictionary<string, Language>(StringComparer.Ordinal);
+        private static readonly object s_Gate = new object();
+        private static UniTask s_ApplyTail;
+        private static bool s_HasApplyTail;
+        private static string s_ActivePackageName;
+        private static Language s_ActiveLanguage = Language.Unspecified;
 
         public static Language CurrentLanguage
         {
@@ -42,7 +44,8 @@ namespace Game
 
         /// <summary>
         /// 包加载完成后、创建组件前调用(打开链的 AcquireAsync 与 CreateObject 之间)。
-        /// 语言未指定(无本地化组件)时跳过;已按同一语言应用过的包直接返回。
+        /// FairyGUI 只有一个全局 strings source，因此不同 package 的应用必须串行；
+        /// 当前 source 不是目标 package+language 时重新加载，不能按 package 永久缓存。
         /// </summary>
         public static async UniTask ApplyAsync(
             string packageName,
@@ -53,25 +56,70 @@ namespace Game
                 throw new ArgumentNullException(nameof(packageName));
             }
 
-            Language language = CurrentLanguage;
-            if (language == Language.Unspecified)
+            UniTask previous;
+            bool hasPrevious;
+            UniTaskCompletionSource<bool> completion = new UniTaskCompletionSource<bool>();
+            lock (s_Gate)
             {
-                // 本地化组件未挂载:使用组件 XML 内置文本,不应用翻译表。
-                return;
+                previous = s_ApplyTail;
+                hasPrevious = s_HasApplyTail;
+                s_ApplyTail = completion.Task;
+                s_HasApplyTail = true;
             }
 
-            if (s_AppliedLanguages.TryGetValue(packageName, out Language applied) && applied == language)
+            try
             {
-                return;
-            }
+                if (hasPrevious && cancellationToken.CanBeCanceled)
+                {
+                    await previous.AttachCancellation(cancellationToken);
+                }
+                else if (hasPrevious)
+                {
+                    await previous;
+                }
 
-            s_AppliedLanguages[packageName] = language;
-            await ApplyStringsAsync(GetStringsAssetName(packageName, language), cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                Language language = CurrentLanguage;
+                if (language == Language.Unspecified)
+                {
+                    // 本地化组件未挂载:使用组件 XML 内置文本,不应用翻译表。
+                    return;
+                }
+
+                lock (s_Gate)
+                {
+                    if (string.Equals(s_ActivePackageName, packageName, StringComparison.Ordinal) &&
+                        s_ActiveLanguage == language)
+                    {
+                        return;
+                    }
+                }
+
+                await ApplyStringsAsync(GetStringsAssetName(packageName, language), cancellationToken);
+                lock (s_Gate)
+                {
+                    s_ActivePackageName = packageName;
+                    s_ActiveLanguage = language;
+                }
+            }
+            finally
+            {
+                completion.TrySetResult(true);
+            }
         }
 
         public static string GetStringsAssetName(string packageName, Language language)
         {
             return $"Assets/Res/UI/FairyGUI/{packageName}_strings_{language}.xml";
+        }
+
+        internal static void Reset()
+        {
+            lock (s_Gate)
+            {
+                s_ActivePackageName = null;
+                s_ActiveLanguage = Language.Unspecified;
+            }
         }
 
         /// <summary>

@@ -40,11 +40,16 @@ namespace Game
             PlayerLoopHelper.AddAction(PlayerLoopTiming.Update, this);
         }
 
+        public void Shutdown()
+        {
+            m_Initialized = false;
+        }
+
         public bool MoveNext()
         {
             if (!m_Initialized)
             {
-                return true;
+                return false;
             }
 
             PollDevices();

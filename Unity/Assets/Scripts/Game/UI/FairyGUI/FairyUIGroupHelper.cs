@@ -17,6 +17,8 @@ namespace Game
     public sealed class FairyUIGroupHelper : IUIGroupHelper
     {
         private readonly List<GComponent> m_Forms = new List<GComponent>();
+        private readonly List<GComponent> m_SafeAreaForms = new List<GComponent>();
+        private readonly List<GComponent> m_FullScreenForms = new List<GComponent>();
         private readonly Container m_Container;
         private GComponent m_SafeAreaContainer;
 
@@ -102,6 +104,7 @@ namespace Game
             }
 
             m_Forms.Add(form);
+            (attachToSafeArea ? m_SafeAreaForms : m_FullScreenForms).Add(form);
             SetFormDepth(form, depthInUIGroup);
         }
 
@@ -111,6 +114,9 @@ namespace Game
             {
                 return;
             }
+
+            m_SafeAreaForms.Remove(form);
+            m_FullScreenForms.Remove(form);
 
             if (!form.isDisposed)
             {
@@ -136,13 +142,22 @@ namespace Game
             }
 
             form.sortingOrder = depthInUIGroup;
-            m_Forms.Sort((left, right) => left.sortingOrder.CompareTo(right.sortingOrder));
-            for (int i = 0; i < m_Forms.Count; i++)
+            List<GComponent> siblings = ReferenceEquals(form.parent, m_SafeAreaContainer)
+                ? m_SafeAreaForms
+                : m_FullScreenForms;
+            siblings.Sort((left, right) => left.sortingOrder.CompareTo(right.sortingOrder));
+            for (int i = 0; i < siblings.Count; i++)
             {
-                DisplayObject displayObject = m_Forms[i].displayObject;
+                DisplayObject displayObject = siblings[i].displayObject;
                 if (displayObject != null && displayObject.parent != null)
                 {
-                    displayObject.parent.SetChildIndex(displayObject, i);
+                    int childIndex = i;
+                    if (ReferenceEquals(displayObject.parent, m_Container) && m_SafeAreaContainer != null)
+                    {
+                        childIndex++;
+                    }
+
+                    displayObject.parent.SetChildIndex(displayObject, childIndex);
                 }
             }
         }
@@ -163,6 +178,8 @@ namespace Game
             }
 
             m_Forms.Clear();
+            m_SafeAreaForms.Clear();
+            m_FullScreenForms.Clear();
         }
 
         private GComponent EnsureSafeAreaContainer()
@@ -244,10 +261,16 @@ namespace Game
             float logicalHeight = pixelSafeArea.height / scaleFactor;
 
             // 钳制到全屏容器范围内,防止编辑器/模拟器异常数据。
-            logicalWidth = Mathf.Min(logicalWidth, m_Container.width - logicalX);
-            logicalHeight = Mathf.Min(logicalHeight, m_Container.height - logicalY);
-            logicalX = Mathf.Max(0f, logicalX);
-            logicalY = Mathf.Max(0f, logicalY);
+            logicalX = Mathf.Clamp(logicalX, 0f, Mathf.Max(0f, m_Container.width));
+            logicalY = Mathf.Clamp(logicalY, 0f, Mathf.Max(0f, m_Container.height));
+            logicalWidth = Mathf.Clamp(
+                logicalWidth,
+                0f,
+                Mathf.Max(0f, m_Container.width - logicalX));
+            logicalHeight = Mathf.Clamp(
+                logicalHeight,
+                0f,
+                Mathf.Max(0f, m_Container.height - logicalY));
 
             Rect logical = new Rect(logicalX, logicalY, logicalWidth, logicalHeight);
             if (logical == m_AppliedSafeArea)

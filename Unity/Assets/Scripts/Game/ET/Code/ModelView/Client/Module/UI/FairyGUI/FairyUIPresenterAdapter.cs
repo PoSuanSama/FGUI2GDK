@@ -42,15 +42,21 @@ namespace ET.Client
         {
             m_Component.UserData = userData;
             m_Component.IsShutdown = isShutdown;
-            FairyUIFormSystemDispatcher.FairyUIFormOnClose(m_Component);
-            // 宿主随后清理上下文(Widget/事件/资源);这里先摘除 Component 引用。
-            m_Component.FairyForm = null;
-            m_Component.Context = null;
-            m_Component.View = null;
-            m_Component.UserData = null;
-            m_Component.IsShutdown = false;
-            // Component 是 per-open 实例:关闭后销毁,由 UIComponent owner 的 Destroy 级联兜底。
-            m_Component.Dispose();
+            try
+            {
+                FairyUIFormSystemDispatcher.FairyUIFormOnClose(m_Component);
+            }
+            finally
+            {
+                // 宿主随后清理上下文(Widget/事件/资源);这里先摘除 Component 引用。
+                m_Component.FairyForm = null;
+                m_Component.Context = null;
+                m_Component.View = null;
+                m_Component.UserData = null;
+                m_Component.IsShutdown = false;
+                // Component 是 per-open 实例:关闭后销毁,由 UIComponent owner 的 Destroy 级联兜底。
+                m_Component.Dispose();
+            }
         }
 
         public void OnPause()
