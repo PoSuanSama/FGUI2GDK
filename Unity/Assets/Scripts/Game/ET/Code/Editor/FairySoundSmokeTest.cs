@@ -29,12 +29,13 @@ namespace ET
                 throw new InvalidOperationException("FairyGUI sound redirect hook was not installed.");
             }
 
-            // 钩子调用与 FairySound.TryPlay 同路径:未映射名字返回 false 且不抛错。
+            // 钩子调用与 FairySound.TryPlay 同路径:未映射名字静默丢弃并返回 true,
+            // 禁止回退 FairyGUI 原生 AudioSource。
             bool handled = UIConfig.soundRedirect("no-such-fairygui-sound", 1f);
-            if (handled)
+            if (!handled)
             {
                 throw new InvalidOperationException(
-                    "Unmapped FairyGUI sound should not be claimed by the GDK bridge.");
+                    "Unmapped FairyGUI sound should be claimed and skipped by the GDK bridge.");
             }
 
             // 内置映射存在(click/select 对应 Sound.xlsx UISound 表)。
