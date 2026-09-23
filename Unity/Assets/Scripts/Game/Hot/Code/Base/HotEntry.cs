@@ -57,7 +57,7 @@ namespace Game.Hot
         private static void InitializeFairyGUI()
         {
             IReadOnlyDictionary<int, Func<IFairyUIPresenter>> presenterFactories =
-                FairyUIPresenterRegistryBuilder.Build(typeof(HotEntry).Assembly);
+                FairyUIPresenterRegistryGenerated.CreateFactories();
 
             FairyUIPresenterRegistry.PreparePackage = descriptor =>
             {

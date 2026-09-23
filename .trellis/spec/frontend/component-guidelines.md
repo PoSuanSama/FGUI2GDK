@@ -2,7 +2,7 @@
 
 ## GameHot
 
-GameHot UI logic is a `IFairyUIPresenter` implementation marked with `[FairyUIPresenter(UIFormId.X)]` (scanned by `HotEntry.InitializeFairyGUI()`). Views are official FairyGUI bindings (`Game.FairyGUI.Package1`), obtained in `OnViewReady` from the context; GF lifecycle methods (`OnOpen`/`OnClose`/`OnPause`/`OnResume`/`OnCover`/`OnReveal`/`OnRefocus`) come from the unified GF host.
+GameHot UI logic is a `IFairyUIPresenter` implementation marked with `[FairyUIPresenter(UIFormId.X)]`. Unity Editor generates and validates the static Presenter factory table from compiled attributes; `HotEntry.InitializeFairyGUI()` consumes that table. The public `FairyUIPresenterRegistryBuilder.Build(Assembly)` remains a compatibility and validation path. This table covers Presenter factories only; Package Binder dispatch generation and ET IL2CPP Player proof remain deferred. Views are official FairyGUI bindings (`Game.FairyGUI.Package1`), obtained in `OnViewReady` from the context; GF lifecycle methods (`OnOpen`/`OnClose`/`OnPause`/`OnResume`/`OnCover`/`OnReveal`/`OnRefocus`) come from the unified GF host.
 
 Entity logic and data remain separate under `Entity/EntityLogic/` and `Entity/EntityData/`. Open/show forms and entities through `FairyUIFormService`/`GameEntry` using generated IDs, never hard-coded asset paths or numeric IDs.
 

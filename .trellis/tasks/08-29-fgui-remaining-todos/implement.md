@@ -39,8 +39,8 @@
 
 ## 阶段 4：生成化注册和延期产品缺口
 
-- [ ] 根据当前 HybridCLR/link.xml 约束评估生成式 Presenter/Package 注册。
-- [ ] 只通过现有事实来源工具生成输出，禁止手工编辑生成文件。
+- [x] 根据当前 HybridCLR/link.xml 约束评估生成式 Presenter/Package 注册；GameHot Presenter 已采用编译后属性生成静态工厂表，包分发仍待处理。
+- [x] GameHot Presenter 静态工厂表由 Unity Editor 生成入口创建并提供只读校验，禁止手工编辑生成文件。
 - [ ] 执行 ET IL2CPP Player 验证、设备安全区/输入矩阵、URP 色觉方案决策和性能基线采集。
 - [ ] 在修改 Procedure 前，先完成版本/更新 UX 的产品决策。
 

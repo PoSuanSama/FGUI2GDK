@@ -62,6 +62,11 @@ GENERATOR_SOURCE_PREFIXES = (
     "Share/Tool/Proto2CS/",
     "Tools/Luban/CustomTemplates/",
 )
+GENERATOR_SOURCE_FILES = frozenset(
+    {
+        "Unity/Assets/Scripts/Game/Hot/Code/Editor/FairyUIPresenterRegistryCodeGenerator.cs",
+    }
+)
 
 
 class ChineseArgumentParser(argparse.ArgumentParser):
@@ -225,8 +230,8 @@ def check_path_policy(repo: Path, changes: list[Change]) -> list[Issue]:
     issues: list[Issue] = []
     changed_paths = {change.path for change in changes}
     generated = [change.path for change in changes if change.status != "D" and is_generated(change.path)]
-    has_generator_source = any(
-        path.startswith(GENERATOR_SOURCE_PREFIXES) for path in changed_paths
+    has_generator_source = any(path.startswith(GENERATOR_SOURCE_PREFIXES) for path in changed_paths) or bool(
+        changed_paths & GENERATOR_SOURCE_FILES
     )
 
     if generated and not has_generator_source:
@@ -425,7 +430,32 @@ def run_self_test() -> int:
             print("失败：未检测到仅修改生成文件的变更", file=sys.stderr)
             return 1
 
-    print("通过：变更守卫可检测元数据缺失、GUID 重复和仅修改生成文件的情况")
+        editor_directory = (
+            repo
+            / "Unity"
+            / "Assets"
+            / "Scripts"
+            / "Game"
+            / "Hot"
+            / "Code"
+            / "Editor"
+        )
+        editor_directory.mkdir(parents=True)
+        unrelated_editor_script = editor_directory / "UnrelatedEditorTool.cs"
+        unrelated_editor_script.write_text("// unrelated editor tool\n", encoding="utf-8")
+        issues = analyze(repo, collect_changes(repo, staged=False, base=None))
+        if not any(item.code == "GEN001" for item in issues):
+            print("失败：无关 Editor 脚本不应被识别为生成器来源", file=sys.stderr)
+            return 1
+
+        generator = editor_directory / "FairyUIPresenterRegistryCodeGenerator.cs"
+        generator.write_text("// generator source\n", encoding="utf-8")
+        issues = analyze(repo, collect_changes(repo, staged=False, base=None))
+        if any(item.code == "GEN001" for item in issues) or not any(item.code == "GEN002" for item in issues):
+            print("失败：生成器来源未被识别为已配对的生成输出", file=sys.stderr)
+            return 1
+
+    print("通过：变更守卫可检测元数据缺失、GUID 重复、生成器配对和仅修改生成文件的情况")
     return 0
 
 

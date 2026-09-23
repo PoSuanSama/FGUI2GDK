@@ -41,7 +41,7 @@ GameHot Procedure / ET flow
   -> FairyPackageManager.AcquireAsync(包租约)
   -> FairyLocalization.ApplyAsync(SetStringsSource)
   -> UIPackage.CreateObject(强类型 GComponent + 绑定类型校验)
-  -> Presenter 创建(ET: Component/System 工厂;GameHot: 类 Presenter 注册表)
+  -> Presenter 创建(ET: Component/System 工厂;GameHot: 静态工厂表)
   -> GF IUIManager.OpenUIForm(descriptor assetName 作为窗体资产 token)
   -> FairyUIForm / FairyUIFormHelper / FairyUIGroupHelper
   -> GF UIGroup、serial、深度、对象池和生命周期
@@ -68,7 +68,7 @@ GameHot Procedure / ET flow
 
 ### GameHot 入口
 
-`HotEntry.InitializeFairyGUI()` 构建 Presenter 注册表（反射扫描 `[FairyUIPresenter]` 标记）、初始化 `FairyUIManager`、安装声音/输入桥、注册五个 UIGroup。业务经 `FairyUIFormService.OpenFairyUIFormAsync` 打开界面。
+`HotEntry.InitializeFairyGUI()` 使用静态 Presenter 工厂表，并初始化 `FairyUIManager`、声音/输入桥和五个 UIGroup。Unity Editor 的 `GameHot/FairyGUI/Generate Presenter Registry` 从已编译的 `[FairyUIPresenter]` 属性生成该表；`Validate Presenter Registry` 会校验生成源码及工厂类型。公开的 `FairyUIPresenterRegistryBuilder.Build(Assembly)` 保留作兼容和验证路径，不是 HotEntry 的运行时注册入口。新增或移除 Presenter 后，等待 Unity 编译完成，再生成并校验工厂表。当前只生成 Presenter 工厂；Package Binder 分发生成和 ET IL2CPP Player 验证仍待后续批次，不能据此宣称 Player 已验证。业务经 `FairyUIFormService.OpenFairyUIFormAsync` 打开界面。
 
 ### ET 入口
 

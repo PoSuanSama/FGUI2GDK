@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using AgentBridge;
 using Cysharp.Threading.Tasks;
-using Game.FairyGUI.Package1;
 using GameFramework.UI;
 using UnityEditor;
 using UnityEngine;
@@ -254,36 +252,12 @@ namespace Game.Hot.Editor
 
         private static void EnsurePresenterRegistry()
         {
-            if (FairyUIPresenterRegistry.PreparePackage != null &&
-                FairyUIPresenterRegistry.CreatePresenter != null)
+            if (FairyUIPresenterRegistry.PreparePackage == null ||
+                FairyUIPresenterRegistry.CreatePresenter == null)
             {
-                return;
-            }
-
-            IReadOnlyDictionary<int, Func<IFairyUIPresenter>> factories =
-                FairyUIPresenterRegistryBuilder.Build(typeof(FairyUIManagerSmokeTest).Assembly);
-
-            FairyUIPresenterRegistry.PreparePackage = descriptor =>
-            {
-                if (!string.Equals(descriptor.PackageName, "Package1", StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException(
-                        $"No FairyGUI package binder for package '{descriptor.PackageName}'.");
-                }
-
-                Package1Binder.BindAll();
-            };
-
-            FairyUIPresenterRegistry.CreatePresenter = descriptor =>
-            {
-                if (factories.TryGetValue(descriptor.UiId, out Func<IFairyUIPresenter> factory))
-                {
-                    return factory();
-                }
-
                 throw new InvalidOperationException(
-                    $"No FairyGUI presenter registered for UI '{descriptor.UiId}'.");
-            };
+                    "GameHot FairyGUI smoke tests require the production Presenter registry initialized by HotEntry.");
+            }
         }
     }
 }
