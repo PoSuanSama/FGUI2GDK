@@ -47,6 +47,10 @@
 
 ## 验证命令和证据
 
+验证基线 `6ed43a50` 的运行时证据记录在同目录的 `evidence.md`。其中已收录 2026-09-24
+Unity Agent Bridge 的 GameHot 失败回滚、混合层级/安全区、100 次生命周期、hash
+契约和 Shutdown/reinitialize 结果；未覆盖项仍按证据边界保持未勾选。
+
 最低确定性检查：
 
     python .agents/skills/gdk-development-workflow/scripts/validate_changes.py
