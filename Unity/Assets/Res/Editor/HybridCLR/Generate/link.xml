@@ -21,7 +21,7 @@
     <type fullname="Game.DTEntity" preserve="all" />
     <type fullname="Game.DTScene" preserve="all" />
     <type fullname="Game.EntityExtension" preserve="all" />
-    <type fullname="Game.FairyGUI.Package1.Package1Binder" preserve="all" />
+    <type fullname="Game.FairyGUI.FairyPackageBinderRegistryGenerated" preserve="all" />
     <type fullname="Game.FairyGUI.Package1.UIActionButton" preserve="all" />
     <type fullname="Game.FairyGUI.Package1.UICategoryTabButton" preserve="all" />
     <type fullname="Game.FairyGUI.Package1.UIDialog" preserve="all" />
@@ -41,7 +41,6 @@
     <type fullname="Game.FairyUIManager" preserve="all" />
     <type fullname="Game.FairyUIPresenterAttribute" preserve="all" />
     <type fullname="Game.FairyUIPresenterRegistry" preserve="all" />
-    <type fullname="Game.FairyUIPresenterRegistryBuilder" preserve="all" />
     <type fullname="Game.GameEntry" preserve="all" />
     <type fullname="Game.IFairyUIPresenter" preserve="all" />
     <type fullname="Game.SoundExtension" preserve="all" />
@@ -200,7 +199,6 @@
     <type fullname="System.RuntimeTypeHandle" preserve="all" />
     <type fullname="System.Single" preserve="all" />
     <type fullname="System.String" preserve="all" />
-    <type fullname="System.StringComparison" preserve="all" />
     <type fullname="System.Threading.CancellationToken" preserve="all" />
     <type fullname="System.Threading.CancellationTokenSource" preserve="all" />
     <type fullname="System.Threading.Interlocked" preserve="all" />
