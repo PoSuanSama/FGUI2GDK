@@ -69,11 +69,19 @@ namespace Game
                 return;
             }
 
-            m_UIManager = GameFrameworkEntry.GetModule<IUIManager>();
-            if (m_UIManager == null)
+            IUIManager uiManager = GameFrameworkEntry.GetModule<IUIManager>();
+            if (uiManager == null)
             {
                 throw new GameFrameworkException("UI manager is invalid.");
             }
+
+            if (m_UIManager != null && !ReferenceEquals(m_UIManager, uiManager))
+            {
+                DetachUIManagerEvents(m_UIManager);
+                DisposeGroupHelpers();
+            }
+
+            m_UIManager = uiManager;
 
             IResourceManager resourceManager = GameEntry.Base != null && GameEntry.Base.EditorResourceMode
                 ? GameEntry.Base.EditorResourceHelper
@@ -312,20 +320,13 @@ namespace Game
             }
 
             m_UIManager.CloseAllLoadingUIForms();
-            if (m_EventsAttached)
-            {
-                m_UIManager.OpenUIFormSuccess -= OnOpenUIFormSuccess;
-                m_UIManager.OpenUIFormFailure -= OnOpenUIFormFailure;
-                m_UIManager.OpenUIFormUpdate -= OnOpenUIFormUpdate;
-                m_UIManager.OpenUIFormDependencyAsset -= OnOpenUIFormDependencyAsset;
-                m_UIManager.CloseUIFormComplete -= OnCloseUIFormComplete;
-                m_EventsAttached = false;
-            }
+            DetachUIManagerEvents(m_UIManager);
 
             FairyInputService.Instance.Shutdown();
             FairySound.Shutdown();
             FairyLocalization.Reset();
             FairyPackageManager.Shutdown();
+            UIFormTableProvider = null;
         }
 
         public async UniTask<FairyUIForm> OpenFairyUIFormAsync(
@@ -632,6 +633,31 @@ namespace Game
         private void OnOpenUIFormSuccess(object sender, OpenUIFormSuccessEventArgs args)
         {
             OpenUIFormSuccess?.Invoke(sender, args);
+        }
+
+        private void DetachUIManagerEvents(IUIManager uiManager)
+        {
+            if (!m_EventsAttached || uiManager == null)
+            {
+                return;
+            }
+
+            uiManager.OpenUIFormSuccess -= OnOpenUIFormSuccess;
+            uiManager.OpenUIFormFailure -= OnOpenUIFormFailure;
+            uiManager.OpenUIFormUpdate -= OnOpenUIFormUpdate;
+            uiManager.OpenUIFormDependencyAsset -= OnOpenUIFormDependencyAsset;
+            uiManager.CloseUIFormComplete -= OnCloseUIFormComplete;
+            m_EventsAttached = false;
+        }
+
+        private void DisposeGroupHelpers()
+        {
+            foreach (FairyUIGroupHelper helper in m_Groups.Values)
+            {
+                helper.Dispose();
+            }
+
+            m_Groups.Clear();
         }
 
         private void OnOpenUIFormFailure(object sender, OpenUIFormFailureEventArgs args)

@@ -6,6 +6,7 @@ using AgentBridge;
 using Cysharp.Threading.Tasks;
 using FairyGUI;
 using GameFramework;
+using GameFramework.UI;
 using UnityEditor;
 using UnityEngine;
 using UnityGameFramework.Editor.ResourceTools;
@@ -926,6 +927,102 @@ namespace Game.Editor
                     throw new InvalidOperationException(
                         "FairyGUI safe-area form was attached to an unexpected group container.");
                 }
+            }
+        }
+
+        [AgentCallable("Shutdown and reinitialize FairyGUI in-place, then verify UI groups, Stage parents, package reload, and form cleanup.", 120)]
+        public static async UniTask ValidateFairyUIManagerShutdownReinitialize()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI manager shutdown validation requires PlayMode.");
+            }
+
+            FairyUIManager uiManager = FairyUIManager.Instance;
+            uiManager.Initialize();
+            if (uiManager.UIGroupCount == 0)
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI manager shutdown validation requires registered UI groups.");
+            }
+
+            IUIGroup[] baselineGroups = uiManager.GetAllUIGroups();
+            FairyUIForm[] loadedForms = uiManager.GetAllLoadedUIForms();
+            for (int i = 0; i < loadedForms.Length; i++)
+            {
+                if (loadedForms[i] != null && uiManager.HasUIForm(loadedForms[i].SerialId))
+                {
+                    uiManager.CloseUIForm(loadedForms[i].SerialId);
+                }
+            }
+
+            uiManager.CloseAllLoadingUIForms();
+            for (int frame = 0; frame < 300 &&
+                 (uiManager.GetAllLoadedUIForms().Length > 0 ||
+                  uiManager.GetAllLoadingUIFormSerialIds().Length > 0); frame++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            if (uiManager.GetAllLoadedUIForms().Length > 0 ||
+                uiManager.GetAllLoadingUIFormSerialIds().Length > 0)
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI forms did not quiesce before manager shutdown validation.");
+            }
+
+            uiManager.Shutdown();
+            uiManager.Initialize();
+
+            if (uiManager.UIGroupCount != baselineGroups.Length)
+            {
+                throw new InvalidOperationException(
+                    $"FairyGUI UI group count changed after in-place shutdown: " +
+                    $"expected={baselineGroups.Length}, actual={uiManager.UIGroupCount}.");
+            }
+
+            for (int i = 0; i < baselineGroups.Length; i++)
+            {
+                IUIGroup group = baselineGroups[i];
+                if (group == null || !uiManager.HasUIGroup(group.Name))
+                {
+                    throw new InvalidOperationException(
+                        $"FairyGUI UI group '{group?.Name}' was lost after in-place shutdown.");
+                }
+
+                FairyUIGroupHelper helper = uiManager.GetUIGroup(group.Name).Helper as FairyUIGroupHelper;
+                if (helper == null || helper.Container.isDisposed ||
+                    !ReferenceEquals(helper.Container.parent, GRoot.inst.container))
+                {
+                    throw new InvalidOperationException(
+                        $"FairyGUI UI group '{group.Name}' has a stale Stage parent after reinitialize.");
+                }
+            }
+
+            FairyUIForm reopened = await OpenFairyUIProbeForm(FairyItemDetailUIId);
+            try
+            {
+                if (UIPackage.GetByName("Package1") == null ||
+                    !ReferenceEquals(reopened.View.displayObject.parent,
+                        uiManager.GetUIGroup("Pop").Helper is FairyUIGroupHelper helper
+                            ? helper.SafeAreaContainer.displayObject
+                            : null))
+                {
+                    throw new InvalidOperationException(
+                        "FairyGUI package or safe-area host did not recover after manager reinitialize.");
+                }
+            }
+            finally
+            {
+                await CloseFairyUIFormIfOpen(uiManager, reopened);
+            }
+
+            if (FairyPackageManager.GetDiagnostics().Count != 0 ||
+                UIPackage.GetByName("Package1") != null)
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI package state did not return to baseline after shutdown reinitialize validation.");
             }
         }
 
