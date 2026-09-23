@@ -62,7 +62,7 @@ GameHot Procedure / ET flow
 | --- | --- | --- |
 | 本地化 | `FairyLocalization` | 打开链 AcquireAsync 后、CreateObject 前按当前语言 `SetStringsSource`，按包幂等。已知边界：vendor SDK 快照的 TranslateComponent 不翻主文本，需升级 SDK 或补丁 |
 | 声音 | `FairySound` | `UIConfig.soundRedirect` 钩子把 click=10001/select=10000 重定向到 GDK UISound 组；未映射资源只诊断一次 |
-| 安全区 | `FairyUIGroupHelper` | `Screen.safeArea` 像素经 contentScaleFactor 缩放 + Y 翻转换算到 GRoot 设计坐标；变化重算幂等；descriptor `fullScreen` 标记决定是否挂安全区容器 |
+| 安全区 | `FairyUIGroupHelper` | `Screen.safeArea` 像素经 contentScaleFactor 缩放 + Y 翻转换算到 GRoot 设计坐标；变化重算幂等；descriptor `fullScreen` 标记决定是否挂安全区容器；组内安全区容器固定为 child index 0，`fullScreen` 窗体按深度排在其后并作为覆盖层 |
 | 输入/焦点/手柄 | `FairyInputService` | Input System 轮询方向导航 + 确认/取消映射到顶部窗体导航根；焦点恢复可测试 |
 | 色觉 | `FairyColorBlindness` | 语义颜色 lint；URP 下旧 ColorBlindnessEffect(OnPostRender) 不生效，Player 滤镜需新 URP RendererFeature（已记录为后续批次） |
 

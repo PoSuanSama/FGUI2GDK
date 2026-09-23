@@ -29,6 +29,9 @@ namespace Game.Editor
         private const int FairyItemDetailUIId = 105;
         private const string FailureProbeDescriptorAsset = "Assets/Res/UI/FairyGUI/Dialog.json";
         private const int FailureProbeUIId = 1;
+        private const string FairyInventoryOverlayDescriptorAsset =
+            "Assets/Res/UI/FairyGUI/FairyInventoryOverlayForm.json";
+        private const int FairyInventoryOverlayUIId = 106;
 
         [AgentCallable("Switch GDK to GameHot mode through the repository's Define Symbol menu.", 60)]
         public static void SwitchToGameHot()
@@ -678,6 +681,252 @@ namespace Game.Editor
             public void OnRefocus(object userData) { }
 
             public void OnUpdate(float elapseSeconds, float realElapseSeconds) { }
+        }
+
+        [AgentCallable("Validate FairyGUI mixed full-screen and safe-area depth ordering plus invalid safe-area bounds.", 120)]
+        public static async UniTask ValidateFairyUIMixedDepthAndSafeArea()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException("FairyGUI mixed depth validation requires PlayMode.");
+            }
+
+            FairyUIManager uiManager = FairyUIManager.Instance;
+            uiManager.Initialize();
+            for (int frame = 0;
+                 frame < 120 &&
+                 (FairyUIPresenterRegistry.PreparePackage == null ||
+                  !uiManager.HasUIGroup("Default") ||
+                  !uiManager.HasUIGroup("Pop"));
+                frame++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            if (FairyUIPresenterRegistry.PreparePackage == null ||
+                !uiManager.HasUIGroup("Default") ||
+                !uiManager.HasUIGroup("Pop"))
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI package binding and the Default/Pop UI groups must be initialized before mixed depth validation.");
+            }
+
+            if (uiManager.IsLoadingUIForm(FairyInventoryOverlayDescriptorAsset) ||
+                uiManager.HasUIForm(FairyInventoryOverlayDescriptorAsset))
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI mixed depth validation requires the overlay form to be idle.");
+            }
+
+            IReadOnlyList<FairyPackageDiagnostic> baselineDiagnostics = FairyPackageManager.GetDiagnostics();
+            int baselineLoadedForms = uiManager.GetAllLoadedUIForms().Length;
+            int baselineLoadingForms = uiManager.GetAllLoadingUIFormSerialIds().Length;
+            int baselineRootChildren = GRoot.inst.numChildren;
+            bool baselinePackageRegistered = UIPackage.GetByName("Package1") != null;
+            FairyUIGroupHelper groupHelper = uiManager.GetUIGroup("Pop").Helper as FairyUIGroupHelper;
+            if (groupHelper == null)
+            {
+                throw new InvalidOperationException("FairyGUI Pop group does not use FairyUIGroupHelper.");
+            }
+
+            FairyUIForm overlay = null;
+            FairyUIForm firstDetail = null;
+            FairyUIForm secondDetail = null;
+            try
+            {
+                overlay = await OpenFairyUIProbeForm(FairyInventoryOverlayUIId);
+                firstDetail = await OpenFairyUIProbeForm(FairyItemDetailUIId);
+                secondDetail = await OpenFairyUIProbeForm(FairyItemDetailUIId);
+                await UniTask.Yield(PlayerLoopTiming.Update);
+
+                AssertFairyUIHostOrdering(groupHelper, overlay, firstDetail, secondDetail);
+
+                int firstDetailIndex = groupHelper.SafeAreaContainer.GetChildIndex(firstDetail.View);
+                int secondDetailIndex = groupHelper.SafeAreaContainer.GetChildIndex(secondDetail.View);
+                if (firstDetailIndex < 0 || secondDetailIndex <= firstDetailIndex ||
+                    firstDetail.DepthInUIGroup >= secondDetail.DepthInUIGroup)
+                {
+                    throw new InvalidOperationException(
+                        "FairyGUI safe-area forms did not preserve increasing depth order.");
+                }
+
+                uiManager.RefocusUIForm(firstDetail, new object());
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                int refocusedDetailIndex = groupHelper.SafeAreaContainer.GetChildIndex(firstDetail.View);
+                if (refocusedDetailIndex <= groupHelper.SafeAreaContainer.GetChildIndex(secondDetail.View) ||
+                    firstDetail.DepthInUIGroup <= secondDetail.DepthInUIGroup)
+                {
+                    throw new InvalidOperationException(
+                        "FairyGUI Refocus did not move the safe-area form to the top of its group.");
+                }
+
+                groupHelper.ApplySafeAreaRect(new Rect(-1000f, -1000f, -400f, -300f));
+                AssertSafeAreaBounds(groupHelper, "negative safe area");
+                groupHelper.ApplySafeAreaRect(
+                    new Rect(-200f, -200f, Screen.width + 1000f, Screen.height + 1000f));
+                AssertSafeAreaBounds(groupHelper, "oversized safe area");
+                float clippedLeft = Mathf.Min(100f, Screen.width);
+                float clippedRight = Mathf.Max(1f, Screen.width * 0.25f);
+                float clippedTop = Mathf.Min(100f, Screen.height * 0.25f);
+                float clippedBottom = Mathf.Max(clippedTop + 1f, Screen.height * 0.75f);
+                Rect partiallyClipped = new Rect(
+                    -clippedLeft,
+                    clippedTop,
+                    clippedLeft + clippedRight,
+                    clippedBottom - clippedTop);
+                groupHelper.ApplySafeAreaRect(partiallyClipped);
+                AssertSafeAreaRect(groupHelper, partiallyClipped, "partially clipped safe area");
+                GComponent safeArea = groupHelper.SafeAreaContainer;
+                float previousSafeAreaX = safeArea.x;
+                float previousSafeAreaY = safeArea.y;
+                float previousSafeAreaWidth = safeArea.width;
+                float previousSafeAreaHeight = safeArea.height;
+                groupHelper.ApplySafeAreaRect(new Rect(float.NaN, 0f, 100f, 100f));
+                if (!Mathf.Approximately(safeArea.x, previousSafeAreaX) ||
+                    !Mathf.Approximately(safeArea.y, previousSafeAreaY) ||
+                    !Mathf.Approximately(safeArea.width, previousSafeAreaWidth) ||
+                    !Mathf.Approximately(safeArea.height, previousSafeAreaHeight))
+                {
+                    throw new InvalidOperationException(
+                        "FairyGUI invalid safe area input changed the last valid layout.");
+                }
+
+                groupHelper.ApplySafeAreaRect(Screen.safeArea);
+                await UniTask.Yield(PlayerLoopTiming.Update);
+
+                await CloseFairyUIFormIfOpen(uiManager, secondDetail);
+                await CloseFairyUIFormIfOpen(uiManager, firstDetail);
+                await CloseFairyUIFormIfOpen(uiManager, overlay);
+                secondDetail = null;
+                firstDetail = await OpenFairyUIProbeForm(FairyItemDetailUIId);
+                overlay = await OpenFairyUIProbeForm(FairyInventoryOverlayUIId);
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                AssertFairyUIHostOrdering(groupHelper, overlay, firstDetail);
+            }
+            finally
+            {
+                try
+                {
+                    await CloseFairyUIFormIfOpen(uiManager, secondDetail);
+                    await CloseFairyUIFormIfOpen(uiManager, firstDetail);
+                    await CloseFairyUIFormIfOpen(uiManager, overlay);
+                }
+                finally
+                {
+                    groupHelper.ApplySafeAreaRect(Screen.safeArea);
+                    await UniTask.Yield(PlayerLoopTiming.Update);
+                }
+            }
+
+            await AssertFairyUIOpenFailureBaseline(
+                uiManager,
+                baselineLoadedForms,
+                baselineLoadingForms,
+                baselineDiagnostics,
+                baselineRootChildren,
+                baselinePackageRegistered,
+                "mixed depth");
+        }
+
+        private static UniTask<FairyUIForm> OpenFairyUIProbeForm(int uiId)
+        {
+            return FairyUIFormService.OpenFairyUIFormAsync(
+                uiId,
+                new object(),
+                descriptor => new FailureProbePresenter(FailureProbeStage.None));
+        }
+
+        private static async UniTask CloseFairyUIFormIfOpen(FairyUIManager uiManager, FairyUIForm form)
+        {
+            if (form == null || (!uiManager.HasUIForm(form.SerialId) &&
+                                 !uiManager.IsLoadingUIForm(form.SerialId)))
+            {
+                return;
+            }
+
+            int serialId = form.SerialId;
+            uiManager.CloseUIForm(serialId);
+            await WaitForFairyUIFormClosed(serialId);
+        }
+
+        private static void AssertSafeAreaBounds(FairyUIGroupHelper groupHelper, string label)
+        {
+            GComponent safeArea = groupHelper.SafeAreaContainer;
+            if (safeArea == null || safeArea.x < -0.01f || safeArea.y < -0.01f ||
+                safeArea.width < -0.01f || safeArea.height < -0.01f ||
+                safeArea.x + safeArea.width > groupHelper.Container.width + 0.01f ||
+                safeArea.y + safeArea.height > groupHelper.Container.height + 0.01f)
+            {
+                throw new InvalidOperationException(
+                    $"FairyGUI {label} produced out-of-bounds safe area: " +
+                    $"rect=({safeArea?.x},{safeArea?.y},{safeArea?.width},{safeArea?.height}), " +
+                    $"container=({groupHelper.Container.width},{groupHelper.Container.height}).");
+            }
+        }
+
+        private static void AssertSafeAreaRect(
+            FairyUIGroupHelper groupHelper,
+            Rect pixelSafeArea,
+            string label)
+        {
+            float scaleFactor = GRoot.contentScaleFactor;
+            float screenWidth = Screen.width;
+            float screenHeight = Screen.height;
+            float pixelXMin = Mathf.Clamp(pixelSafeArea.xMin, 0f, screenWidth);
+            float pixelYMin = Mathf.Clamp(pixelSafeArea.yMin, 0f, screenHeight);
+            float pixelXMax = Mathf.Clamp(pixelSafeArea.xMax, 0f, screenWidth);
+            float pixelYMax = Mathf.Clamp(pixelSafeArea.yMax, 0f, screenHeight);
+            float expectedX = pixelXMin / scaleFactor;
+            float expectedY = (screenHeight - pixelYMax) / scaleFactor;
+            float expectedWidth = (pixelXMax - pixelXMin) / scaleFactor;
+            float expectedHeight = (pixelYMax - pixelYMin) / scaleFactor;
+            GComponent safeArea = groupHelper.SafeAreaContainer;
+            if (safeArea == null ||
+                !Mathf.Approximately(safeArea.x, expectedX) ||
+                !Mathf.Approximately(safeArea.y, expectedY) ||
+                !Mathf.Approximately(safeArea.width, expectedWidth) ||
+                !Mathf.Approximately(safeArea.height, expectedHeight))
+            {
+                throw new InvalidOperationException(
+                    $"FairyGUI {label} mismatch: actual=({safeArea?.x},{safeArea?.y}," +
+                    $"{safeArea?.width},{safeArea?.height}), " +
+                    $"expected=({expectedX},{expectedY},{expectedWidth},{expectedHeight}).");
+            }
+        }
+
+        private static void AssertFairyUIHostOrdering(
+            FairyUIGroupHelper groupHelper,
+            FairyUIForm overlay,
+            params FairyUIForm[] safeAreaForms)
+        {
+            if (overlay == null || groupHelper.SafeAreaContainer == null ||
+                !ReferenceEquals(overlay.View.displayObject.parent, groupHelper.Container))
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI full-screen form was attached to an unexpected group container.");
+            }
+
+            int safeContainerIndex = groupHelper.Container.GetChildIndex(
+                groupHelper.SafeAreaContainer.displayObject);
+            int overlayIndex = overlay.View.displayObject.parent.GetChildIndex(overlay.View.displayObject);
+            if (safeContainerIndex < 0 || overlayIndex <= safeContainerIndex)
+            {
+                throw new InvalidOperationException(
+                    $"FairyGUI full-screen ordering is invalid: safeArea={safeContainerIndex}, overlay={overlayIndex}.");
+            }
+
+            for (int i = 0; i < safeAreaForms.Length; i++)
+            {
+                FairyUIForm safeAreaForm = safeAreaForms[i];
+                if (safeAreaForm == null ||
+                    !ReferenceEquals(
+                        safeAreaForm.View.displayObject.parent,
+                        groupHelper.SafeAreaContainer.displayObject))
+                {
+                    throw new InvalidOperationException(
+                        "FairyGUI safe-area form was attached to an unexpected group container.");
+                }
+            }
         }
 
         [AgentCallable("Open, refocus, owner-cancel or close, and recycle the native FairyGUI form 100 times, then verify runtime diagnostics return to baseline.", 300)]

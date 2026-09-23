@@ -12,7 +12,7 @@ namespace Game
     /// 安全区容器按 Screen.safeArea 换算到 GRoot 设计坐标(Y 轴翻转、
     /// 除以 contentScaleFactor),方向/安全区变化时统一重算;
     /// 界面默认挂安全区容器(页面经 FairyGUI 关系适配),全屏界面(descriptor
-    /// fullScreen,如覆盖层/背景)挂全屏容器。
+    /// fullScreen)挂全屏覆盖容器。
     /// </summary>
     public sealed class FairyUIGroupHelper : IUIGroupHelper
     {
@@ -106,6 +106,7 @@ namespace Game
             m_Forms.Add(form);
             (attachToSafeArea ? m_SafeAreaForms : m_FullScreenForms).Add(form);
             SetFormDepth(form, depthInUIGroup);
+            ReorderHostContainers();
         }
 
         public void RemoveForm(GComponent form)
@@ -132,6 +133,8 @@ namespace Game
             {
                 displayObject.parent.RemoveChild(displayObject);
             }
+
+            ReorderHostContainers();
         }
 
         public void SetFormDepth(GComponent form, int depthInUIGroup)
@@ -160,6 +163,8 @@ namespace Game
                     displayObject.parent.SetChildIndex(displayObject, childIndex);
                 }
             }
+
+            ReorderHostContainers();
         }
 
         public void Dispose()
@@ -243,34 +248,76 @@ namespace Game
                 return;
             }
 
+            if (!IsFinite(pixelSafeArea.x) ||
+                !IsFinite(pixelSafeArea.y) ||
+                !IsFinite(pixelSafeArea.width) ||
+                !IsFinite(pixelSafeArea.height))
+            {
+                return;
+            }
+
             float scaleFactor = GRoot.contentScaleFactor;
-            if (scaleFactor <= 0f)
+            if (!IsFinite(scaleFactor) || scaleFactor <= 0f)
             {
                 return;
             }
 
+            float screenWidth = Screen.width;
             float screenHeight = Screen.height;
-            if (screenHeight <= 0f)
+            float containerWidth = m_Container.width;
+            float containerHeight = m_Container.height;
+            if (screenWidth <= 0f || screenHeight <= 0f ||
+                !IsFinite(containerWidth) || !IsFinite(containerHeight) ||
+                containerWidth <= 0f || containerHeight <= 0f)
             {
                 return;
             }
 
-            float logicalX = pixelSafeArea.xMin / scaleFactor;
-            float logicalY = (screenHeight - pixelSafeArea.yMax) / scaleFactor;
-            float logicalWidth = pixelSafeArea.width / scaleFactor;
-            float logicalHeight = pixelSafeArea.height / scaleFactor;
+            float rawPixelXMin = pixelSafeArea.xMin;
+            float rawPixelYMin = pixelSafeArea.yMin;
+            float rawPixelXMax = pixelSafeArea.xMax;
+            float rawPixelYMax = pixelSafeArea.yMax;
+            if (!IsFinite(rawPixelXMin) || !IsFinite(rawPixelYMin) ||
+                !IsFinite(rawPixelXMax) || !IsFinite(rawPixelYMax))
+            {
+                return;
+            }
+
+            float pixelXMin = Mathf.Clamp(rawPixelXMin, 0f, screenWidth);
+            float pixelYMin = Mathf.Clamp(rawPixelYMin, 0f, screenHeight);
+            float pixelXMax = Mathf.Clamp(rawPixelXMax, 0f, screenWidth);
+            float pixelYMax = Mathf.Clamp(rawPixelYMax, 0f, screenHeight);
+            if (pixelXMax < pixelXMin)
+            {
+                pixelXMax = pixelXMin;
+            }
+
+            if (pixelYMax < pixelYMin)
+            {
+                pixelYMax = pixelYMin;
+            }
+
+            float logicalX = pixelXMin / scaleFactor;
+            float logicalY = (screenHeight - pixelYMax) / scaleFactor;
+            float logicalWidth = (pixelXMax - pixelXMin) / scaleFactor;
+            float logicalHeight = (pixelYMax - pixelYMin) / scaleFactor;
+            if (!IsFinite(logicalX) || !IsFinite(logicalY) ||
+                !IsFinite(logicalWidth) || !IsFinite(logicalHeight))
+            {
+                return;
+            }
 
             // 钳制到全屏容器范围内,防止编辑器/模拟器异常数据。
-            logicalX = Mathf.Clamp(logicalX, 0f, Mathf.Max(0f, m_Container.width));
-            logicalY = Mathf.Clamp(logicalY, 0f, Mathf.Max(0f, m_Container.height));
+            logicalX = Mathf.Clamp(logicalX, 0f, containerWidth);
+            logicalY = Mathf.Clamp(logicalY, 0f, containerHeight);
             logicalWidth = Mathf.Clamp(
                 logicalWidth,
                 0f,
-                Mathf.Max(0f, m_Container.width - logicalX));
+                Mathf.Max(0f, containerWidth - logicalX));
             logicalHeight = Mathf.Clamp(
                 logicalHeight,
                 0f,
-                Mathf.Max(0f, m_Container.height - logicalY));
+                Mathf.Max(0f, containerHeight - logicalY));
 
             Rect logical = new Rect(logicalX, logicalY, logicalWidth, logicalHeight);
             if (logical == m_AppliedSafeArea)
@@ -281,6 +328,35 @@ namespace Game
             m_SafeAreaContainer.SetXY(logical.x, logical.y);
             m_SafeAreaContainer.SetSize(logical.width, logical.height);
             m_AppliedSafeArea = logical;
+        }
+
+        private void ReorderHostContainers()
+        {
+            if (m_SafeAreaContainer == null ||
+                m_SafeAreaContainer.isDisposed ||
+                m_Container.isDisposed ||
+                !ReferenceEquals(m_SafeAreaContainer.displayObject.parent, m_Container))
+            {
+                return;
+            }
+
+            // fullScreen 作为组内覆盖层固定位于 safeArea 容器之后,不随创建顺序漂移。
+            m_Container.SetChildIndex(m_SafeAreaContainer.displayObject, 0);
+            for (int i = 0; i < m_FullScreenForms.Count; i++)
+            {
+                DisplayObject displayObject = m_FullScreenForms[i]?.displayObject;
+                if (displayObject != null &&
+                    !displayObject.isDisposed &&
+                    ReferenceEquals(displayObject.parent, m_Container))
+                {
+                    m_Container.SetChildIndex(displayObject, i + 1);
+                }
+            }
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
     }
 }
