@@ -39,8 +39,9 @@
 
 ## 阶段 4：生成化注册和延期产品缺口
 
-- [x] 根据当前 HybridCLR/link.xml 约束评估生成式 Presenter/Package 注册；GameHot Presenter 已采用编译后属性生成静态工厂表，包分发仍待处理。
+- [x] 根据当前 HybridCLR/link.xml 约束评估生成式 Presenter/Package 注册；GameHot Presenter 工厂表和共享 Game 程序集的 Package Binder 分发表均为静态生成。
 - [x] GameHot Presenter 静态工厂表由 Unity Editor 生成入口创建并提供只读校验，禁止手工编辑生成文件。
+- [x] 从 Publish.json 和源 manifest 生成共享 Package Binder 分发表，并在 GameHot/ET 引导中共用；生成流水线先刷新 manifest。
 - [ ] 执行 ET IL2CPP Player 验证、设备安全区/输入矩阵、URP 色觉方案决策和性能基线采集。
 - [ ] 在修改 Procedure 前，先完成版本/更新 UX 的产品决策。
 
@@ -56,6 +57,7 @@
     pwsh -NoProfile -File ./Tools/FairyGUI/Generate-FairyUIFormDescriptors.ps1 -Check
     pwsh -NoProfile -File ./Tools/FairyGUI/Generate-FairyRuntimeManifest.ps1 -Check
     pwsh -NoProfile -File ./Tools/FairyGUI/Generate-FairyLocalizationXml.ps1 -Check
+    pwsh -NoProfile -File ./Tools/FairyGUI/Generate-FairyPackageBinderRegistry.ps1 -Check
 
 Unity 专项证据必须来自运行时发现的 Agent Bridge 命令：编译结果、Error 日志扫描、GameHot/ET 聚焦冒烟、生命周期循环、本地化/安全区/输入/声音检查，以及排期中的 Player 构建和启动。不能用 .NET 编译替代这些证据。
 

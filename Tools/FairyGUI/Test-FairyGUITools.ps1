@@ -10,6 +10,7 @@ $lintScript = Join-Path $PSScriptRoot 'Test-GDKProject.ps1'
 $publishScript = Join-Path $PSScriptRoot 'Publish-GDKDemo.ps1'
 $descriptorScript = Join-Path $PSScriptRoot 'Generate-FairyUIFormDescriptors.ps1'
 $runtimeManifestScript = Join-Path $PSScriptRoot 'Generate-FairyRuntimeManifest.ps1'
+$packageBinderRegistryScript = Join-Path $PSScriptRoot 'Generate-FairyPackageBinderRegistry.ps1'
 $lubanUiFormData = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../../Unity/Assets/Res/Editor/Luban/dtuiform.json')).Path
 $sourceProject = (Resolve-Path -LiteralPath $ProjectPath).Path
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('gdk-fairygui-tools-' + [Guid]::NewGuid().ToString('N'))
@@ -43,6 +44,80 @@ function New-ProjectCopy {
     $destination = Join-Path $testRoot $Name
     Copy-Item -LiteralPath $sourceProject -Destination $destination -Recurse
     return $destination
+}
+
+function New-PackageBinderRegistryFixture {
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][object[]]$Packages,
+        [string[]]$OmitBinderNames = @(),
+        [string]$Namespace = 'Game.FairyGUI'
+    )
+
+    $project = Join-Path $testRoot $Name
+    $codeRoot = Join-Path $project 'generated-code'
+    [System.IO.Directory]::CreateDirectory((Join-Path $project 'settings')) | Out-Null
+    [System.IO.Directory]::CreateDirectory((Join-Path $project 'generated')) | Out-Null
+    [System.IO.Directory]::CreateDirectory($codeRoot) | Out-Null
+
+    $publish = [pscustomobject][ordered]@{
+        codeGeneration = [pscustomobject][ordered]@{
+            allowGenCode = $true
+            codePath = 'generated-code'
+            packageName = $Namespace
+        }
+    }
+    $manifest = [pscustomobject][ordered]@{
+        schemaVersion = 1
+        packages = @($Packages)
+    }
+    [System.IO.File]::WriteAllText(
+        (Join-Path $project 'settings/Publish.json'),
+        ($publish | ConvertTo-Json -Depth 10),
+        $utf8NoBom)
+    [System.IO.File]::WriteAllText(
+        (Join-Path $project 'generated/GDKFairyManifest.json'),
+        ($manifest | ConvertTo-Json -Depth 10),
+        $utf8NoBom)
+
+    foreach ($package in $Packages) {
+        $packageName = [string]$package.name
+        if ($packageName -notmatch '^[A-Za-z_][A-Za-z0-9_]*$' -or $OmitBinderNames -ccontains $packageName) {
+            continue
+        }
+
+        $packageDirectory = Join-Path $codeRoot $packageName
+        [System.IO.Directory]::CreateDirectory($packageDirectory) | Out-Null
+        $binderSource = "namespace $Namespace.$packageName`n{`n    public class ${packageName}Binder`n    {`n        public static void BindAll() { }`n    }`n}`n"
+        [System.IO.File]::WriteAllText(
+            (Join-Path $packageDirectory ($packageName + 'Binder.cs')),
+            $binderSource,
+            $utf8NoBom)
+    }
+
+    return [pscustomobject]@{
+        ProjectPath = $project
+        RepositoryRoot = $testRoot
+        CodeRoot = $codeRoot
+        ManifestPath = Join-Path $project 'generated/GDKFairyManifest.json'
+    }
+}
+
+function Invoke-PackageBinderRegistry {
+    param(
+        [Parameter(Mandatory)]$Fixture,
+        [switch]$Check
+    )
+
+    $parameters = @{
+        ProjectPath = $Fixture.ProjectPath
+        RepositoryRoot = $Fixture.RepositoryRoot
+        ManifestPath = $Fixture.ManifestPath
+    }
+    if ($Check) {
+        $parameters.Check = $true
+    }
+    return Invoke-Tool $packageBinderRegistryScript $parameters
 }
 
 function Invoke-Tool {
@@ -749,6 +824,74 @@ exit /b 0
         ($rows | Where-Object { $_.CSName -ceq 'FairyDemoForm' }).PackageName = ''
         Set-DescriptorRows $fixture $rows
     } 'must provide both PackageName and ComponentName'
+
+    $binderFixture = New-PackageBinderRegistryFixture 'binder-registry' @(
+        [pscustomobject]@{ id = 'package-b'; name = 'PackageB' },
+        [pscustomobject]@{ id = 'package-a'; name = 'PackageA' }
+    ) -Namespace 'Game.TestFairy'
+    $binderGenerate = Invoke-PackageBinderRegistry $binderFixture
+    Assert-True $binderGenerate.Success "Package binder registry generation failed: $($binderGenerate.Output)"
+    $binderRegistryPath = Join-Path $binderFixture.CodeRoot 'FairyPackageBinderRegistry.Generated.cs'
+    $firstBinderRegistryBytes = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($binderRegistryPath))
+    $binderGenerate = Invoke-PackageBinderRegistry $binderFixture
+    Assert-True $binderGenerate.Success "Repeated package binder registry generation failed: $($binderGenerate.Output)"
+    $secondBinderRegistryBytes = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($binderRegistryPath))
+    Assert-Equal $firstBinderRegistryBytes $secondBinderRegistryBytes 'Repeated package binder generation was not byte equivalent.'
+    $binderRegistrySource = [System.IO.File]::ReadAllText($binderRegistryPath)
+    Assert-True $binderRegistrySource.Contains('namespace Game.TestFairy') 'Package binder registry ignored the configured FairyGUI namespace.'
+    Assert-True ($binderRegistrySource.IndexOf('case "PackageA"', [System.StringComparison]::Ordinal) -lt
+        $binderRegistrySource.IndexOf('case "PackageB"', [System.StringComparison]::Ordinal)) 'Package binder dispatch order is not ordinal and stable.'
+    Assert-True $binderRegistrySource.Contains('global::Game.TestFairy.PackageA.PackageABinder.BindAll()') 'Package A binder is not statically referenced.'
+    Assert-True $binderRegistrySource.Contains('global::Game.TestFairy.PackageB.PackageBBinder.BindAll()') 'Package B binder is not statically referenced for dependency coverage.'
+    Assert-True $binderRegistrySource.Contains('{descriptor.UiId}') 'Missing-binder diagnostics omit the UI id.'
+    Assert-True $binderRegistrySource.Contains('{descriptor.CsName}') 'Missing-binder diagnostics omit the UI name.'
+    Assert-True $binderRegistrySource.Contains('{descriptor.PackageName}') 'Missing-binder diagnostics omit the package name.'
+    $binderCheck = Invoke-PackageBinderRegistry $binderFixture -Check
+    Assert-True $binderCheck.Success "Package binder registry -Check failed for current output: $($binderCheck.Output)"
+
+    [System.IO.File]::WriteAllText($binderRegistryPath, $binderRegistrySource + "// stale`n", $utf8NoBom)
+    $binderCheck = Invoke-PackageBinderRegistry $binderFixture -Check
+    Assert-True (-not $binderCheck.Success -and $binderCheck.Output.Contains('package binder registry is stale')) 'Package binder registry -Check accepted stale output.'
+
+    $invalidPackageFixture = New-PackageBinderRegistryFixture 'binder-registry-invalid' @(
+        [pscustomobject]@{ id = 'invalid-package'; name = 'Package-Bad' }
+    )
+    $invalidPackageResult = Invoke-PackageBinderRegistry $invalidPackageFixture
+    Assert-True (-not $invalidPackageResult.Success -and $invalidPackageResult.Output.Contains('not a supported C# identifier')) 'Package binder registry accepted an invalid package name.'
+
+    $duplicatePackageFixture = New-PackageBinderRegistryFixture 'binder-registry-duplicate' @(
+        [pscustomobject]@{ id = 'duplicate-id'; name = 'PackageOne' },
+        [pscustomobject]@{ id = 'duplicate-id'; name = 'PackageTwo' }
+    )
+    $duplicatePackageResult = Invoke-PackageBinderRegistry $duplicatePackageFixture
+    Assert-True (-not $duplicatePackageResult.Success -and $duplicatePackageResult.Output.Contains('Duplicate FairyGUI package id')) 'Package binder registry accepted duplicate package metadata.'
+
+    $duplicateNameFixture = New-PackageBinderRegistryFixture 'binder-registry-duplicate-name' @(
+        [pscustomobject]@{ id = 'package-one'; name = 'SharedPackage' },
+        [pscustomobject]@{ id = 'package-two'; name = 'SharedPackage' }
+    )
+    $duplicateNameResult = Invoke-PackageBinderRegistry $duplicateNameFixture
+    Assert-True (-not $duplicateNameResult.Success -and $duplicateNameResult.Output.Contains('Duplicate FairyGUI package name')) 'Package binder registry accepted duplicate package names.'
+
+    $missingBinderFixture = New-PackageBinderRegistryFixture 'binder-registry-missing' @(
+        [pscustomobject]@{ id = 'missing-binder'; name = 'PackageMissing' }
+    ) -OmitBinderNames @('PackageMissing')
+    $missingBinderResult = Invoke-PackageBinderRegistry $missingBinderFixture
+    Assert-True (-not $missingBinderResult.Success -and $missingBinderResult.Output.Contains("binder source is missing for package 'PackageMissing'")) 'Package binder registry accepted a package without its generated binder.'
+
+    $pathEscapeFixture = New-PackageBinderRegistryFixture 'binder-registry-path-escape' @(
+        [pscustomobject]@{ id = 'path-escape'; name = 'PackagePathEscape' }
+    )
+    $pathEscapePublishPath = Join-Path $pathEscapeFixture.ProjectPath 'settings/Publish.json'
+    $pathEscapePublish = Get-Content -Raw -LiteralPath $pathEscapePublishPath | ConvertFrom-Json
+    $pathEscapePublish.codeGeneration.codePath = '../../outside'
+    [System.IO.File]::WriteAllText(
+        $pathEscapePublishPath,
+        ($pathEscapePublish | ConvertTo-Json -Depth 10),
+        $utf8NoBom)
+    $pathEscapeResult = Invoke-PackageBinderRegistry $pathEscapeFixture
+    Assert-True (-not $pathEscapeResult.Success -and $pathEscapeResult.Output.Contains('escapes repository root')) 'Package binder registry accepted a code path outside the repository root.'
+
     $summary = [pscustomobject][ordered]@{
         success = $true
         assertions = $script:assertionCount

@@ -34,6 +34,13 @@ Editor 工作副本，必须先通过同步协议收敛，才能发布或评审�
 - FairyGUI 官方 C# 生成保持启用，并设置 `getMemberByName=true`；不得构建第二个绑定编译器。
 - 清单路径使用 `/`，集合稳定排序，哈希基于规范化的 LF 文本和 SHA-256，输出采用不带 BOM 的
   UTF-8，并以一个 LF 结尾。
+- Package Binder 分发表是由 `Generate-FairyPackageBinderRegistry.ps1` 生成的派生 C#，输入为
+  `Publish.json` 的 `codeGeneration.codePath`/`packageName` 与源 manifest 的 package id/name。
+  每个包必须有官方生成的 `<PackageName>Binder.BindAll()`；名称、ID 不得重复，包名和 namespace
+  必须是可生成的 C# 标识符。输出写到配置的代码路径根目录，按包名 ordinal 排序并支持逐字节 `-Check`。
+- 生成流水线先运行 `Test-GDKProject.ps1` 刷新/校验源 manifest，再生成 Package Binder 分发表。
+  运行时分发表验证目标 UI 的 PackageName 后注册 manifest 中全部 Binder，使 package dependency 的
+  组件扩展在创建 UI 对象前可用；缺失包诊断包含 UI ID、UI 名和 PackageName。
 
 ## 4. 验证与错误矩阵
 
@@ -67,6 +74,7 @@ Editor 工作副本，必须先通过同步协议收敛，才能发布或评审�
 - 断言检查工具会拒绝缺失引用、只有 `pkg` 没有 `src`、重复 ID/名称、无效控制器/关系、包依赖环、
   组件路径逃逸和稳定契约漂移。
 - 生成两次清单并断言字节完全相等；断言 `-Check` 会拒绝内容、BOM 和 CRLF 漂移。
+- 生成两次 Package Binder 表并断言字节完全相等；覆盖无效/重复包元数据、缺失 Binder 和陈旧 `-Check`。
 - 运行 PowerShell AST 解析、JSON/XML 解析、聚焦空白字符检查和 GDK 变更守卫。
 
 ## 7. 错误与正确做法

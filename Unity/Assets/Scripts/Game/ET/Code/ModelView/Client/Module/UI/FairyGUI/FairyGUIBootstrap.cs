@@ -1,7 +1,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 using Game;
-using Game.FairyGUI.Package1;
+using Game.FairyGUI;
 using GameFramework;
 using UnityGameFramework.Runtime;
 
@@ -39,15 +39,7 @@ namespace ET.Client
             // ET 全部界面走 Component/System 打开链(per-open 工厂),不再注册类 Presenter;
             // 未命中注册表的打开会由 FairyUIManager 直接报稳定错误。
             FairyUIPresenterRegistry.PreparePackage = descriptor =>
-            {
-                if (!string.Equals(descriptor.PackageName, "Package1", StringComparison.Ordinal))
-                {
-                    throw new GameFrameworkException(
-                        $"No FairyGUI package binder is registered for UI '{descriptor.CsName}'.");
-                }
-
-                Package1Binder.BindAll();
-            };
+                FairyPackageBinderRegistryGenerated.BindAllPackages(descriptor);
 
             FairyUIManager uiManager = FairyUIManager.Instance;
             uiManager.Initialize();

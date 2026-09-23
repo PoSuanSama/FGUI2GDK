@@ -21,6 +21,8 @@ FairyGUI XML 工程是 AI UI 流程的唯一版本化事实来源。`D:\Unity\Pr
 | 描述符生成 | `Tools/FairyGUI/Generate-FairyUIFormDescriptors.ps1` |
 | 运行时 manifest 生成 | `Tools/FairyGUI/Generate-FairyRuntimeManifest.ps1` |
 | 本地化 XML 生成 | `Tools/FairyGUI/Generate-FairyLocalizationXml.ps1` |
+| Package Binder 分发表生成 | `Tools/FairyGUI/Generate-FairyPackageBinderRegistry.ps1` |
+| FairyGUI/GDK 生成流水线 | `Tools/FairyGUI/Invoke-FairyGUIPipeline.ps1` |
 | 发布脚本 | `Tools/FairyGUI/Publish-GDKDemo.ps1` |
 | 发布产物 | `Unity/Assets/Res/UI/FairyGUI/` |
 | GDK 运行时管理层 | `Unity/Assets/Scripts/Game/UI/FairyGUI/`（FairyUIManager 等） |
@@ -68,7 +70,7 @@ GameHot Procedure / ET flow
 
 ### GameHot 入口
 
-`HotEntry.InitializeFairyGUI()` 使用静态 Presenter 工厂表，并初始化 `FairyUIManager`、声音/输入桥和五个 UIGroup。Unity Editor 的 `GameHot/FairyGUI/Generate Presenter Registry` 从已编译的 `[FairyUIPresenter]` 属性生成该表；`Validate Presenter Registry` 会校验生成源码及工厂类型。公开的 `FairyUIPresenterRegistryBuilder.Build(Assembly)` 保留作兼容和验证路径，不是 HotEntry 的运行时注册入口。新增或移除 Presenter 后，等待 Unity 编译完成，再生成并校验工厂表。当前只生成 Presenter 工厂；Package Binder 分发生成和 ET IL2CPP Player 验证仍待后续批次，不能据此宣称 Player 已验证。业务经 `FairyUIFormService.OpenFairyUIFormAsync` 打开界面。
+`HotEntry.InitializeFairyGUI()` 使用静态 Presenter 工厂表和 Package Binder 分发表，并初始化 `FairyUIManager`、声音/输入桥和五个 UIGroup。Unity Editor 的 `GameHot/FairyGUI/Generate Presenter Registry` 从已编译的 `[FairyUIPresenter]` 属性生成 Presenter 工厂表；`Validate Presenter Registry` 会校验生成源码及工厂类型。公开的 `FairyUIPresenterRegistryBuilder.Build(Assembly)` 保留作兼容和验证路径，不是 HotEntry 的运行时注册入口。新增或移除 Presenter 后，等待 Unity 编译完成，再生成并校验工厂表。`Generate-FairyPackageBinderRegistry.ps1` 从 `Publish.json` 的代码路径/namespace 设置和源 manifest 包列表生成共享 Game 程序集中的静态 Binder 表；它要求对应的官方 `<PackageName>Binder.cs` 已发布。生成流水线先刷新 manifest，再生成分发表；每次准备包时会注册 manifest 中全部 Binder，保证依赖包的扩展绑定也就绪。反射只保留 Presenter 兼容验证路径；ET IL2CPP Player 仍需单独验证。业务经 `FairyUIFormService.OpenFairyUIFormAsync` 打开界面。
 
 ### ET 入口
 
@@ -109,9 +111,9 @@ AI 直接修改仓库 `assets/*/*.xml`。布局、颜色、文本和非业务节
 | 类名前缀 | `UI_` |
 | 成员前缀 | `m_` |
 | 命名空间前缀 | `Game.FairyGUI` |
-| 仓库代码路径 | `../../../Unity/Assets/Scripts/Game/Hot/Code/Generate/FairyGUI` |
+| 仓库代码路径 | `../../../Unity/Assets/Scripts/Game/Generate/FairyGUI` |
 
-发布 `Package1` 后，官方生成器会在代码路径下创建 `Package1/`，生成类使用 `Game.FairyGUI.Package1` 命名空间和 `GetChild("成员名")` 绑定。
+发布 `Package1` 后，官方生成器会在代码路径下创建 `Package1/`，生成类使用 `Game.FairyGUI.Package1` 命名空间和 `GetChild("成员名")` 绑定。之后运行 `Invoke-FairyGUIPipeline.ps1` 更新源 manifest、描述符及共享 `FairyPackageBinderRegistry.Generated.cs`；该分发表是派生输出，不要手动编辑。
 
 ## 仓库与 Editor 同步
 
@@ -315,6 +317,7 @@ pwsh -NoProfile -File ./Tools/FairyGUI/Test-GDKProject.ps1 -Check
 pwsh -NoProfile -File ./Tools/FairyGUI/Generate-FairyUIFormDescriptors.ps1 -Check
 pwsh -NoProfile -File ./Tools/FairyGUI/Generate-FairyRuntimeManifest.ps1 -Check
 pwsh -NoProfile -File ./Tools/FairyGUI/Generate-FairyLocalizationXml.ps1 -Check
+pwsh -NoProfile -File ./Tools/FairyGUI/Generate-FairyPackageBinderRegistry.ps1 -Check
 ```
 
 Unity 冒烟（经 Unity Agent Bridge 的 AgentCallable）：

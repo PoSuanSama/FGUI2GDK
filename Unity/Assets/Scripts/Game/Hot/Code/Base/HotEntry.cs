@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Game.FairyGUI.Package1;
+using Game.FairyGUI;
 using GameFramework;
 using UnityEngine;
 using UnityGameFramework.Runtime;
@@ -60,15 +60,7 @@ namespace Game.Hot
                 FairyUIPresenterRegistryGenerated.CreateFactories();
 
             FairyUIPresenterRegistry.PreparePackage = descriptor =>
-            {
-                if (!string.Equals(descriptor.PackageName, "Package1", System.StringComparison.Ordinal))
-                {
-                    throw new GameFrameworkException(
-                        $"No FairyGUI package binder is registered for UI '{descriptor.CsName}'.");
-                }
-
-                Package1Binder.BindAll();
-            };
+                FairyPackageBinderRegistryGenerated.BindAllPackages(descriptor);
             FairyUIManager uiManager = FairyUIManager.Instance;
             uiManager.Initialize();
             // 声音桥:按钮/transition 播放统一重定向到 GDK Sound 组。

@@ -13,6 +13,8 @@ $toolExe = Join-Path $binDir 'Tool.exe'
 $descriptorGenerator = Join-Path $PSCmdlet.MyInvocation.MyCommand.Path '..\Generate-FairyUIFormDescriptors.ps1'
 $runtimeManifestGenerator = Join-Path $PSCmdlet.MyInvocation.MyCommand.Path '..\Generate-FairyRuntimeManifest.ps1'
 $localizationGenerator = Join-Path $PSCmdlet.MyInvocation.MyCommand.Path '..\Generate-FairyLocalizationXml.ps1'
+$projectValidator = Join-Path $PSCmdlet.MyInvocation.MyCommand.Path '..\Test-GDKProject.ps1'
+$packageBinderRegistryGenerator = Join-Path $PSCmdlet.MyInvocation.MyCommand.Path '..\Generate-FairyPackageBinderRegistry.ps1'
 $unityProject = [System.IO.Path]::GetFullPath((Join-Path $repoRoot $UnityProject))
 $bridgeSession = Join-Path $repoRoot '.agents/skills/gdk-development-workflow/scripts/bridge_session.py'
 
@@ -33,6 +35,11 @@ if (-not $SkipLuban) {
     }
 }
 
+if (-not (Test-Path -LiteralPath $projectValidator -PathType Leaf)) {
+    throw "FairyGUI project validator not found: $projectValidator"
+}
+& $projectValidator -ProjectPath (Join-Path $repoRoot 'Design/FairyGUI/GDK_FGUI')
+
 if (-not (Test-Path -LiteralPath $descriptorGenerator -PathType Leaf)) {
     throw "Descriptor generator not found: $descriptorGenerator"
 }
@@ -47,6 +54,11 @@ if (-not (Test-Path -LiteralPath $localizationGenerator -PathType Leaf)) {
     throw "Localization XML generator not found: $localizationGenerator"
 }
 & $localizationGenerator
+
+if (-not (Test-Path -LiteralPath $packageBinderRegistryGenerator -PathType Leaf)) {
+    throw "FairyGUI package binder registry generator not found: $packageBinderRegistryGenerator"
+}
+& $packageBinderRegistryGenerator -ProjectPath (Join-Path $repoRoot 'Design/FairyGUI/GDK_FGUI')
 
 if (-not (Test-Path -LiteralPath $bridgeSession -PathType Leaf)) {
     throw "Unity Agent Bridge session script not found: $bridgeSession"
@@ -71,5 +83,6 @@ if ($LASTEXITCODE -ne 0) {
     lubanSkipped = [bool]$SkipLuban
     descriptorGenerator = $descriptorGenerator
     runtimeManifestGenerator = $runtimeManifestGenerator
+    packageBinderRegistryGenerator = $packageBinderRegistryGenerator
     unityProject = $unityProject
 } | ConvertTo-Json -Depth 100

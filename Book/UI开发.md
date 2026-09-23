@@ -98,7 +98,7 @@ namespace Game.Hot
 }
 ```
 
-`HotEntry.InitializeFairyGUI()` 使用 Unity Editor 生成的静态 Presenter 工厂表。生成器从已编译的 `[FairyUIPresenter]` 属性创建工厂；通过 `GameHot/FairyGUI/Generate Presenter Registry` 更新，并用 `GameHot/FairyGUI/Validate Presenter Registry` 校验。新增或移除 Presenter 后，等待 Unity 编译完成再运行这两个入口。公开的 `FairyUIPresenterRegistryBuilder.Build(Assembly)` 保留作兼容和验证路径。生成表目前只覆盖 Presenter 工厂；Package Binder 分发生成和 ET IL2CPP Player 验证仍待后续批次。`OnViewReady` 收到的 `context` 携带 Widget/Event/Resource 容器（随窗体级联清理），`context.Form` 在 GF OnInit 之后才回填。
+`HotEntry.InitializeFairyGUI()` 使用 Unity Editor 生成的静态 Presenter 工厂表和工具生成的静态 Package Binder 分发表。Presenter 工厂由已编译的 `[FairyUIPresenter]` 属性生成；通过 `GameHot/FairyGUI/Generate Presenter Registry` 更新，并用 `GameHot/FairyGUI/Validate Presenter Registry` 校验。Package Binder 表由 `Invoke-FairyGUIPipeline.ps1` 在刷新 FairyGUI manifest 后生成，按 `Publish.json` 中的 namespace/代码路径设置引用官方 Binder，并为依赖绑定注册所有 manifest 包。新增或移除 Presenter 后，等待 Unity 编译完成再运行对应 Editor 入口；新增包则先发布官方 Binder，再运行生成流水线。公开的 `FairyUIPresenterRegistryBuilder.Build(Assembly)` 保留作兼容和验证路径。ET IL2CPP Player 仍需单独验证。`OnViewReady` 收到的 `context` 携带 Widget/Event/Resource 容器（随窗体级联清理），`context.Form` 在 GF OnInit 之后才回填。
 
 ### 4. 打开界面
 
