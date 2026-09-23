@@ -27,6 +27,8 @@ namespace Game.Editor
         private const string DescriptorAsset = "Assets/Res/UI/FairyGUI/FairyDemoForm.json";
         private const int FairyDemoUIId = 103;
         private const int FairyItemDetailUIId = 105;
+        private const string FailureProbeDescriptorAsset = "Assets/Res/UI/FairyGUI/Dialog.json";
+        private const int FailureProbeUIId = 1;
 
         [AgentCallable("Switch GDK to GameHot mode through the repository's Define Symbol menu.", 60)]
         public static void SwitchToGameHot()
@@ -455,6 +457,227 @@ namespace Game.Editor
             {
                 throw new InvalidOperationException("FairyGUI manifest hash mismatch was not rejected.");
             }
+        }
+
+        [AgentCallable("Validate FairyGUI open failure rollback for OnViewReady, OnOpen, binding preparation, and closed Context invalidation.", 120)]
+        public static async UniTask ValidateFairyUIOpenFailureCleanup()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException("FairyGUI failure cleanup validation requires PlayMode.");
+            }
+
+            FairyUIManager uiManager = FairyUIManager.Instance;
+            uiManager.Initialize();
+            for (int frame = 0;
+                 frame < 120 &&
+                 (FairyUIPresenterRegistry.PreparePackage == null || !uiManager.HasUIGroup("Default"));
+                 frame++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            if (FairyUIPresenterRegistry.PreparePackage == null || !uiManager.HasUIGroup("Default"))
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI package binding and the Default UI group must be initialized before failure cleanup validation.");
+            }
+
+            if (uiManager.IsLoadingUIForm(FailureProbeDescriptorAsset))
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI failure cleanup validation requires the dialog probe form to be idle.");
+            }
+
+            int baselineLoadedForms = uiManager.GetAllLoadedUIForms().Length;
+            int baselineLoadingForms = uiManager.GetAllLoadingUIFormSerialIds().Length;
+            IReadOnlyList<FairyPackageDiagnostic> baselineDiagnostics = FairyPackageManager.GetDiagnostics();
+            int baselineRootChildren = GRoot.inst.numChildren;
+            bool baselinePackageRegistered = UIPackage.GetByName("Package1") != null;
+            Action<FairyUIFormDescriptor> originalPreparePackage = FairyUIPresenterRegistry.PreparePackage;
+
+            try
+            {
+                await AssertFairyUIOpenFailure(
+                    uiManager,
+                    "OnViewReady",
+                    FailureProbeStage.OnViewReady,
+                    baselineLoadedForms,
+                    baselineLoadingForms,
+                    baselineDiagnostics,
+                    baselineRootChildren,
+                    baselinePackageRegistered);
+
+                await AssertFairyUIOpenFailure(
+                    uiManager,
+                    "OnOpen",
+                    FailureProbeStage.OnOpen,
+                    baselineLoadedForms,
+                    baselineLoadingForms,
+                    baselineDiagnostics,
+                    baselineRootChildren,
+                    baselinePackageRegistered);
+
+                FairyUIPresenterRegistry.PreparePackage = descriptor =>
+                    throw new InvalidOperationException("FairyGUI failure probe binding preparation failed.");
+                await AssertFairyUIOpenFailure(
+                    uiManager,
+                    "binding preparation",
+                    FailureProbeStage.None,
+                    baselineLoadedForms,
+                    baselineLoadingForms,
+                    baselineDiagnostics,
+                    baselineRootChildren,
+                    baselinePackageRegistered);
+            }
+            finally
+            {
+                FairyUIPresenterRegistry.PreparePackage = originalPreparePackage;
+            }
+
+            FairyUIForm form = await FairyUIFormService.OpenFairyUIFormAsync(
+                FailureProbeUIId,
+                new object(),
+                descriptor => new FailureProbePresenter(FailureProbeStage.None));
+            FairyUIFormContext context = form.Context;
+            int serial = form.SerialId;
+            uiManager.CloseUIForm(serial);
+            await WaitForFairyUIFormClosed(serial);
+            if (context.IsAlive)
+            {
+                throw new InvalidOperationException("FairyGUI Context remained alive after its form closed.");
+            }
+
+            bool contextRejected = false;
+            try
+            {
+                _ = context.LifetimeToken;
+            }
+            catch (ObjectDisposedException)
+            {
+                contextRejected = true;
+            }
+
+            if (!contextRejected)
+            {
+                throw new InvalidOperationException(
+                    "A closed FairyGUI Context still exposed its lifetime token.");
+            }
+
+            await AssertFairyUIOpenFailureBaseline(
+                uiManager,
+                baselineLoadedForms,
+                baselineLoadingForms,
+                baselineDiagnostics,
+                baselineRootChildren,
+                baselinePackageRegistered,
+                "closed Context validation");
+        }
+
+        private static async UniTask AssertFairyUIOpenFailure(
+            FairyUIManager uiManager,
+            string failureName,
+            FailureProbeStage failureStage,
+            int baselineLoadedForms,
+            int baselineLoadingForms,
+            IReadOnlyList<FairyPackageDiagnostic> baselineDiagnostics,
+            int baselineRootChildren,
+            bool baselinePackageRegistered)
+        {
+            bool observedFailure = false;
+            try
+            {
+                await FairyUIFormService.OpenFairyUIFormAsync(
+                    FailureProbeUIId,
+                    new object(),
+                    descriptor => new FailureProbePresenter(failureStage));
+            }
+            catch (Exception exception) when (exception.ToString().Contains("failure probe"))
+            {
+                observedFailure = true;
+            }
+
+            if (!observedFailure)
+            {
+                throw new InvalidOperationException(
+                    $"FairyGUI {failureName} failure probe did not propagate an observable exception.");
+            }
+
+            await AssertFairyUIOpenFailureBaseline(
+                uiManager,
+                baselineLoadedForms,
+                baselineLoadingForms,
+                baselineDiagnostics,
+                baselineRootChildren,
+                baselinePackageRegistered,
+                failureName);
+        }
+
+        private static async UniTask AssertFairyUIOpenFailureBaseline(
+            FairyUIManager uiManager,
+            int baselineLoadedForms,
+            int baselineLoadingForms,
+            IReadOnlyList<FairyPackageDiagnostic> baselineDiagnostics,
+            int baselineRootChildren,
+            bool baselinePackageRegistered,
+            string failureName)
+        {
+            await WaitForFairyPackageDiagnostics(baselineDiagnostics);
+            if (uiManager.GetAllLoadedUIForms().Length != baselineLoadedForms ||
+                uiManager.GetAllLoadingUIFormSerialIds().Length != baselineLoadingForms ||
+                GRoot.inst.numChildren != baselineRootChildren ||
+                (UIPackage.GetByName("Package1") != null) != baselinePackageRegistered)
+            {
+                throw new InvalidOperationException(
+                    $"FairyGUI {failureName} failure probe left UI, package, or root state behind.");
+            }
+        }
+
+        private enum FailureProbeStage
+        {
+            None,
+            OnViewReady,
+            OnOpen,
+        }
+
+        private sealed class FailureProbePresenter : IFairyUIPresenter
+        {
+            private readonly FailureProbeStage m_Stage;
+
+            public FailureProbePresenter(FailureProbeStage stage)
+            {
+                m_Stage = stage;
+            }
+
+            public void OnViewReady(FairyUIFormContext context)
+            {
+                if (m_Stage == FailureProbeStage.OnViewReady)
+                {
+                    throw new InvalidOperationException("FairyGUI failure probe OnViewReady failed.");
+                }
+            }
+
+            public void OnOpen(object userData)
+            {
+                if (m_Stage == FailureProbeStage.OnOpen)
+                {
+                    throw new InvalidOperationException("FairyGUI failure probe OnOpen failed.");
+                }
+            }
+
+            public void OnClose(bool isShutdown, object userData) { }
+
+            public void OnPause() { }
+
+            public void OnResume() { }
+
+            public void OnCover() { }
+
+            public void OnReveal() { }
+
+            public void OnRefocus(object userData) { }
+
+            public void OnUpdate(float elapseSeconds, float realElapseSeconds) { }
         }
 
         [AgentCallable("Open, refocus, owner-cancel or close, and recycle the native FairyGUI form 100 times, then verify runtime diagnostics return to baseline.", 300)]
