@@ -61,6 +61,8 @@ namespace Game
         private bool m_EventsAttached;
         private bool m_Initialized;
         private long m_NextOperationId;
+        private long m_LifecycleGeneration;
+        private CancellationTokenSource m_LifecycleCancellation;
 
         public void Initialize()
         {
@@ -97,7 +99,8 @@ namespace Game
                 m_UIManager.SetObjectPoolManager(objectPoolManager);
             }
 
-            m_UIFormHelper = new FairyUIFormHelper(ReleaseAsset);
+            ResourceComponent resourceComponent = GameEntry.Resource;
+            m_UIFormHelper = new FairyUIFormHelper(asset => ReleaseAsset(resourceComponent, asset));
             m_UIManager.SetUIFormHelper(m_UIFormHelper);
 
             if (!m_EventsAttached)
@@ -124,6 +127,9 @@ namespace Game
             }
 
             ReorderGroups();
+            m_LifecycleCancellation?.Dispose();
+            m_LifecycleCancellation = new CancellationTokenSource();
+            Interlocked.Increment(ref m_LifecycleGeneration);
             m_Initialized = true;
 
         }
@@ -296,37 +302,76 @@ namespace Game
 
         public void Shutdown()
         {
-            if (m_UIManager == null)
-            {
-                return;
-            }
-
             m_Initialized = false;
+            Interlocked.Increment(ref m_LifecycleGeneration);
 
-            IUIForm[] forms = m_UIManager.GetAllLoadedUIForms();
-            foreach (IUIForm form in forms)
+            CancellationTokenSource lifecycleCancellation = m_LifecycleCancellation;
+            m_LifecycleCancellation = null;
+            if (lifecycleCancellation != null)
             {
-                if (form != null && m_UIManager.HasUIForm(form.SerialId))
+                try
                 {
-                    try
-                    {
-                        m_UIManager.CloseUIForm(form.SerialId);
-                    }
-                    catch (Exception exception)
-                    {
-                        Log.Error("Failed to close FairyGUI form '{0}' during shutdown: {1}", form.SerialId, exception);
-                    }
+                    lifecycleCancellation.Cancel();
+                }
+                catch (Exception exception)
+                {
+                    Log.Error("Failed to cancel FairyGUI manager lifetime during shutdown: {0}", exception);
                 }
             }
 
-            m_UIManager.CloseAllLoadingUIForms();
-            DetachUIManagerEvents(m_UIManager);
+            IUIManager uiManager = m_UIManager;
+            if (uiManager != null)
+            {
+                IUIForm[] forms = uiManager.GetAllLoadedUIForms();
+                foreach (IUIForm form in forms)
+                {
+                    if (form != null && uiManager.HasUIForm(form.SerialId))
+                    {
+                        try
+                        {
+                            uiManager.CloseUIForm(form.SerialId);
+                        }
+                        catch (Exception exception)
+                        {
+                            Log.Error("Failed to close FairyGUI form '{0}' during shutdown: {1}", form.SerialId, exception);
+                        }
+                    }
+                }
+
+                try
+                {
+                    uiManager.CloseAllLoadingUIForms();
+                }
+                catch (Exception exception)
+                {
+                    Log.Error("Failed to close loading FairyGUI forms during shutdown: {0}", exception);
+                }
+
+                DetachUIManagerEvents(uiManager);
+            }
+
+            FairyUIFormPendingState[] pendingStates = FairyUIFormPendingRegistry.Drain();
+            foreach (FairyUIFormPendingState pendingState in pendingStates)
+            {
+                if (pendingState.IsAdopted && pendingState.AdoptedForm != null)
+                {
+                    TryRelease(
+                        pendingState.AdoptedForm.ReleaseAfterFailedOpen,
+                        pendingState.DescriptorKey,
+                        "adopted form");
+                }
+                else
+                {
+                    ReleasePendingState(pendingState);
+                }
+            }
 
             FairyInputService.Instance.Shutdown();
             FairySound.Shutdown();
             FairyLocalization.Reset();
             FairyPackageManager.Shutdown();
             UIFormTableProvider = null;
+            lifecycleCancellation?.Dispose();
         }
 
         public async UniTask<FairyUIForm> OpenFairyUIFormAsync(
@@ -344,29 +389,88 @@ namespace Game
             Func<FairyUIFormDescriptor, IFairyUIPresenter> presenterFactory)
         {
             IUIManager uiManager = GetRequiredUIManager();
-            DRUIForm uiForm = await ResolveUIFormAsync(uiId, ownerToken);
-            if (uiForm == null)
+            CancellationTokenSource lifecycleCancellation = m_LifecycleCancellation;
+            if (lifecycleCancellation == null)
             {
-                throw new GameFrameworkException($"Can not load UI form '{uiId}' from data table.");
+                throw new GameFrameworkException("FairyUIManager has no active lifecycle token.");
             }
 
-            string descriptorAssetName = GetDescriptorAssetName(uiForm.AssetName);
-            if (!uiForm.AllowMultiInstance &&
-                (uiManager.IsLoadingUIForm(descriptorAssetName) || uiManager.HasUIForm(descriptorAssetName)))
+            long lifecycleGeneration = Interlocked.Read(ref m_LifecycleGeneration);
+            CancellationTokenSource linkedCancellation =
+                CancellationTokenSource.CreateLinkedTokenSource(lifecycleCancellation.Token);
+            CancellationToken openToken = linkedCancellation.Token;
+            CancellationTokenRegistration ownerCancellationRegistration = default;
+            int ownerCancellationActive = 1;
+
+            void CancelOpen()
             {
-                throw new GameFrameworkException(
-                    $"FairyGUI UI form '{descriptorAssetName}' is loading or already open.");
+                if (Volatile.Read(ref ownerCancellationActive) == 0)
+                {
+                    return;
+                }
+
+                try
+                {
+                    linkedCancellation.Cancel();
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+            }
+
+            void RequestOpenCancellation()
+            {
+                if (PlayerLoopHelper.IsMainThread)
+                {
+                    CancelOpen();
+                    return;
+                }
+
+                PlayerLoopHelper.AddContinuation(PlayerLoopTiming.Update, CancelOpen);
             }
 
             TextAsset descriptorAsset = null;
+            ResourceComponent descriptorResource = null;
             FairyPackageLease packageLease = null;
             GComponent pendingView = null;
             FairyUIFormPendingState pendingState = null;
+            int serialId = 0;
+            bool hasSerialId = false;
             long operationId = Interlocked.Increment(ref m_NextOperationId);
             try
             {
-                ownerToken.ThrowIfCancellationRequested();
-                descriptorAsset = await LoadDescriptorTextAsync(descriptorAssetName, ownerToken);
+                if (ownerToken.CanBeCanceled)
+                {
+                    ownerCancellationRegistration = ownerToken.Register(RequestOpenCancellation);
+                }
+
+                ThrowIfOpenInvalidated(lifecycleGeneration, uiManager, openToken, ownerToken);
+                DRUIForm uiForm = await ResolveUIFormAsync(uiId, openToken);
+                ThrowIfOpenInvalidated(lifecycleGeneration, uiManager, openToken, ownerToken);
+                if (uiForm == null)
+                {
+                    throw new GameFrameworkException($"Can not load UI form '{uiId}' from data table.");
+                }
+
+                string descriptorAssetName = GetDescriptorAssetName(uiForm.AssetName);
+                if (!uiForm.AllowMultiInstance &&
+                    (uiManager.IsLoadingUIForm(descriptorAssetName) || uiManager.HasUIForm(descriptorAssetName)))
+                {
+                    throw new GameFrameworkException(
+                        $"FairyGUI UI form '{descriptorAssetName}' is loading or already open.");
+                }
+
+                descriptorResource = GameEntry.Resource;
+                if (descriptorResource == null)
+                {
+                    throw new GameFrameworkException("FairyGUI resource component is unavailable.");
+                }
+
+                descriptorAsset = await LoadDescriptorTextAsync(
+                    descriptorAssetName,
+                    descriptorResource,
+                    openToken);
+                ThrowIfOpenInvalidated(lifecycleGeneration, uiManager, openToken, ownerToken);
                 FairyUIFormDescriptor descriptor = FairyUIFormDescriptor.Parse(descriptorAsset.text);
                 ValidateDescriptor(descriptor, uiId, uiForm);
 
@@ -376,7 +480,7 @@ namespace Game
                 // Mode 不经过 Asset Pool 而不暴露差异;AssetBundle 模式若用有类型加载
                 // (assetName, typeof(TextAsset)) 会与 GF 的键分裂,同一个 Unity 对象被 Register
                 // 两次并抛同 key ArgumentException。解析后释放让 GF 的后续加载直接 Spawn 复用。
-                GameEntry.Resource.UnloadAsset(descriptorAsset);
+                UnloadAsset(descriptorResource, descriptorAsset);
                 descriptorAsset = null;
 
                 Action<FairyUIFormDescriptor> preparePackage = FairyUIPresenterRegistry.PreparePackage;
@@ -394,9 +498,11 @@ namespace Game
                         "Either a per-open presenter factory or a class presenter registry must be available before opening a form.");
                 }
 
-                packageLease = await FairyPackageManager.AcquireAsync(descriptor.PackageName, ownerToken);
+                packageLease = await FairyPackageManager.AcquireAsync(descriptor.PackageName, openToken);
+                ThrowIfOpenInvalidated(lifecycleGeneration, uiManager, openToken, ownerToken);
                 FairyPackageManager.ValidateDescriptorIdentity(descriptor);
-                await FairyLocalization.ApplyAsync(descriptor.PackageName, ownerToken);
+                await FairyLocalization.ApplyAsync(descriptor.PackageName, openToken);
+                ThrowIfOpenInvalidated(lifecycleGeneration, uiManager, openToken, ownerToken);
                 preparePackage(descriptor);
                 pendingView = UIPackage.CreateObject(
                     descriptor.PackageName,
@@ -455,8 +561,9 @@ namespace Game
                 pendingView = null;
 
                 presenter.OnViewReady(pendingState.Context);
-                await FairyPackageManager.WaitForPendingAssetsAsync(pendingState.PackageLease, ownerToken);
-                ownerToken.ThrowIfCancellationRequested();
+                ThrowIfOpenInvalidated(lifecycleGeneration, uiManager, openToken, ownerToken);
+                await FairyPackageManager.WaitForPendingAssetsAsync(pendingState.PackageLease, openToken);
+                ThrowIfOpenInvalidated(lifecycleGeneration, uiManager, openToken, ownerToken);
 
                 if (!uiManager.HasUIGroup(uiForm.UIGroupName))
                 {
@@ -464,7 +571,7 @@ namespace Game
                         $"FairyGUI UI group '{uiForm.UIGroupName}' is not registered.");
                 }
 
-                int serialId;
+                ThrowIfOpenInvalidated(lifecycleGeneration, uiManager, openToken, ownerToken);
                 using (FairyUIFormPendingRegistry.BeginOpen(pendingState))
                 {
                     serialId = uiManager.OpenUIForm(
@@ -473,11 +580,13 @@ namespace Game
                         Constant.AssetPriority.UIFormAsset,
                         uiForm.PauseCoveredUIForm,
                         userData);
+                    hasSerialId = true;
                     FairyUIFormPendingRegistry.BindSerialId(serialId, pendingState);
                 }
 
                 while (true)
                 {
+                    ThrowIfOpenInvalidated(lifecycleGeneration, uiManager, openToken, ownerToken);
                     if (FairyUIFormPendingRegistry.TryGetFailure(serialId, out Exception openFailure))
                     {
                         CleanupFailedOpen(serialId, pendingState, uiManager);
@@ -485,19 +594,10 @@ namespace Game
                         throw openFailure;
                     }
 
-                    if (ownerToken.IsCancellationRequested)
-                    {
-                        if (uiManager.HasUIForm(serialId) || uiManager.IsLoadingUIForm(serialId))
-                        {
-                            uiManager.CloseUIForm(serialId);
-                        }
-
-                        ownerToken.ThrowIfCancellationRequested();
-                    }
-
                     if (uiManager.IsLoadingUIForm(serialId))
                     {
                         await UniTask.Yield(PlayerLoopTiming.Update);
+                        ThrowIfOpenInvalidated(lifecycleGeneration, uiManager, openToken, ownerToken);
                         continue;
                     }
 
@@ -508,47 +608,109 @@ namespace Game
                             $"Open FairyGUI UI form failed, asset name '{descriptorAssetName}'.");
                     }
 
-                    pendingState = null;
                     try
                     {
-                        openedForm.AttachOwnerCancellation(ownerToken, RequestCloseOwnedUIForm);
-                        ownerToken.ThrowIfCancellationRequested();
+                        openedForm.AttachOwnerCancellation(
+                            ownerToken,
+                            ownedSerialId => RequestCloseOwnedUIForm(
+                                uiManager,
+                                lifecycleGeneration,
+                                ownedSerialId));
+                        ThrowIfOpenInvalidated(lifecycleGeneration, uiManager, openToken, ownerToken);
+                        pendingState = null;
                         return openedForm;
                     }
                     catch
                     {
-                        CloseOwnedUIForm(serialId);
+                        CloseOwnedUIForm(uiManager, lifecycleGeneration, serialId);
                         throw;
                     }
                 }
             }
             finally
             {
-                if (pendingState != null)
+                try
                 {
-                    FairyUIFormPendingRegistry.TryRemove(pendingState);
-                    if (!pendingState.IsAdopted)
+                    if (pendingState != null)
                     {
-                        ReleasePendingState(pendingState);
+                        int cleanupSerialId = hasSerialId
+                            ? serialId
+                            : pendingState.AdoptedForm?.SerialId ?? 0;
+                        if (cleanupSerialId > 0)
+                        {
+                            try
+                            {
+                                CleanupFailedOpen(cleanupSerialId, pendingState, uiManager);
+                            }
+                            catch (Exception exception)
+                            {
+                                Log.Error(
+                                    "Failed to close FairyGUI operation '{0}' (serial {1}) during rollback: {2}",
+                                    operationId,
+                                    cleanupSerialId,
+                                    exception);
+                            }
+                        }
+
+                        FairyUIFormPendingRegistry.TryRemove(pendingState);
+                        if (pendingState.IsAdopted && pendingState.AdoptedForm != null)
+                        {
+                            TryRelease(
+                                pendingState.AdoptedForm.ReleaseAfterFailedOpen,
+                                pendingState.DescriptorKey,
+                                "adopted form");
+                        }
+                        else
+                        {
+                            ReleasePendingState(pendingState);
+                        }
+                    }
+
+                    pendingView?.Dispose();
+                    packageLease?.Dispose();
+                    if (descriptorAsset != null)
+                    {
+                        UnloadAsset(descriptorResource, descriptorAsset);
                     }
                 }
-
-                pendingView?.Dispose();
-                packageLease?.Dispose();
-                if (descriptorAsset != null)
+                finally
                 {
-                    GameEntry.Resource.UnloadAsset(descriptorAsset);
+                    Interlocked.Exchange(ref ownerCancellationActive, 0);
+                    ownerCancellationRegistration.Dispose();
+                    linkedCancellation.Dispose();
                 }
+            }
+        }
+
+        private void ThrowIfOpenInvalidated(
+            long lifecycleGeneration,
+            IUIManager uiManager,
+            CancellationToken cancellationToken,
+            CancellationToken ownerToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ownerToken.ThrowIfCancellationRequested();
+            if (!m_Initialized ||
+                lifecycleGeneration != Interlocked.Read(ref m_LifecycleGeneration) ||
+                !ReferenceEquals(m_UIManager, uiManager))
+            {
+                throw new OperationCanceledException(
+                    "FairyGUI manager lifecycle changed while opening a form.",
+                    cancellationToken);
             }
         }
 
         private static void ReleasePendingState(FairyUIFormPendingState pendingState)
         {
-            if (pendingState == null)
+            if (pendingState == null || !pendingState.TryBeginRelease())
             {
                 return;
             }
 
+            TryRelease(
+                () => pendingState.Context?.CancelLifetime(),
+                pendingState.DescriptorKey,
+                "context lifetime");
             TryRelease(
                 () => pendingState.Presenter?.OnClose(false, pendingState.UserData),
                 pendingState.DescriptorKey,
@@ -709,6 +871,11 @@ namespace Game
                 return;
             }
 
+            if (uiManager.IsLoadingUIForm(serialId))
+            {
+                uiManager.CloseUIForm(serialId);
+            }
+
             if (pendingState?.AdoptedForm != null)
             {
                 pendingState.AdoptedForm.ReleaseAfterFailedOpen();
@@ -716,6 +883,7 @@ namespace Game
             }
 
             FairyUIFormPendingRegistry.TryRemove(pendingState);
+            ReleasePendingState(pendingState);
         }
 
         private void OnOpenUIFormUpdate(object sender, OpenUIFormUpdateEventArgs args)
@@ -733,29 +901,37 @@ namespace Game
             CloseUIFormComplete?.Invoke(args.SerialId);
         }
 
-        private void RequestCloseOwnedUIForm(int serialId)
+        private void RequestCloseOwnedUIForm(
+            IUIManager ownerUIManager,
+            long ownerGeneration,
+            int serialId)
         {
             if (PlayerLoopHelper.IsMainThread)
             {
-                CloseOwnedUIForm(serialId);
+                CloseOwnedUIForm(ownerUIManager, ownerGeneration, serialId);
                 return;
             }
 
             PlayerLoopHelper.AddContinuation(
                 PlayerLoopTiming.Update,
-                () => CloseOwnedUIForm(serialId));
+                () => CloseOwnedUIForm(ownerUIManager, ownerGeneration, serialId));
         }
 
-        private void CloseOwnedUIForm(int serialId)
+        private void CloseOwnedUIForm(
+            IUIManager ownerUIManager,
+            long ownerGeneration,
+            int serialId)
         {
-            IUIManager uiManager = m_UIManager;
-            if (uiManager == null ||
-                (!uiManager.HasUIForm(serialId) && !uiManager.IsLoadingUIForm(serialId)))
+            if (!m_Initialized ||
+                ownerGeneration != Interlocked.Read(ref m_LifecycleGeneration) ||
+                !ReferenceEquals(m_UIManager, ownerUIManager) ||
+                ownerUIManager == null ||
+                (!ownerUIManager.HasUIForm(serialId) && !ownerUIManager.IsLoadingUIForm(serialId)))
             {
                 return;
             }
 
-            uiManager.CloseUIForm(serialId);
+            ownerUIManager.CloseUIForm(serialId);
         }
 
         private static bool IsUIInstancePool(ObjectPoolBase pool)
@@ -763,12 +939,22 @@ namespace Game
             return pool != null && string.Equals(pool.Name, "UI Instance Pool", StringComparison.Ordinal);
         }
 
-        private void ReleaseAsset(object asset)
+        private static void ReleaseAsset(ResourceComponent resourceComponent, object asset)
         {
             if (asset is UnityEngine.Object unityAsset)
             {
-                GameEntry.Resource.UnloadAsset(unityAsset);
+                UnloadAsset(resourceComponent, unityAsset);
             }
+        }
+
+        private static void UnloadAsset(ResourceComponent resourceComponent, UnityEngine.Object asset)
+        {
+            if (resourceComponent == null || asset == null)
+            {
+                return;
+            }
+
+            resourceComponent.UnloadAsset(asset);
         }
 
 
@@ -783,8 +969,15 @@ namespace Game
         /// </summary>
         private static UniTask<TextAsset> LoadDescriptorTextAsync(
             string assetName,
+            ResourceComponent resourceComponent,
             CancellationToken cancellationToken)
         {
+            if (resourceComponent == null)
+            {
+                return UniTask.FromException<TextAsset>(
+                    new GameFrameworkException("FairyGUI resource component is unavailable."));
+            }
+
             if (cancellationToken.IsCancellationRequested)
             {
                 return UniTask.FromCanceled<TextAsset>(cancellationToken);
@@ -806,7 +999,7 @@ namespace Game
                 cancellationRegistration.Dispose();
             }
 
-            GameEntry.Resource.LoadAsset(
+            resourceComponent.LoadAsset(
                 assetName,
                 new LoadAssetCallbacks(
                     (loadedName, asset, duration, userData) =>
@@ -814,7 +1007,7 @@ namespace Game
                         if (finished)
                         {
                             // await 已被取消或已失败,释放迟到结果。
-                            GameEntry.Resource.UnloadAsset(asset);
+                            UnloadAsset(resourceComponent, asset as UnityEngine.Object);
                             return;
                         }
 
@@ -827,7 +1020,7 @@ namespace Game
                         else
                         {
                             Finish();
-                            GameEntry.Resource.UnloadAsset(asset);
+                            UnloadAsset(resourceComponent, asset as UnityEngine.Object);
                             completion.TrySetException(new GameFrameworkException(
                                 Utility.Text.Format(
                                     "FairyGUI descriptor asset '{0}' has unexpected type '{1}'.",
@@ -847,16 +1040,32 @@ namespace Game
                     null,
                     null));
 
-            cancellationRegistration = cancellationToken.Register(() =>
+            void CancelLoad()
             {
+                if (finished)
+                {
+                    return;
+                }
+
                 Finish();
                 if (loadedAsset != null)
                 {
-                    GameEntry.Resource.UnloadAsset(loadedAsset);
+                    UnloadAsset(resourceComponent, loadedAsset);
                     loadedAsset = null;
                 }
 
                 completion.TrySetCanceled(cancellationToken);
+            }
+
+            cancellationRegistration = cancellationToken.Register(() =>
+            {
+                if (PlayerLoopHelper.IsMainThread)
+                {
+                    CancelLoad();
+                    return;
+                }
+
+                PlayerLoopHelper.AddContinuation(PlayerLoopTiming.Update, CancelLoad);
             });
 
             return completion.Task;

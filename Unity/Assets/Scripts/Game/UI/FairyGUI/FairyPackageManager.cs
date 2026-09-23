@@ -270,9 +270,15 @@ namespace Game
             long generation)
         {
             TextAsset manifest = null;
+            ResourceComponent resourceComponent = GameEntry.Resource;
             try
             {
-                manifest = await GameEntry.Resource.LoadAssetAsync<TextAsset>(ManifestAssetPath);
+                if (resourceComponent == null)
+                {
+                    throw new GameFrameworkException("FairyGUI resource component is unavailable.");
+                }
+
+                manifest = await resourceComponent.LoadAssetAsync<TextAsset>(ManifestAssetPath);
                 if (manifest == null)
                 {
                     throw new GameFrameworkException(
@@ -298,7 +304,7 @@ namespace Game
             {
                 if (manifest != null)
                 {
-                    GameEntry.Resource.UnloadAsset(manifest);
+                    UnloadAsset(resourceComponent, manifest);
                 }
 
                 if (ReferenceEquals(s_CatalogLoading, loading))
@@ -363,7 +369,13 @@ namespace Game
                     (await GetCatalogAsync(state.LoadCancellation.Token)).GetLoadOrder(state.Name);
                 FairyPackageCatalog.PackageDefinition definition = definitions[definitions.Count - 1];
                 string descriptorPath = definition.DescriptorAsset;
-                TextAsset descriptor = await GameEntry.Resource.LoadAssetAsync<TextAsset>(
+                state.ResourceComponent = GameEntry.Resource;
+                if (state.ResourceComponent == null)
+                {
+                    throw new GameFrameworkException("FairyGUI resource component is unavailable.");
+                }
+
+                TextAsset descriptor = await state.ResourceComponent.LoadAssetAsync<TextAsset>(
                     descriptorPath,
                     cancellationToken: state.LoadCancellation.Token);
                 state.Descriptor = descriptor;
@@ -527,9 +539,10 @@ namespace Game
 
         private static void ReleaseAssets(PackageState state)
         {
+            ResourceComponent resourceComponent = state.ResourceComponent;
             if (state.Descriptor != null)
             {
-                GameEntry.Resource.UnloadAsset(state.Descriptor);
+                UnloadAsset(resourceComponent, state.Descriptor);
                 state.Descriptor = null;
             }
 
@@ -537,11 +550,22 @@ namespace Game
             {
                 if (asset != null)
                 {
-                    GameEntry.Resource.UnloadAsset(asset);
+                    UnloadAsset(resourceComponent, asset);
                 }
             }
 
             state.LoadedAssets.Clear();
+            state.ResourceComponent = null;
+        }
+
+        private static void UnloadAsset(ResourceComponent resourceComponent, UnityEngine.Object asset)
+        {
+            if (resourceComponent == null || asset == null)
+            {
+                return;
+            }
+
+            resourceComponent.UnloadAsset(asset);
         }
 
         private static void LoadPackageResourceAsync(
@@ -573,18 +597,20 @@ namespace Game
             Type type,
             PackageItem item)
         {
+            ResourceComponent resourceComponent = state.ResourceComponent;
             string assetPath = null;
             try
             {
                 assetPath = s_Catalog.ResolveRuntimeAsset(state.Name, name, extension);
                 UnityEngine.Object asset = await LoadAssetAsync(
+                    resourceComponent,
                     assetPath,
                     type,
                     state.LoadCancellation.Token);
                 VerifyAssetHash(state.Name, assetPath, asset);
                 if (!IsCurrent(state) || state.Package == null)
                 {
-                    GameEntry.Resource.UnloadAsset(asset);
+                    UnloadAsset(resourceComponent, asset);
                     return;
                 }
 
@@ -644,39 +670,45 @@ namespace Game
         }
 
         private static async UniTask<UnityEngine.Object> LoadAssetAsync(
+            ResourceComponent resourceComponent,
             string assetPath,
             Type type,
             CancellationToken cancellationToken)
         {
+            if (resourceComponent == null)
+            {
+                throw new GameFrameworkException("FairyGUI resource component is unavailable.");
+            }
+
             if (type == typeof(Texture))
             {
-                return await GameEntry.Resource.LoadAssetAsync<Texture>(
+                return await resourceComponent.LoadAssetAsync<Texture>(
                     assetPath,
                     cancellationToken: cancellationToken);
             }
 
             if (type == typeof(AudioClip))
             {
-                return await GameEntry.Resource.LoadAssetAsync<AudioClip>(
+                return await resourceComponent.LoadAssetAsync<AudioClip>(
                     assetPath,
                     cancellationToken: cancellationToken);
             }
 
             if (type == typeof(TextAsset))
             {
-                return await GameEntry.Resource.LoadAssetAsync<TextAsset>(
+                return await resourceComponent.LoadAssetAsync<TextAsset>(
                     assetPath,
                     cancellationToken: cancellationToken);
             }
 
             if (type == typeof(Font))
             {
-                return await GameEntry.Resource.LoadAssetAsync<Font>(
+                return await resourceComponent.LoadAssetAsync<Font>(
                     assetPath,
                     cancellationToken: cancellationToken);
             }
 
-            return await GameEntry.Resource.LoadAssetAsync<UnityEngine.Object>(
+            return await resourceComponent.LoadAssetAsync<UnityEngine.Object>(
                 assetPath,
                 cancellationToken: cancellationToken);
         }
@@ -698,6 +730,7 @@ namespace Game
             internal bool LoadCancellationDisposed;
             internal bool IsActive = true;
             internal FairyPackageStatus Status = FairyPackageStatus.Loading;
+            internal ResourceComponent ResourceComponent;
 
             internal PackageState(string name, long generation)
             {

@@ -57,8 +57,11 @@ Transform tree.
   tokens before `Cancel()`, and make cancel/dispose paths idempotent.
 - After GF reports a successful open, `ownerToken` continues to own exactly that serial ID. Register against the
   captured serial, marshal a background-thread cancellation to Unity's PlayerLoop, and transfer the registration
-  to `FairyUIForm`. `OnClose`/`OnRecycle`/failed return paths dispose it before a pooled host can represent a newer
-  serial. Never close by asset name or by a captured pooled-form reference because both can identify another open.
+  to `FairyUIForm`. While opening, check both the linked lifecycle token and the original `ownerToken` at each
+  post-await boundary and before returning: PlayerLoop marshaling can leave the linked token uncanceled briefly
+  after a background thread cancels the owner. `OnClose`/`OnRecycle`/failed return paths dispose the registration
+  before a pooled host can represent a newer serial. Never close by asset name or by a captured pooled-form
+  reference because both can identify another open.
 - During Editor shutdown, FairyGUI may dispose Stage display objects before GF calls `OnPause/OnClose`. Treat an
   already-disposed display object or container as already detached, but still close the presenter, dispose the
   GObject, release package leases, clear pooled state, and restore the UIGroup Transform when it still exists.

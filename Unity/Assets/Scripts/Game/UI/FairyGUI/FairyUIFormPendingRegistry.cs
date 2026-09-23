@@ -205,6 +205,38 @@ namespace Game
             }
         }
 
+        internal static FairyUIFormPendingState[] Drain()
+        {
+            lock (s_Gate)
+            {
+                HashSet<FairyUIFormPendingState> states = new HashSet<FairyUIFormPendingState>(s_OwnedStates);
+                foreach (FairyUIFormPendingState state in s_StatesBySerialId.Values)
+                {
+                    states.Add(state);
+                }
+
+                foreach (FairyUIFormPendingState state in s_AdoptedStatesBySerialId.Values)
+                {
+                    states.Add(state);
+                }
+
+                if (s_SynchronousOpenState != null)
+                {
+                    states.Add(s_SynchronousOpenState);
+                }
+
+                s_OwnedStates.Clear();
+                s_StatesBySerialId.Clear();
+                s_AdoptedStatesBySerialId.Clear();
+                s_FailuresBySerialId.Clear();
+                s_SynchronousOpenState = null;
+
+                FairyUIFormPendingState[] drained = new FairyUIFormPendingState[states.Count];
+                states.CopyTo(drained);
+                return drained;
+            }
+        }
+
         private static void RemoveFailureBindings(FairyUIFormPendingState state)
         {
             if (state == null)

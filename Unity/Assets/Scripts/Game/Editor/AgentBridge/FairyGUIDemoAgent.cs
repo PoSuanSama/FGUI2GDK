@@ -930,7 +930,7 @@ namespace Game.Editor
             }
         }
 
-        [AgentCallable("Shutdown and reinitialize FairyGUI in-place, then verify UI groups, Stage parents, package reload, and form cleanup.", 120)]
+        [AgentCallable("Cancel an in-flight FairyGUI open during shutdown, reinitialize in-place, and verify UI groups, Stage parents, package reload, and cleanup.", 120)]
         public static async UniTask ValidateFairyUIManagerShutdownReinitialize()
         {
             if (!EditorApplication.isPlaying)
@@ -972,7 +972,24 @@ namespace Game.Editor
                     "FairyGUI forms did not quiesce before manager shutdown validation.");
             }
 
+            UniTask<FairyUIForm> pendingOpen = uiManager.OpenFairyUIFormAsync(FairyItemDetailUIId);
+            if (pendingOpen.Status != UniTaskStatus.Pending)
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI shutdown cancellation probe did not reach an in-flight open state.");
+            }
+
             uiManager.Shutdown();
+            try
+            {
+                await pendingOpen;
+                throw new InvalidOperationException(
+                    "FairyGUI open completed after its manager was shut down.");
+            }
+            catch (OperationCanceledException)
+            {
+            }
+
             uiManager.Initialize();
 
             if (uiManager.UIGroupCount != baselineGroups.Length)
@@ -1158,6 +1175,75 @@ namespace Game.Editor
             int baselineLoadedForms = FairyUIManager.Instance.GetAllLoadedUIForms().Length;
             int baselineLoadingForms = FairyUIManager.Instance.GetAllLoadingUIFormSerialIds().Length;
             int baselineRootChildren = GRoot.inst.numChildren;
+            bool baselinePackageRegistered = UIPackage.GetByName("Package1") != null;
+
+            using (CancellationTokenSource backgroundOwnerCancellation = new CancellationTokenSource())
+            {
+                UniTask<FairyUIForm> pendingBackgroundOpen = FairyUIManager.Instance.OpenFairyUIFormAsync(
+                    FairyItemDetailUIId,
+                    CreateItemDetailOpenData(1004),
+                    backgroundOwnerCancellation.Token);
+                if (pendingBackgroundOpen.Status != UniTaskStatus.Pending)
+                {
+                    throw new InvalidOperationException(
+                        "FairyGUI background cancellation probe did not reach an in-flight open state.");
+                }
+
+                Exception cancellationCallbackFailure = null;
+                Thread cancellationThread = new Thread(() =>
+                {
+                    try
+                    {
+                        backgroundOwnerCancellation.Cancel();
+                    }
+                    catch (Exception exception)
+                    {
+                        cancellationCallbackFailure = exception;
+                    }
+                })
+                {
+                    IsBackground = true,
+                };
+                cancellationThread.Start();
+                if (!cancellationThread.Join(TimeSpan.FromSeconds(5)))
+                {
+                    throw new InvalidOperationException(
+                        "FairyGUI background cancellation callback did not return within five seconds.");
+                }
+
+                if (cancellationCallbackFailure != null)
+                {
+                    throw new InvalidOperationException(
+                        "FairyGUI background cancellation callback failed.",
+                        cancellationCallbackFailure);
+                }
+
+                bool cancellationObserved = false;
+                try
+                {
+                    await pendingBackgroundOpen;
+                }
+                catch (OperationCanceledException)
+                {
+                    cancellationObserved = true;
+                }
+
+                if (!cancellationObserved)
+                {
+                    throw new InvalidOperationException(
+                        "FairyGUI open did not observe cancellation from a background thread.");
+                }
+            }
+
+            await WaitForFairyPackageDiagnostics(baselineDiagnostics);
+            if (FairyUIManager.Instance.GetAllLoadedUIForms().Length != baselineLoadedForms ||
+                FairyUIManager.Instance.GetAllLoadingUIFormSerialIds().Length != baselineLoadingForms ||
+                GRoot.inst.numChildren != baselineRootChildren ||
+                (UIPackage.GetByName("Package1") != null) != baselinePackageRegistered)
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI background cancellation did not return runtime state to baseline.");
+            }
 
             for (int cycle = 0; cycle < 100; cycle++)
             {

@@ -42,6 +42,7 @@ namespace Game
         public bool IsAdopted { get; private set; }
         public FairyUIForm AdoptedForm { get; private set; }
         public Exception OpenFailure { get; private set; }
+        private bool m_ReleaseStarted;
 
         public void MarkAdopted(FairyUIForm form)
         {
@@ -59,6 +60,17 @@ namespace Game
         {
             OpenFailure ??= exception ?? new GameFrameworkException(
                 $"FairyGUI UI form '{DescriptorKey}' (operation {OperationId}) failed to open.");
+        }
+
+        internal bool TryBeginRelease()
+        {
+            if (m_ReleaseStarted)
+            {
+                return false;
+            }
+
+            m_ReleaseStarted = true;
+            return true;
         }
     }
 
@@ -298,6 +310,19 @@ namespace Game
             }
 
             m_Disposed = true;
+            FairyUIFormPendingState pendingState = m_PendingState;
+            if (pendingState != null && !pendingState.TryBeginRelease())
+            {
+                m_PendingState = null;
+                m_GroupHelper = null;
+                m_View = null;
+                m_Presenter = null;
+                m_Context = null;
+                m_PackageLease = null;
+                m_Opened = false;
+                return;
+            }
+
             Exception firstException = null;
 
             FairyUIFormContext context = m_Context;
