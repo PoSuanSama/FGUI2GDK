@@ -36,11 +36,23 @@
 
 这条证据覆盖 **FairyGUI 包 descriptor 资源加载失败**，不等同于 UI descriptor 缺失、外部纹理失败或 binding type mismatch。
 
+## 2026-09-24 生成绑定类型错配回归切片
+
+在同一 Unity/Bridge 环境中对生成绑定错配切片重新编译并验证：
+
+- 编译 generation `77`：`errorCount=0`、`warningCount=0`。
+- 重启 `Assets/FairyGUIDemo.unity` PlayMode，并清理 Unity Console 的 24 条旧日志。
+- `Game.Editor.FairyGUIDemoAgent::ValidateFairyUIBindingTypeMismatchCleanup` 返回 `status=ok`。
+- 该方法保留生成 `Package1Binder`，仅将 `UIDialog.URL` 临时映射到 `GComponent`，连续打开 Dialog 100 次；每次均观察到 `FairyGUI binding type mismatch`，并核对 loaded/loading UI、package diagnostics、GRoot child 数和 Package1 注册状态回到基线。
+- `finally` 恢复原 `PreparePackage` 并重新执行生成 Binder；验证后的 Unity Console `type=error` 查询为 `matched=0`。
+
+这条证据覆盖真实生成绑定类型错配回滚，不等同于 ET child entity 计数、外部纹理失败或 Player/设备验证。
+
 ## 证据边界
 
 本轮结果不能证明以下验收项：
 
-- 真实生成绑定类型不匹配，以及六类失败统一执行 100 次后的资源/ET child entity 基线；本轮已单独覆盖包 descriptor 资源加载失败；
+- 六类失败统一执行 100 次后的资源/ET child entity 基线；本轮已分别覆盖包 descriptor 资源加载失败和生成绑定类型错配；
 - 旋转/分辨率矩阵和重复 add/remove；
 - 并发多 package 或语言切换；当前仓库只有一个运行时 Package1；
 - 场景重载、域/热更重载、重复 PlayMode 后旧 PlayerLoop/ResourceManager 引用清零；

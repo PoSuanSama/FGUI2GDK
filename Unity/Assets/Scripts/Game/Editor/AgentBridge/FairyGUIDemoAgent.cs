@@ -673,6 +673,105 @@ namespace Game.Editor
             }
         }
 
+        [AgentCallable("Validate FairyGUI generated binding type mismatch rollback across 100 retries.", 300)]
+        public static async UniTask ValidateFairyUIBindingTypeMismatchCleanup()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI binding mismatch validation requires PlayMode.");
+            }
+
+            FairyUIManager uiManager = FairyUIManager.Instance;
+            uiManager.Initialize();
+            for (int frame = 0;
+                 frame < 120 &&
+                 (FairyUIPresenterRegistry.PreparePackage == null || !uiManager.HasUIGroup("Default"));
+                 frame++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            if (FairyUIPresenterRegistry.PreparePackage == null || !uiManager.HasUIGroup("Default"))
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI package binding and the Default UI group must be initialized before binding mismatch validation.");
+            }
+
+            int baselineLoadedForms = uiManager.GetAllLoadedUIForms().Length;
+            int baselineLoadingForms = uiManager.GetAllLoadingUIFormSerialIds().Length;
+            IReadOnlyList<FairyPackageDiagnostic> baselineDiagnostics = FairyPackageManager.GetDiagnostics();
+            int baselineRootChildren = GRoot.inst.numChildren;
+            bool baselinePackageRegistered = UIPackage.GetByName("Package1") != null;
+            Action<FairyUIFormDescriptor> originalPreparePackage = FairyUIPresenterRegistry.PreparePackage;
+
+            try
+            {
+                FairyUIPresenterRegistry.PreparePackage = descriptor =>
+                {
+                    originalPreparePackage(descriptor);
+                    if (descriptor.UiId == FailureProbeUIId &&
+                        string.Equals(descriptor.PackageName, "Package1", StringComparison.Ordinal) &&
+                        string.Equals(descriptor.ComponentName, "Dialog", StringComparison.Ordinal))
+                    {
+                        // Keep the generated binder as the source of truth, then replace only
+                        // this probe's extension with a generic component. The manager must
+                        // reject it before adopting the view or presenter.
+                        UIObjectFactory.SetPackageItemExtension(
+                            global::Game.FairyGUI.Package1.UIDialog.URL,
+                            typeof(GComponent));
+                    }
+                };
+
+                for (int attempt = 0; attempt < 100; attempt++)
+                {
+                    bool observedFailure = false;
+                    FairyUIForm unexpectedForm = null;
+                    try
+                    {
+                        unexpectedForm = await FairyUIFormService.OpenFairyUIFormAsync(
+                            FailureProbeUIId,
+                            new object(),
+                            descriptor => new FailureProbePresenter(FailureProbeStage.None));
+                    }
+                    catch (Exception exception) when (
+                        exception.ToString().Contains("FairyGUI binding type mismatch"))
+                    {
+                        observedFailure = true;
+                    }
+
+                    if (unexpectedForm != null)
+                    {
+                        int unexpectedSerialId = unexpectedForm.SerialId;
+                        uiManager.CloseUIForm(unexpectedSerialId);
+                        await WaitForFairyUIFormClosed(unexpectedSerialId);
+                    }
+
+                    if (!observedFailure)
+                    {
+                        throw new InvalidOperationException(
+                            $"FairyGUI generated binding mismatch was not observable on attempt {attempt}.");
+                    }
+
+                    await AssertFairyUIOpenFailureBaseline(
+                        uiManager,
+                        baselineLoadedForms,
+                        baselineLoadingForms,
+                        baselineDiagnostics,
+                        baselineRootChildren,
+                        baselinePackageRegistered,
+                        $"generated binding mismatch attempt {attempt}");
+                }
+            }
+            finally
+            {
+                FairyUIPresenterRegistry.PreparePackage = originalPreparePackage;
+                // UIObjectFactory keeps extension creators in a process-wide map. Rebind the
+                // generated table even when Package1 was unloaded during rollback.
+                global::Game.FairyGUI.Package1.Package1Binder.BindAll();
+            }
+        }
+
         private static async UniTask AssertFairyUIOpenFailure(
             FairyUIManager uiManager,
             string failureName,
