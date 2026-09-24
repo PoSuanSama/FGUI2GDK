@@ -50,6 +50,7 @@
 验证基线 `6ed43a50` 及其后续小轮次的运行时证据记录在同目录的 `evidence.md`。其中已收录
 2026-09-24 Unity Agent Bridge 的 GameHot 失败回滚、包 descriptor 资源失败 100 次回归、生成绑定
 类型错配 100 次回归、混合层级/安全区、100 次生命周期、hash 契约和 Shutdown/reinitialize 结果；
+以及四组 Unity Editor Game View 分辨率矩阵；
 未覆盖项仍按证据边界保持未勾选。
 
 最低确定性检查：

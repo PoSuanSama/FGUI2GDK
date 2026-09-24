@@ -48,12 +48,26 @@
 
 这条证据覆盖真实生成绑定类型错配回滚，不等同于 ET child entity 计数、外部纹理失败或 Player/设备验证。
 
+## 2026-09-24 编辑器分辨率矩阵
+
+使用运行时发现的 `set_game_view_resolution`，在同一 PlayMode 会话依次执行
+`ValidateFairyUIMixedDepthAndSafeArea`，四组尺寸均返回 `status=ok`，且每组后错误日志均为
+`matched=0`：
+
+- `1280×720`；
+- `1920×1080`；
+- `1080×1920`；
+- `800×1280`。
+
+最后按 Bridge 返回的 restore token 恢复原始 `4K UHD (3840×2160)` Game View 选择。
+该证据覆盖 Unity Editor 的横向/纵向分辨率变化，不替代真机安全区、旋转传感器和输入验证。
+
 ## 证据边界
 
 本轮结果不能证明以下验收项：
 
 - 六类失败统一执行 100 次后的资源/ET child entity 基线；本轮已分别覆盖包 descriptor 资源加载失败和生成绑定类型错配；
-- 旋转/分辨率矩阵和重复 add/remove；
+- 真机旋转/安全区、输入矩阵和重复 add/remove；本轮已覆盖 Unity Editor 的四组分辨率矩阵；
 - 并发多 package 或语言切换；当前仓库只有一个运行时 Package1；
 - 场景重载、域/热更重载、重复 PlayMode 后旧 PlayerLoop/ResourceManager 引用清零；
 - ET IL2CPP Player、真机安全区/输入、URP 色觉方案和性能 Profiler 基线；
