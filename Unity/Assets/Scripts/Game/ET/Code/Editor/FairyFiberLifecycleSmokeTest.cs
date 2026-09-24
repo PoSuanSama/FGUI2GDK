@@ -25,6 +25,7 @@ namespace ET
     public static class FairyFiberLifecycleSmokeTest
     {
         private const string DemoAsset = "Assets/Res/UI/FairyGUI/FairyDemoForm.json";
+        private const int OwnerLifecyclePressureRepeatCount = 100;
 
         [AgentCallable("ET owner 在 OnViewReady 完成且 GF serial 尚未分配时销毁：断言业务 OnClose 恰好一次并回到资源基线。", 120)]
         public static async UniTask RunFairyPreSerialOwnerDestroySmokeTest()
@@ -271,7 +272,8 @@ namespace ET
 
                 await WaitForFairyPackageDiagnosticsAsync(
                     originalPackageDiagnostics,
-                    originalPackageRegistered);
+                    originalPackageRegistered,
+                    compareGeneration: false);
                 if (uiManager.GetAllLoadedUIForms().Length != originalLoadedForms ||
                     uiManager.GetAllLoadingUIFormSerialIds().Length != originalLoadingForms ||
                     (GRoot.inst?.numChildren ?? 0) != originalRootChildren)
@@ -279,6 +281,94 @@ namespace ET
                     throw new InvalidOperationException(
                         "The pre-serial timing test did not restore the original FairyGUI runtime baseline.");
                 }
+            }
+        }
+
+        [AgentCallable("ET FairyGUI owner 取消/Destroy 100 次压力矩阵：覆盖 pending open、owner Dispose、Fiber Remove 与完整资源基线。", 600)]
+        public static async UniTask RunFairyOwnerLifecyclePressureSmokeTest()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException(
+                    "ET FairyGUI owner lifecycle pressure smoke test requires PlayMode.");
+            }
+
+            await ET.Client.FairyGUIBootstrap.InitializeAsync();
+
+            FairyUIManager uiManager = FairyUIManager.Instance;
+            FairyUIForm mainDemo = uiManager.GetUIForm(DemoAsset);
+            UIComponent mainOwner = null;
+            if (mainDemo?.Presenter is FairyUIPresenterAdapter mainAdapter && mainAdapter.Component != null)
+            {
+                mainOwner = mainAdapter.Component.Parent as UIComponent;
+            }
+
+            bool restoreMainDemo = mainDemo != null &&
+                mainOwner != null &&
+                !mainOwner.IsDisposed &&
+                mainOwner.OwnsFairyUIForm(mainDemo.SerialId);
+            if (mainDemo != null && !restoreMainDemo)
+            {
+                throw new InvalidOperationException(
+                    "The existing FairyGUI demo is not owned by a live ET UIComponent.");
+            }
+
+            FairyRuntimeBaseline originalBaseline = CaptureFairyRuntimeBaseline(uiManager);
+            if (restoreMainDemo)
+            {
+                int serialId = mainDemo.SerialId;
+                if (!mainOwner.CloseFairyUIForm(serialId))
+                {
+                    throw new InvalidOperationException(
+                        "Failed to close the main owner demo before the ET owner pressure matrix.");
+                }
+
+                await WaitForUIFormClosedAsync(uiManager, serialId);
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            FairyRuntimeBaseline baseline = CaptureFairyRuntimeBaseline(uiManager);
+            try
+            {
+                for (int iteration = 0; iteration < OwnerLifecyclePressureRepeatCount; iteration++)
+                {
+                    await RunPendingOwnerDestroyPressureIterationAsync(
+                        uiManager,
+                        baseline,
+                        iteration);
+                    await RunOpenedOwnerDestroyPressureIterationAsync(
+                        uiManager,
+                        baseline,
+                        iteration,
+                        removeFiber: iteration % 2 == 1);
+                }
+            }
+            finally
+            {
+                if (restoreMainDemo && mainOwner != null && !mainOwner.IsDisposed)
+                {
+                    FairyUIForm restored = await mainOwner.OpenFairyUIFormAsync(
+                        UGFUIFormId.FairyDemoForm,
+                        mainOwner);
+                    if (!mainOwner.OwnsFairyUIForm(restored.SerialId) ||
+                        !uiManager.HasUIForm(restored.SerialId))
+                    {
+                        throw new InvalidOperationException(
+                            "Failed to restore the main owner demo after the ET owner pressure matrix.");
+                    }
+                }
+
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                await WaitForFairyPackageDiagnosticsAsync(
+                    originalBaseline.PackageDiagnostics,
+                    originalBaseline.Package != null,
+                    compareGeneration: false);
+                AssertFairyRuntimeGlobalBaseline(
+                    uiManager,
+                    originalBaseline,
+                    "pressure matrix finalization",
+                    requireExactPackage: false,
+                    compareGeneration: false);
             }
         }
 
@@ -398,6 +488,393 @@ namespace ET
             }
         }
 
+        private static async UniTask RunPendingOwnerDestroyPressureIterationAsync(
+            FairyUIManager uiManager,
+            FairyRuntimeBaseline baseline,
+            int iteration)
+        {
+            int fiberId = 0;
+            Scene root = null;
+            UIComponent owner = null;
+            int rootComponentBaseline = 0;
+            FairyDemoFormComponent component = null;
+            FairyUIFormContext context = null;
+            UIMainView view = null;
+            FairyInventoryItemWidget widget = null;
+            bool canceled = false;
+
+            try
+            {
+                fiberId = await FiberManager.Instance.Create(
+                    SchedulerType.Main,
+                    0,
+                    SceneType.NetClient,
+                    $"FairyOwnerPendingPressure-{iteration}");
+                root = GetFiber(FiberManager.Instance, fiberId).Root;
+                rootComponentBaseline = root.ComponentsCount();
+                owner = root.AddComponent<UIComponent>();
+                if (owner.ChildrenCount() != 0 ||
+                    owner.GetPendingFairyUIOpenCount() != 0 ||
+                    owner.GetOwnedFairyUIFormCount() != 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Pending pressure iteration {iteration} started with a non-empty ET owner.");
+                }
+
+                try
+                {
+                    await owner.OpenFairyUIFormAfterViewReadyForTestingAsync(
+                        UGFUIFormId.FairyDemoForm,
+                        owner,
+                        candidate =>
+                        {
+                            component = candidate as FairyDemoFormComponent
+                                ?? throw new InvalidOperationException(
+                                    $"Pending pressure iteration {iteration} did not create FairyDemoFormComponent.");
+                            context = component.Context;
+                            view = component.View as UIMainView;
+                            widget = component.ItemWidget;
+                            if (context == null || view == null || widget == null)
+                            {
+                                throw new InvalidOperationException(
+                                    $"Pending pressure iteration {iteration} did not finish OnViewReady.");
+                            }
+
+                            if (context.Form != null ||
+                                context.SerialId != 0 ||
+                                component.SerialId != 0 ||
+                                owner.GetPendingFairyUIOpenCount() != 1 ||
+                                owner.GetOwnedFairyUIFormCount() != 0 ||
+                                owner.ChildrenCount() != 1 ||
+                                root.ComponentsCount() != rootComponentBaseline + 1 ||
+                                uiManager.GetAllLoadedUIForms().Length != baseline.LoadedForms ||
+                                uiManager.GetAllLoadingUIFormSerialIds().Length != baseline.LoadingForms ||
+                                UIPackage.GetByName("Package1") == null)
+                            {
+                                throw new InvalidOperationException(
+                                    $"Pending pressure iteration {iteration} did not stop at the pending ownership boundary.");
+                            }
+
+                            CancellationToken lifetimeToken = context.LifetimeToken;
+                            owner.Dispose();
+
+                            if (!lifetimeToken.IsCancellationRequested ||
+                                !owner.IsDisposed ||
+                                owner.ChildrenCount() != 0 ||
+                                owner.GetPendingFairyUIOpenCount() != 0 ||
+                                owner.GetOwnedFairyUIFormCount() != 0)
+                            {
+                                throw new InvalidOperationException(
+                                    $"Pending pressure iteration {iteration} did not synchronously cancel and detach the owner.");
+                            }
+
+                            if (!component.IsDisposed ||
+                                component.OnCloseCount != 1 ||
+                                component.OnOpenCount != 0 ||
+                                component.Context != null ||
+                                component.View != null ||
+                                component.FairyForm != null)
+                            {
+                                throw new InvalidOperationException(
+                                    $"Pending pressure iteration {iteration} did not synchronously release its ET Component.");
+                            }
+                        });
+
+                    throw new InvalidOperationException(
+                        $"Pending pressure iteration {iteration} unexpectedly completed after owner disposal.");
+                }
+                catch (OperationCanceledException)
+                {
+                    canceled = true;
+                }
+
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                await WaitForFairyPackageDiagnosticsAsync(
+                    baseline.PackageDiagnostics,
+                    baseline.Package != null);
+                AssertReleasedFairyComponent(
+                    component,
+                    context,
+                    view,
+                    widget,
+                    0,
+                    $"pending pressure iteration {iteration} completion");
+                AssertFairyRuntimeBaseline(
+                    uiManager,
+                    baseline,
+                    root,
+                    owner,
+                    rootComponentBaseline,
+                    $"pending pressure iteration {iteration}");
+
+                if (!canceled)
+                {
+                    throw new InvalidOperationException(
+                        $"Pending pressure iteration {iteration} did not finish with OperationCanceledException.");
+                }
+            }
+            finally
+            {
+                if (fiberId != 0)
+                {
+                    await FiberManager.Instance.Remove(fiberId);
+                }
+            }
+        }
+
+        private static async UniTask RunOpenedOwnerDestroyPressureIterationAsync(
+            FairyUIManager uiManager,
+            FairyRuntimeBaseline baseline,
+            int iteration,
+            bool removeFiber)
+        {
+            int fiberId = 0;
+            Scene root = null;
+            UIComponent owner = null;
+            int rootComponentBaseline = 0;
+            FairyUIForm form = null;
+            FairyDemoFormComponent component = null;
+            FairyUIFormContext context = null;
+            UIMainView view = null;
+            FairyInventoryItemWidget widget = null;
+            int serialId = 0;
+
+            try
+            {
+                fiberId = await FiberManager.Instance.Create(
+                    SchedulerType.Main,
+                    0,
+                    SceneType.NetClient,
+                    $"FairyOwnerOpenedPressure-{iteration}");
+                root = GetFiber(FiberManager.Instance, fiberId).Root;
+                rootComponentBaseline = root.ComponentsCount();
+                owner = root.AddComponent<UIComponent>();
+                form = await owner.OpenFairyUIFormAsync(UGFUIFormId.FairyDemoForm, owner);
+                serialId = form.SerialId;
+                component = form.Presenter is FairyUIPresenterAdapter adapter
+                    ? adapter.Component as FairyDemoFormComponent
+                    : null;
+                context = component?.Context;
+                view = component?.View as UIMainView;
+                widget = component?.ItemWidget;
+                if (component == null || context == null || view == null || widget == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Opened pressure iteration {iteration} did not create the complete ET FairyGUI state.");
+                }
+
+                if (!owner.OwnsFairyUIForm(serialId) ||
+                    owner.GetPendingFairyUIOpenCount() != 0 ||
+                    owner.GetOwnedFairyUIFormCount() != 1 ||
+                    owner.ChildrenCount() != 1 ||
+                    root.ComponentsCount() != rootComponentBaseline + 1 ||
+                    !uiManager.HasUIForm(serialId) ||
+                    uiManager.GetAllLoadedUIForms().Length != baseline.LoadedForms + 1 ||
+                    uiManager.IsLoadingUIForm(serialId) ||
+                    !context.IsAlive ||
+                    context.Form != form ||
+                    context.SerialId != serialId ||
+                    component.SerialId != serialId ||
+                    !widget.Opened ||
+                    widget.View == null ||
+                    UIPackage.GetByName("Package1") == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Opened pressure iteration {iteration} did not establish the expected owned state.");
+                }
+
+                if (removeFiber)
+                {
+                    await FiberManager.Instance.Remove(fiberId);
+                    fiberId = 0;
+                }
+                else
+                {
+                    owner.Dispose();
+                }
+
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                await WaitForFairyPackageDiagnosticsAsync(
+                    baseline.PackageDiagnostics,
+                    baseline.Package != null);
+                AssertReleasedFairyComponent(
+                    component,
+                    context,
+                    view,
+                    widget,
+                    1,
+                    $"opened pressure iteration {iteration} ({(removeFiber ? "Fiber Remove" : "owner Dispose")})");
+                AssertFairyRuntimeBaseline(
+                    uiManager,
+                    baseline,
+                    root,
+                    owner,
+                    rootComponentBaseline,
+                    $"opened pressure iteration {iteration} ({(removeFiber ? "Fiber Remove" : "owner Dispose")})",
+                    removeFiber);
+
+                if (uiManager.HasUIForm(serialId) || uiManager.IsLoadingUIForm(serialId))
+                {
+                    throw new InvalidOperationException(
+                        $"Opened pressure iteration {iteration} left serial {serialId} in GF loaded/loading state.");
+                }
+            }
+            finally
+            {
+                if (fiberId != 0)
+                {
+                    await FiberManager.Instance.Remove(fiberId);
+                }
+            }
+        }
+
+        private static FairyRuntimeBaseline CaptureFairyRuntimeBaseline(FairyUIManager uiManager)
+        {
+            return new FairyRuntimeBaseline(
+                uiManager.GetAllLoadedUIForms().Length,
+                uiManager.GetAllLoadingUIFormSerialIds().Length,
+                GRoot.inst?.numChildren ?? 0,
+                UIPackage.GetByName("Package1"),
+                FairyPackageManager.GetDiagnostics(),
+                FairyInventoryFlow.OpenDetailCount);
+        }
+
+        private static void AssertFairyRuntimeBaseline(
+            FairyUIManager uiManager,
+            FairyRuntimeBaseline baseline,
+            Scene root,
+            UIComponent owner,
+            int rootComponentBaseline,
+            string phase,
+            bool rootRemoved = false)
+        {
+            if (owner == null ||
+                !owner.IsDisposed ||
+                owner.GetPendingFairyUIOpenCount() != 0 ||
+                owner.GetOwnedFairyUIFormCount() != 0 ||
+                owner.ChildrenCount() != 0)
+            {
+                throw new InvalidOperationException(
+                    $"{phase} left ET owner pending/owned/child state behind.");
+            }
+
+            if (rootRemoved)
+            {
+                if (root == null || !root.IsDisposed)
+                {
+                    throw new InvalidOperationException(
+                        $"{phase} did not dispose the ET fiber root.");
+                }
+            }
+            else if (root == null || root.IsDisposed || root.ComponentsCount() != rootComponentBaseline)
+            {
+                throw new InvalidOperationException(
+                    $"{phase} changed the ET root component count from {rootComponentBaseline} to " +
+                    $"{root?.ComponentsCount() ?? -1}.");
+            }
+
+            AssertFairyRuntimeGlobalBaseline(uiManager, baseline, phase);
+        }
+
+        private static void AssertFairyRuntimeGlobalBaseline(
+            FairyUIManager uiManager,
+            FairyRuntimeBaseline baseline,
+            string phase,
+            bool requireExactPackage = true,
+            bool compareGeneration = true)
+        {
+            UIPackage currentPackage = UIPackage.GetByName("Package1");
+            bool packageMatches = requireExactPackage
+                ? ReferenceEquals(currentPackage, baseline.Package)
+                : (currentPackage != null) == (baseline.Package != null);
+            if (uiManager.GetAllLoadedUIForms().Length != baseline.LoadedForms ||
+                uiManager.GetAllLoadingUIFormSerialIds().Length != baseline.LoadingForms ||
+                (GRoot.inst?.numChildren ?? 0) != baseline.RootChildren ||
+                FairyInventoryFlow.OpenDetailCount != baseline.DetailCount ||
+                !packageMatches ||
+                !FairyPackageDiagnosticsMatch(
+                    baseline.PackageDiagnostics,
+                    FairyPackageManager.GetDiagnostics(),
+                    compareGeneration))
+            {
+                IReadOnlyList<FairyPackageDiagnostic> diagnostics = FairyPackageManager.GetDiagnostics();
+                throw new InvalidOperationException(
+                    $"{phase} did not return FairyGUI global state to baseline: " +
+                    $"loaded/loading/root/detail={uiManager.GetAllLoadedUIForms().Length}/" +
+                    $"{uiManager.GetAllLoadingUIFormSerialIds().Length}/{GRoot.inst?.numChildren ?? 0}/" +
+                    $"{FairyInventoryFlow.OpenDetailCount}, package-ref=" +
+                    $"{packageMatches}, " +
+                    $"diagnostics={diagnostics.Count}/{baseline.PackageDiagnostics.Count}.");
+            }
+        }
+
+        private static void AssertReleasedFairyComponent(
+            FairyDemoFormComponent component,
+            FairyUIFormContext context,
+            UIMainView view,
+            FairyInventoryItemWidget widget,
+            int expectedOnOpenCount,
+            string phase)
+        {
+            if (component == null ||
+                context == null ||
+                view == null ||
+                widget == null ||
+                !component.IsDisposed ||
+                component.OnCloseCount != 1 ||
+                component.OnOpenCount != expectedOnOpenCount ||
+                component.Context != null ||
+                component.View != null ||
+                component.FairyForm != null ||
+                context.IsAlive ||
+                context.Form != null ||
+                context.SerialId != 0 ||
+                !view.isDisposed ||
+                widget.Opened ||
+                widget.View != null)
+            {
+                throw new InvalidOperationException(
+                    $"{phase} did not release ET Component, Context, view, and Widget exactly once.");
+            }
+
+            try
+            {
+                _ = context.LifetimeToken;
+                throw new InvalidOperationException(
+                    $"{phase} left Context.LifetimeToken accessible after cleanup.");
+            }
+            catch (ObjectDisposedException)
+            {
+                // Expected: Context access is invalid immediately after owner/form cleanup.
+            }
+        }
+
+        private sealed class FairyRuntimeBaseline
+        {
+            internal FairyRuntimeBaseline(
+                int loadedForms,
+                int loadingForms,
+                int rootChildren,
+                UIPackage package,
+                IReadOnlyList<FairyPackageDiagnostic> packageDiagnostics,
+                int detailCount)
+            {
+                LoadedForms = loadedForms;
+                LoadingForms = loadingForms;
+                RootChildren = rootChildren;
+                Package = package;
+                PackageDiagnostics = packageDiagnostics;
+                DetailCount = detailCount;
+            }
+
+            internal int LoadedForms { get; }
+            internal int LoadingForms { get; }
+            internal int RootChildren { get; }
+            internal UIPackage Package { get; }
+            internal IReadOnlyList<FairyPackageDiagnostic> PackageDiagnostics { get; }
+            internal int DetailCount { get; }
+        }
+
         private static Fiber GetFiber(FiberManager manager, int fiberId)
         {
             // FiberManager.Get 是 internal;测试专用反射访问,与运行时流程同源。
@@ -433,11 +910,15 @@ namespace ET
 
         private static async UniTask WaitForFairyPackageDiagnosticsAsync(
             IReadOnlyList<FairyPackageDiagnostic> expected,
-            bool expectedPackageRegistered)
+            bool expectedPackageRegistered,
+            bool compareGeneration = true)
         {
             for (int frame = 0; frame < 300; frame++)
             {
-                if (FairyPackageDiagnosticsMatch(expected, FairyPackageManager.GetDiagnostics()) &&
+                if (FairyPackageDiagnosticsMatch(
+                        expected,
+                        FairyPackageManager.GetDiagnostics(),
+                        compareGeneration) &&
                     (UIPackage.GetByName("Package1") != null) == expectedPackageRegistered)
                 {
                     return;
@@ -455,7 +936,8 @@ namespace ET
 
         private static bool FairyPackageDiagnosticsMatch(
             IReadOnlyList<FairyPackageDiagnostic> expected,
-            IReadOnlyList<FairyPackageDiagnostic> actual)
+            IReadOnlyList<FairyPackageDiagnostic> actual,
+            bool compareGeneration = true)
         {
             if (expected.Count != actual.Count)
             {
@@ -468,6 +950,7 @@ namespace ET
                 FairyPackageDiagnostic actualItem = actual[i];
                 if (!string.Equals(expectedItem.Name, actualItem.Name, StringComparison.Ordinal) ||
                     expectedItem.Status != actualItem.Status ||
+                    (compareGeneration && expectedItem.Generation != actualItem.Generation) ||
                     expectedItem.ReferenceCount != actualItem.ReferenceCount ||
                     expectedItem.LoadedAssetCount != actualItem.LoadedAssetCount ||
                     !string.Equals(expectedItem.LastError, actualItem.LastError, StringComparison.Ordinal))

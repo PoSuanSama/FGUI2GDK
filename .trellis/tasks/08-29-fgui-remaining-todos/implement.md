@@ -16,6 +16,7 @@
 - [x] 为 Context 增加 lifetime token 和 cleared guard，并将现有 Presenter 异步调用迁移到 owner-scoped cancellation。
 - [x] 为 OnViewReady、OnOpen、资源失败、取消和 owner 销毁增加基础回归测试。
 - [x] 将 GameHot OnViewReady、OnOpen、绑定准备失败和关闭后 Context 失效提升为逐类 100 次压力回归。
+- [x] 将 ET pending open owner 取消与成功打开后的 owner Dispose/Fiber Remove 提升为逐类 100 次压力矩阵，并逐次核对 Entity、GF、GRoot、Context、Widget 和 package 基线。
 - [x] 增加 OnViewReady 完成、GF serial 尚未分配时 owner 销毁的精确时序测试，并断言业务 OnClose 恰好一次。
 
 风险点：本阶段跨越 GF 回调、FairyGUI 对象和 ET Entity。不能修改 vendor GF core，应在 FairyUIManager/Adapter 边界完成适配。
@@ -55,6 +56,7 @@
 GameHot OnViewReady、OnOpen、绑定准备失败与关闭后 Context 失效的逐类 100 次回归；
 四组 Unity Editor Game View 分辨率矩阵，以及 ET owner Destroy/Fiber Remove 生命周期回归；
 ET serial 分配前 owner Destroy 的精确时序、取消顺序和完整资源基线回归；
+ET pending owner 取消与成功打开后 owner Dispose/Fiber Remove 的逐类 100 次压力矩阵；
 未覆盖项仍按证据边界保持未勾选。
 
 最低确定性检查：

@@ -141,11 +141,43 @@ pending、RuntimeInspector 完整业务 OnClose、六类失败统一 100 次矩�
 资源 descriptor 失败与生成绑定类型错配的 100 次证据见前文。owner cancel/Destroy 的 ET child
 entity 统一 100 次矩阵仍未完成。
 
+## 2026-09-24 ET owner 取消与销毁压力矩阵
+
+在 `HEAD=60374b1a` 的独立测试切片上，新增 Editor-only
+`ET.FairyFiberLifecycleSmokeTest::RunFairyOwnerLifecyclePressureSmokeTest`，未修改生产运行时 API：
+
+- 双符号 `UNITY_ET + UNITY_GAMEHOT` 的最终 Unity 编译 generation `27` 为 `0 error / 0 warning`；
+  恢复默认符号后的 generation `28` 同样为 `0 error / 0 warning`，`ProjectSettings` 无差异。
+- 在 `Assets/FairyGUIDemoET.unity` 的稳定 PlayMode 会话中清空启动日志后，该 AgentCallable
+  连续两次完整运行均返回 `status=ok`；最终证据轮覆盖 100 次 pending open owner Dispose，及
+  100 次成功打开后的销毁，其中 owner Dispose 与真实 `FiberManager.Remove` 各 50 次。
+- pending 路径逐次停在业务 `OnViewReady` 完成、GF serial 尚未分配的边界，断言 owner
+  `pending=1 / owned=0 / child=1`，随后同步取消 lifetime、执行一次业务 `OnClose`，最终以
+  `OperationCanceledException` 结束。
+- 成功打开路径逐次断言 owner `pending=0 / owned=1 / child=1`、GF serial、Context、View 与
+  Widget 完整建立；销毁后逐次确认 Component 已 disposed、`OnCloseCount=1`、Context API 失效、
+  View disposed、Widget 回收，owner/fiber 与 GF loaded/loading 状态回到基线。
+- 每次迭代都比较 GRoot child、`FairyInventoryFlow.OpenDetailCount`、Package1 精确 `UIPackage`
+  实例，以及 package diagnostics 的 Name/Status/**Generation**/引用数/资源数/错误字段。
+  测试为复用单实例 Demo 会主动关闭再恢复入口窗体，因此最终恢复原业务状态时允许这一次有意的
+  package 卸载/重载，只要求注册状态、引用/资源计数和其他诊断字段恢复；迭代内部仍执行精确实例
+  与 generation 门禁。
+- 稳定证据轮后的 `type=error, query=Fairy` 为 `matched=0`。全量 Error 查询只命中仓库既有的
+  `ET.Server.RouterComponentSystem.Update` 空引用（本机 Router 端口已被其他 Unity/ET 进程占用），
+  不在本 FairyGUI 切片调用栈中。
+- `Test-FairyGUITools.ps1` 为 `success=true, assertions=157`；GDK project、descriptor、manifest、
+  localization 与 binder registry 五项只读校验全部通过，binder `changed=false`；任务上下文、
+  变更守卫和 `git diff --check` 通过。
+
+这条证据补齐 ET owner cancel/Destroy 的逐类 100 次 child entity 与资源基线覆盖。GameHot 的
+OnViewReady、OnOpen、绑定和资源失败压力测试仍不直接创建 ET child，因此尚不构成六类失败在
+同一个 ET 矩阵中的统一覆盖。
+
 ## 证据边界
 
 本轮结果不能证明以下验收项：
 
-- 六类失败统一执行 100 次后的 ET child entity 基线；GameHot OnViewReady、OnOpen、绑定准备失败、Context 关闭失效，以及包 descriptor 资源失败、生成绑定类型错配均已有逐类 100 次证据，ET owner cancel/Destroy 仍只有聚焦生命周期证据；
+- 六类失败统一执行 100 次后的 ET child entity 基线；GameHot OnViewReady、OnOpen、绑定准备失败、Context 关闭失效，以及包 descriptor 资源失败、生成绑定类型错配均已有逐类 100 次证据；ET owner cancel/Destroy 也已有逐类 100 次 child/entity 与资源基线，但前四类尚未在 ET Component 路径复跑；
 - 真机旋转/安全区、输入矩阵和重复 add/remove；本轮已覆盖 Unity Editor 的四组分辨率矩阵；
 - 并发多 package 或语言切换；当前仓库只有一个运行时 Package1；
 - 场景重载、域/热更重载、重复 PlayMode 后旧 PlayerLoop/ResourceManager 引用清零；
