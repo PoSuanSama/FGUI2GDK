@@ -133,6 +133,8 @@ Calling `FairyUIFormService` from ET business code without recording ownership o
   runtime-only (`BsonIgnore` + `MemoryPackIgnore`).
 - HotfixView `UIComponentSystem.OpenFairyUIFormAsync(UIComponent, int, object)` returns the opened form and transfers
   its per-open CTS from pending-operation ownership to GF serial ownership.
+- Editor-only `OpenFairyUIFormAfterViewReadyForTestingAsync(UIComponent, int, object, Action<FairyUIFormComponent>)`
+  injects one callback into one open after business `OnViewReady` dispatch and before GF requests a serial.
 - `CloseFairyUIForm(UIComponent, int)` and `RefocusFairyUIForm(UIComponent, int, object)` act only on serial IDs owned
   by that component.
 - `UIComponentFairyUIBridge` is the ModelView-callable delegate contract injected by HotfixView `Awake`; a missing
@@ -155,6 +157,9 @@ Calling `FairyUIFormService` from ET business code without recording ownership o
   It must also run cleanup after `OnViewReady` when
   GF has not reached `OnInit` and no serial exists yet. The later `UIComponent.Destroy` cancels pending opens and
   closes/cancels captured owned serials as the CTS/serial fallback. Never close by asset name.
+- A deterministic timing probe must keep its hook on the per-open Presenter Adapter instance, compile the public
+  test entry and callback storage only under `UNITY_EDITOR`, and invoke it synchronously on the Unity main thread.
+  Do not use a static hook: concurrent opens and domain reload would leak test state into unrelated transactions.
 - ModelView may retain presenter state, but Hotfix/HotfixView assemblies reject every property and non-const field via
   `ET0004`. Do not move a stateful `IFairyUIPresenter` class wholesale into HotfixView or suppress the analyzer.
   A future full Presenter split must introduce an explicit state/logic adapter or Entity/System dispatcher.
@@ -167,13 +172,17 @@ Calling `FairyUIFormService` from ET business code without recording ownership o
 - Duplicate close of one serial -> first call closes, later calls are no-ops; sibling same-asset serials remain.
 - Missing bridge injection -> stable `InvalidOperationException`, not a null reference.
 - Stateful Presenter moved to HotfixView -> `ET0004`; restore the state boundary or implement an approved adapter.
+- Static or Player-visible timing hook -> reject it; use the Editor-only per-open adapter callback and assert it
+  fires exactly once before any serial or owned-form entry exists.
 
 ### 5. Good / Base / Bad Cases
 
 - Good: three same-asset detail forms are tracked by three serial entries and can be closed independently.
+- Good: an Editor timing callback belongs to one adapter/open and is absent from Player-facing entry points.
 - Base: owner Destroy closes Demo/Inventory/Detail/Overlay and a replacement owner starts from a clean baseline.
 - Bad: Entry opens through the global service and adds `UIComponent` afterwards.
 - Bad: ModelView code references HotfixView extension methods directly; the assembly dependency is one-way.
+- Bad: a global static callback pauses whichever open happens next and survives beyond the intended regression.
 
 ## Current FairyGUI transaction invariant
 

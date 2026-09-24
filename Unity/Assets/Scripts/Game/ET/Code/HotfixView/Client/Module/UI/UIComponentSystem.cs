@@ -61,10 +61,39 @@ namespace ET.Client
             }
         }
 
-        public static async UniTask<FairyUIForm> OpenFairyUIFormAsync(
+        public static UniTask<FairyUIForm> OpenFairyUIFormAsync(
             this UIComponent self,
             int uiId,
             object userData = null)
+        {
+            return OpenFairyUIFormCoreAsync(self, uiId, userData, null);
+        }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor 生命周期回归专用入口。钩子在业务 OnViewReady 完成后、GF serial 分配前
+        /// 同步执行,且仅绑定本次打开,用于稳定验证 owner 销毁竞态。
+        /// </summary>
+        public static UniTask<FairyUIForm> OpenFairyUIFormAfterViewReadyForTestingAsync(
+            this UIComponent self,
+            int uiId,
+            object userData,
+            Action<FairyUIFormComponent> afterViewReadyForTesting)
+        {
+            if (afterViewReadyForTesting == null)
+            {
+                throw new ArgumentNullException(nameof(afterViewReadyForTesting));
+            }
+
+            return OpenFairyUIFormCoreAsync(self, uiId, userData, afterViewReadyForTesting);
+        }
+#endif
+
+        private static async UniTask<FairyUIForm> OpenFairyUIFormCoreAsync(
+            UIComponent self,
+            int uiId,
+            object userData,
+            Action<FairyUIFormComponent> afterViewReadyForTesting)
         {
             if (self == null || self.IsDisposed)
             {
@@ -81,7 +110,7 @@ namespace ET.Client
             bool ownershipTransferred = false;
             FairyUIFormService.PresenterFactory presenterFactory =
                 new FairyUIFormService.PresenterFactory(
-                    () => CreateComponentPresenter(self, ownerRef, uiId),
+                    () => CreateComponentPresenter(self, ownerRef, uiId, afterViewReadyForTesting),
                     presenter => (presenter as FairyUIPresenterAdapter)?.Component.Dispose());
             try
             {
@@ -225,7 +254,8 @@ namespace ET.Client
         private static IFairyUIPresenter CreateComponentPresenter(
             UIComponent self,
             EntityRef<UIComponent> ownerRef,
-            int uiId)
+            int uiId,
+            Action<FairyUIFormComponent> afterViewReadyForTesting)
         {
             // 未命中 Component/System 注册表时回退到类 Presenter 注册表(返回 null)。
             if (!FairyUIFormComponentRegistry.TryGet(uiId, out Func<UIComponent, FairyUIFormComponent> factory))
@@ -241,6 +271,12 @@ namespace ET.Client
             }
 
             FairyUIFormComponent component = factory(currentOwner);
+#if UNITY_EDITOR
+            if (afterViewReadyForTesting != null)
+            {
+                return new FairyUIPresenterAdapter(component, afterViewReadyForTesting);
+            }
+#endif
             return new FairyUIPresenterAdapter(component);
         }
 

@@ -10,18 +10,36 @@ namespace ET.Client
     /// <see cref="FairyUIFormSystemDispatcher"/> 派发到 HotfixView 的 Entity System。
     ///
     /// 与原 AETMonoUGFUIForm -> UGFSystemSingleton 的转发同构(8b39d6cc 删除前)。
-    /// ET 打开流程负责创建 Component 并以本适配器作为 Presenter 交给 FairyUIManager;
-    /// 界面关闭后 Component 仍由 UIComponent 持有,可复用或随 owner 销毁。
+    /// ET 打开流程负责创建 per-open Component 并以本适配器作为 Presenter 交给 FairyUIManager;
+    /// 正常关闭时销毁 Component,owner 销毁则由 child Destroy System 提前回滚业务清理。
     /// </summary>
     [global::ET.EnableClass]
     public sealed class FairyUIPresenterAdapter : IFairyUIPresenter
     {
         private readonly FairyUIFormComponent m_Component;
+#if UNITY_EDITOR
+        private readonly Action<FairyUIFormComponent> m_AfterViewReadyForTesting;
+#endif
 
         public FairyUIPresenterAdapter(FairyUIFormComponent component)
         {
             m_Component = component ?? throw new ArgumentNullException(nameof(component));
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor 回归测试专用的单次打开钩子。回调发生在业务 OnViewReady 完成后、
+        /// FairyUIManager 向 GF 请求 serial 前,且只随当前 Adapter 实例存活。
+        /// </summary>
+        public FairyUIPresenterAdapter(
+            FairyUIFormComponent component,
+            Action<FairyUIFormComponent> afterViewReadyForTesting)
+            : this(component)
+        {
+            m_AfterViewReadyForTesting = afterViewReadyForTesting
+                ?? throw new ArgumentNullException(nameof(afterViewReadyForTesting));
+        }
+#endif
 
         public FairyUIFormComponent Component => m_Component;
 
@@ -30,6 +48,9 @@ namespace ET.Client
             m_Component.Context = context;
             m_Component.View = context?.View;
             FairyUIFormSystemDispatcher.FairyUIFormOnViewReady(m_Component);
+#if UNITY_EDITOR
+            m_AfterViewReadyForTesting?.Invoke(m_Component);
+#endif
         }
 
         public void OnOpen(object userData)

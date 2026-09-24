@@ -92,17 +92,42 @@
 
 Skeleton self-check 证明当前五种已注册 ET Fairy form Component 都有精确类型 Destroy System；运行时
 owner Destroy 实际覆盖 Demo、ItemDetail 和 Fiber Demo，Inventory 流程另覆盖 pending/owned serial
-清理。Overlay pending 和 RuntimeInspector 的完整业务 OnClose 尚未分别验证。本轮也没有用同步闩锁
-锁定 OnViewReady 完成、GF serial 尚未分配的窗口并断言业务 OnClose 恰好一次。
+清理。Overlay pending 和 RuntimeInspector 的完整业务 OnClose 尚未分别验证。该提交当时尚未锁定
+OnViewReady 完成、GF serial 尚未分配的窗口；后续精确时序证据见下一节。
 
 这条证据不等同于 ET IL2CPP Player、100 次 ET child entity 计数矩阵或任意未来新 Component 的自动覆盖。
+
+## 2026-09-24 ET serial 分配前 owner Destroy 精确竞态
+
+在 `HEAD=df19728f` 的未提交测试切片上，通过实例级、仅 Editor 编译的单次打开钩子，稳定停在
+业务 `OnViewReady` 派发完成且 GF 尚未分配 serial 的窗口：
+
+- 最终双符号 Unity 编译 generation `15`：`errorCount=0`、`warningCount=0`；运行时发现的新方法
+  `ET.FairyFiberLifecycleSmokeTest::RunFairyPreSerialOwnerDestroySmokeTest` 返回 `status=ok`。
+- 钩子在 Unity 主线程同步执行；当时 Context/Form/Component serial 均为 `0`，owner 状态为
+  `pending=1`、`owned=0`、`child=1`，业务按钮订阅和 Widget 已完成，而 `OnOpenCount=0`。
+- 同步销毁 owner 后，Context lifetime 回调执行一次并观察到 `OnCloseCount=0`，随后业务
+  `OnClose` 恰好执行一次；订阅、Widget 和 child 立即清理，打开任务最终以
+  `OperationCanceledException` 结束。
+- 回滚后 Component、Context、view、Widget、ET root component、GF loaded/loading、GRoot child、
+  package diagnostics 和 `UIPackage.GetByName("Package1")` 的精确注册实例均回到测试基线；测试
+  `finally` 恢复进入前的主 Demo 与运行时计数。
+- 同一独占 Bridge 会话中，`ET.FairyInventorySmokeTest::RunFairyInventorySmokeTest` 和
+  `ET.FairyFiberLifecycleSmokeTest::RunFairyFiberLifecycleSmokeTest` 均返回 `status=ok`；PlayMode
+  的 `type=error, query=Fairy` 为 `matched=0`。全量错误仍命中已有 ET Server 端口占用/Router
+  连带错误，不属于本 FairyGUI 切片。
+- 退出 PlayMode 并清理上述既有日志后，`ET.FairyUIFormSkeletonSelfCheck::RunFairyUIFormSkeletonSelfCheck`
+  返回 `status=ok`，Fairy 与全量 Error 查询均为 `matched=0`。
+- 最后恢复默认符号，Unity 编译 generation `16` 为 0 error / 0 warning；`ProjectSettings` 无差异。
+
+这条证据关闭了 OnViewReady 后、GF serial 前 owner Destroy 的精确竞态缺口；仍不等同于 Overlay
+pending、RuntimeInspector 完整业务 OnClose、六类失败统一 100 次矩阵或 ET IL2CPP Player 证据。
 
 ## 证据边界
 
 本轮结果不能证明以下验收项：
 
 - 六类失败统一执行 100 次后的资源/ET child entity 基线；本轮已分别覆盖包 descriptor 资源加载失败、生成绑定类型错配，以及单轮 ET owner Destroy/Fiber Remove；
-- OnViewReady 完成、GF serial 尚未分配时 owner Destroy 的精确竞态与业务 OnClose 恰好一次；
 - 真机旋转/安全区、输入矩阵和重复 add/remove；本轮已覆盖 Unity Editor 的四组分辨率矩阵；
 - 并发多 package 或语言切换；当前仓库只有一个运行时 Package1；
 - 场景重载、域/热更重载、重复 PlayMode 后旧 PlayerLoop/ResourceManager 引用清零；
