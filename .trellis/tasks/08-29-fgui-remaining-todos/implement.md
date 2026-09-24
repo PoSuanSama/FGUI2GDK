@@ -35,6 +35,7 @@
 - [x] 校验 descriptor 的 package/component/dependency 身份与 catalog、生成契约一致。
 - [x] 通过 ResourceComponent 校验允许的资源根目录，并在包 descriptor、外部 TextAsset 和本地化 XML 应用前验证 manifest SHA-256。
 - [x] 为 PlayerLoop、事件桥、声音钩子、package registry、Stage 和组辅助器增加明确的 FairyGUI Shutdown/重载处理。
+- [x] 让 FairyInputService 的每次初始化使用独立 PlayerLoop registration；Shutdown 后同帧重初始化时旧 registration 只退场一次，不会复用新会话状态重复轮询。
 - [x] 让 HotEntry 和 ET Runner 从已有生命周期钩子调用 Shutdown。
 - [ ] 增加重复初始化、场景重载、域/热更重载和 hash 不匹配测试。
 
@@ -57,6 +58,7 @@ GameHot OnViewReady、OnOpen、绑定准备失败与关闭后 Context 失效的�
 四组 Unity Editor Game View 分辨率矩阵，以及 ET owner Destroy/Fiber Remove 生命周期回归；
 ET serial 分配前 owner Destroy 的精确时序、取消顺序和完整资源基线回归；
 ET pending owner 取消与成功打开后 owner Dispose/Fiber Remove 的逐类 100 次压力矩阵；
+FairyInputService Shutdown 后同帧重初始化、重复 Initialize 幂等和 PlayerLoop 单次轮询回归；
 未覆盖项仍按证据边界保持未勾选。
 
 最低确定性检查：

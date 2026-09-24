@@ -173,6 +173,29 @@ entity 统一 100 次矩阵仍未完成。
 OnViewReady、OnOpen、绑定和资源失败压力测试仍不直接创建 ET child，因此尚不构成六类失败在
 同一个 ET 矩阵中的统一覆盖。
 
+## 2026-09-24 FairyInputService 同帧重初始化
+
+在 `HEAD=8eeb5129` 的独立运行时切片上，修复 UniTask PlayerLoop item 必须等下一次
+`MoveNext=false` 才移除时，`Shutdown()` 后同帧 `Initialize()` 会让旧条目借用新
+`m_Initialized=true` 状态继续轮询的问题：
+
+- 每次 Initialize 现在创建独立 `PlayerLoopRegistration`；Shutdown 立即失活并摘除当前
+  registration。旧条目即使下一帧才被 runner 调度，也只能返回 `false`，不会读取新会话状态。
+- 重复 Initialize 保持幂等；`PlayerLoopHelper.AddAction` 抛错时会回滚 registration 和初始化状态。
+  代次与 poll 计数仅在 `UNITY_EDITOR` 下提供给聚焦回归，不进入 Player 运行时接口。
+- Unity 默认符号编译 generation `30`：`errorCount=0`、`warningCount=0`。
+- 在 `Assets/FairyGUIDemo.unity` 稳定 PlayMode 中清理 24 条启动日志后，运行时重新发现的
+  `Game.Editor.FairyInputLifecycleAgent::ValidateImmediateShutdownReinitialize` 返回 `status=ok`。
+- 探针在同一帧执行 Shutdown→Initialize，确认 registration generation 恰好增加一次；再次
+  Initialize 不改变 generation。排空旧条目后，连续三个完整 Update 各只增加一次 poll；再次
+  Shutdown 后等待三个完整帧，poll 计数保持不变，并在 finally 恢复进入测试前的初始化状态。
+- 探针后与停止 PlayMode 后的全量 `type=error` 查询均为 `matched=0`。
+- `Test-FairyGUITools.ps1` 为 `success=true, assertions=157`；GDK project、descriptor、manifest、
+  localization、binder registry 只读校验、任务上下文、变更守卫和 `git diff --check` 均通过。
+
+这条证据关闭了同一运行时会话内输入 PlayerLoop 重复注册的确定性缺口；跨场景、domain reload、
+禁用 domain reload 的重复 PlayMode，以及旧 ResourceManager/Stage/静态委托清零仍需独立矩阵。
+
 ## 证据边界
 
 本轮结果不能证明以下验收项：

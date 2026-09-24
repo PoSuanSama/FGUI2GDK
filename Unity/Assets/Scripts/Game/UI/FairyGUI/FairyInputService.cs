@@ -22,9 +22,53 @@ namespace Game
     /// </summary>
     public sealed class FairyInputService : IPlayerLoopItem
     {
+        // UniTask removes an item only after MoveNext returns false. A per-initialize token
+        // lets a stopped item retire even when the service is initialized again first.
+        private sealed class PlayerLoopRegistration : IPlayerLoopItem
+        {
+            private readonly FairyInputService m_Owner;
+            private bool m_Active;
+
+            internal PlayerLoopRegistration(FairyInputService owner, long generation)
+            {
+                m_Owner = owner;
+                Generation = generation;
+                m_Active = true;
+            }
+
+            internal long Generation { get; }
+
+            internal void Deactivate()
+            {
+                m_Active = false;
+            }
+
+            public bool MoveNext()
+            {
+                if (!m_Active)
+                {
+                    return false;
+                }
+
+                m_Active = m_Owner.MoveNext(this);
+                return m_Active;
+            }
+        }
+
         public static FairyInputService Instance { get; } = new FairyInputService();
 
         private bool m_Initialized;
+        private long m_NextRegistrationGeneration;
+        private PlayerLoopRegistration m_PlayerLoopRegistration;
+
+#if UNITY_EDITOR
+        private int m_DiagnosticPollCount;
+
+        internal bool IsInitializedForDiagnostics => m_Initialized;
+        internal long ActiveRegistrationGenerationForDiagnostics =>
+            m_PlayerLoopRegistration?.Generation ?? 0;
+        internal int PollCountForDiagnostics => m_DiagnosticPollCount;
+#endif
 
         /// <summary>
         /// 安装每帧轮询(bootstrap 在 FairyUIManager.Initialize 后调用一次)。
@@ -36,25 +80,62 @@ namespace Game
                 return;
             }
 
+            PlayerLoopRegistration registration = new PlayerLoopRegistration(
+                this,
+                ++m_NextRegistrationGeneration);
+            m_PlayerLoopRegistration = registration;
             m_Initialized = true;
-            PlayerLoopHelper.AddAction(PlayerLoopTiming.Update, this);
+            try
+            {
+                PlayerLoopHelper.AddAction(PlayerLoopTiming.Update, registration);
+            }
+            catch
+            {
+                registration.Deactivate();
+                if (ReferenceEquals(m_PlayerLoopRegistration, registration))
+                {
+                    m_PlayerLoopRegistration = null;
+                    m_Initialized = false;
+                }
+
+                throw;
+            }
         }
 
         public void Shutdown()
         {
             m_Initialized = false;
+            PlayerLoopRegistration registration = m_PlayerLoopRegistration;
+            m_PlayerLoopRegistration = null;
+            registration?.Deactivate();
         }
 
         public bool MoveNext()
         {
-            if (!m_Initialized)
+            PlayerLoopRegistration registration = m_PlayerLoopRegistration;
+            return registration != null && MoveNext(registration);
+        }
+
+        private bool MoveNext(PlayerLoopRegistration registration)
+        {
+            if (!m_Initialized || !ReferenceEquals(m_PlayerLoopRegistration, registration))
             {
                 return false;
             }
 
+#if UNITY_EDITOR
+            ++m_DiagnosticPollCount;
+#endif
             PollDevices();
-            return true;
+            return m_Initialized && ReferenceEquals(m_PlayerLoopRegistration, registration);
         }
+
+#if UNITY_EDITOR
+        internal void ResetDiagnostics()
+        {
+            m_DiagnosticPollCount = 0;
+        }
+#endif
 
         private void PollDevices()
         {
