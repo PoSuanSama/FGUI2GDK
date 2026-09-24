@@ -62,6 +62,16 @@ namespace Game
         private static long s_NextGeneration;
         private static long s_CatalogGeneration;
 
+#if UNITY_EDITOR
+        // Editor-only failure seam used by AgentCallable lifecycle probes. Player builds
+        // always use ResourceComponent directly and therefore have no test override state.
+        internal static Func<
+            ResourceComponent,
+            string,
+            CancellationToken,
+            UniTask<TextAsset>> DescriptorLoaderOverride;
+#endif
+
         internal static async UniTask<FairyPackageLease> AcquireAsync(
             string packageName,
             CancellationToken cancellationToken = default)
@@ -319,29 +329,41 @@ namespace Game
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            UniTask<UIPackage> loadingTask = default;
+            bool waitForLoad = false;
             if (!s_States.TryGetValue(packageName, out PackageState state))
             {
                 state = new PackageState(packageName, ++s_NextGeneration);
                 s_States.Add(packageName, state);
                 state.ReferenceCount++;
+                // Capture the completion task before starting the producer. A descriptor
+                // failure can complete synchronously and clear state.Loading before the
+                // caller reaches the await below; retaining this task preserves the root
+                // exception instead of degrading it to a generic "not Ready" error.
+                loadingTask = state.Loading.Task;
+                waitForLoad = true;
                 LoadPackageAsync(state).Forget();
             }
             else
             {
                 state.ReferenceCount++;
+                if (state.Status == FairyPackageStatus.Loading)
+                {
+                    loadingTask = state.Loading.Task;
+                    waitForLoad = true;
+                }
             }
             try
             {
-                if (state.Status == FairyPackageStatus.Loading)
+                if (waitForLoad)
                 {
-                    UniTask<UIPackage> task = state.Loading.Task;
                     if (cancellationToken.CanBeCanceled)
                     {
-                        await task.AttachCancellation(cancellationToken);
+                        await loadingTask.AttachCancellation(cancellationToken);
                     }
                     else
                     {
-                        await task;
+                        await loadingTask;
                     }
                 }
 
@@ -375,9 +397,23 @@ namespace Game
                     throw new GameFrameworkException("FairyGUI resource component is unavailable.");
                 }
 
-                TextAsset descriptor = await state.ResourceComponent.LoadAssetAsync<TextAsset>(
+                TextAsset descriptor;
+#if UNITY_EDITOR
+                Func<ResourceComponent, string, CancellationToken, UniTask<TextAsset>> descriptorLoader =
+                    DescriptorLoaderOverride;
+                descriptor = descriptorLoader != null
+                    ? await descriptorLoader(
+                        state.ResourceComponent,
+                        descriptorPath,
+                        state.LoadCancellation.Token)
+                    : await state.ResourceComponent.LoadAssetAsync<TextAsset>(
+                        descriptorPath,
+                        cancellationToken: state.LoadCancellation.Token);
+#else
+                descriptor = await state.ResourceComponent.LoadAssetAsync<TextAsset>(
                     descriptorPath,
                     cancellationToken: state.LoadCancellation.Token);
+#endif
                 state.Descriptor = descriptor;
                 if (descriptor == null)
                 {

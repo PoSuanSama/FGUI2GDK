@@ -578,6 +578,101 @@ namespace Game.Editor
                 "closed Context validation");
         }
 
+        [AgentCallable("Validate FairyGUI descriptor resource-load failure cleanup across 100 retries.", 300)]
+        public static async UniTask ValidateFairyUIResourceFailureCleanup()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException("FairyGUI resource failure validation requires PlayMode.");
+            }
+
+            FairyUIManager uiManager = FairyUIManager.Instance;
+            uiManager.Initialize();
+            for (int frame = 0;
+                 frame < 120 &&
+                 (FairyUIPresenterRegistry.PreparePackage == null || !uiManager.HasUIGroup("Default"));
+                 frame++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            if (FairyUIPresenterRegistry.PreparePackage == null || !uiManager.HasUIGroup("Default"))
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI package binding and the Default UI group must be initialized before resource failure validation.");
+            }
+
+            uiManager.CloseAllLoadedUIForms();
+            uiManager.CloseAllLoadingUIForms();
+            for (int frame = 0;
+                 frame < 300 &&
+                 (uiManager.GetAllLoadedUIForms().Length != 0 ||
+                  uiManager.GetAllLoadingUIFormSerialIds().Length != 0 ||
+                  FairyPackageManager.GetDiagnostics().Count != 0);
+                 frame++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            int baselineLoadedForms = uiManager.GetAllLoadedUIForms().Length;
+            int baselineLoadingForms = uiManager.GetAllLoadingUIFormSerialIds().Length;
+            IReadOnlyList<FairyPackageDiagnostic> baselineDiagnostics = FairyPackageManager.GetDiagnostics();
+            int baselineRootChildren = GRoot.inst.numChildren;
+            bool baselinePackageRegistered = UIPackage.GetByName("Package1") != null;
+            if (baselineLoadedForms != 0 || baselineLoadingForms != 0 || baselineDiagnostics.Count != 0 ||
+                baselinePackageRegistered)
+            {
+                throw new InvalidOperationException(
+                    "FairyGUI resource failure validation could not establish an unloaded baseline.");
+            }
+
+            Func<ResourceComponent, string, CancellationToken, UniTask<TextAsset>> originalLoader =
+                FairyPackageManager.DescriptorLoaderOverride;
+            try
+            {
+                FairyPackageManager.Shutdown();
+                FairyPackageManager.DescriptorLoaderOverride = (resource, path, cancellationToken) =>
+                    UniTask.FromException<TextAsset>(
+                        new GameFrameworkException(
+                            $"FairyGUI resource failure probe rejected descriptor '{path}'."));
+
+                for (int attempt = 0; attempt < 100; attempt++)
+                {
+                    bool observedFailure = false;
+                    try
+                    {
+                        await FairyUIFormService.OpenFairyUIFormAsync(
+                            FairyDemoUIId,
+                            new object());
+                    }
+                    catch (Exception exception) when (exception.ToString().Contains("resource failure probe"))
+                    {
+                        observedFailure = true;
+                    }
+
+                    if (!observedFailure)
+                    {
+                        throw new InvalidOperationException(
+                            $"FairyGUI descriptor resource failure was not observable on attempt {attempt}.");
+                    }
+
+                    await AssertFairyUIOpenFailureBaseline(
+                        uiManager,
+                        baselineLoadedForms,
+                        baselineLoadingForms,
+                        baselineDiagnostics,
+                        baselineRootChildren,
+                        baselinePackageRegistered,
+                        $"descriptor resource failure attempt {attempt}");
+                }
+            }
+            finally
+            {
+                FairyPackageManager.DescriptorLoaderOverride = originalLoader;
+                FairyPackageManager.Shutdown();
+            }
+        }
+
         private static async UniTask AssertFairyUIOpenFailure(
             FairyUIManager uiManager,
             string failureName,

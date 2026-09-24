@@ -24,11 +24,23 @@
 
 上述五个方法均返回 `status=ok`。停止 PlayMode 后再次检查 Unity Console，`type=error` 查询结果为 `matched=0`。
 
+## 2026-09-24 资源失败回归切片
+
+在同一 Unity/Bridge 环境中对本轮资源失败切片重新编译并验证：
+
+- 编译 generation `76`：`errorCount=0`、`warningCount=0`。
+- 先重启 `Assets/FairyGUIDemo.unity` PlayMode，使 domain reload 后的 FairyGUI 引导重新完成。
+- `Game.Editor.FairyGUIDemoAgent::ValidateFairyUIResourceFailureCleanup` 返回 `status=ok`。
+- 该方法在包 descriptor 资源加载点注入 Editor-only 失败 seam，连续打开 `FairyDemoUIId` 100 次；每次均观察到原始资源失败异常，并核对 loaded/loading UI、package diagnostics、GRoot child 数和 Package1 注册状态回到未加载基线。
+- 验证结束后恢复 loader override 并执行 `FairyPackageManager.Shutdown()`；Unity Console `type=error` 查询为 `matched=0`。
+
+这条证据覆盖 **FairyGUI 包 descriptor 资源加载失败**，不等同于 UI descriptor 缺失、外部纹理失败或 binding type mismatch。
+
 ## 证据边界
 
 本轮结果不能证明以下验收项：
 
-- 资源加载失败、真实生成绑定类型不匹配、以及六类失败统一执行 100 次后的资源/ET child entity 基线；
+- 真实生成绑定类型不匹配，以及六类失败统一执行 100 次后的资源/ET child entity 基线；本轮已单独覆盖包 descriptor 资源加载失败；
 - 旋转/分辨率矩阵和重复 add/remove；
 - 并发多 package 或语言切换；当前仓库只有一个运行时 Package1；
 - 场景重载、域/热更重载、重复 PlayMode 后旧 PlayerLoop/ResourceManager 引用清零；
