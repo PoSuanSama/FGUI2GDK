@@ -183,6 +183,45 @@ namespace ET.Client
             return self?.PendingFairyUIOpens?.Count ?? 0;
         }
 
+        internal static void CloseFairyUIFormBeforeComponentDestroy<T>(
+            T component,
+            Action<T> closeComponent)
+            where T : FairyUIFormComponent
+        {
+            if (component == null)
+            {
+                return;
+            }
+
+            FairyUIFormContext context = component.Context;
+            bool viewReady = context != null;
+            FairyUIForm form = component.FairyForm ?? context?.Form;
+            Exception firstException = null;
+            // ET 已先把 child 标记为 disposed，通用 dispatcher 会跳过；这里直接回滚
+            // OnViewReady 已建立的订阅，即使 GF 尚未分配 form serial。
+            TryCleanup(() => context?.CancelLifetime(), ref firstException);
+            if (viewReady)
+            {
+                TryCleanup(() => closeComponent(component), ref firstException);
+            }
+
+            component.FairyForm = null;
+            component.Context = null;
+            component.View = null;
+            component.UserData = null;
+            component.IsShutdown = false;
+
+            if (form != null)
+            {
+                TryCleanup(() => CloseBySerialId(form.SerialId), ref firstException);
+            }
+
+            if (firstException != null)
+            {
+                throw firstException;
+            }
+        }
+
         private static IFairyUIPresenter CreateComponentPresenter(
             UIComponent self,
             EntityRef<UIComponent> ownerRef,

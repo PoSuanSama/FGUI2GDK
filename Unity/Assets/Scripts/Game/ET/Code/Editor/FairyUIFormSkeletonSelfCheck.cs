@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using AgentBridge;
 using Cysharp.Threading.Tasks;
@@ -55,6 +56,12 @@ namespace ET
                 World.Instance.AddSingleton<EntitySystemSingleton>();
             }
 
+            AssertDestroySystemRegistration(typeof(FairyDemoFormComponent));
+            AssertDestroySystemRegistration(typeof(FairyInventoryFormComponent));
+            AssertDestroySystemRegistration(typeof(FairyItemDetailFormComponent));
+            AssertDestroySystemRegistration(typeof(FairyInventoryOverlayFormComponent));
+            AssertDestroySystemRegistration(typeof(FairyRuntimeInspectorFormComponent));
+
             FairyDemoFormComponent component = new FairyDemoFormComponent();
             try
             {
@@ -106,6 +113,27 @@ namespace ET
                 "InstanceId",
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             instanceIdProperty.GetSetMethod(true).Invoke(entity, new object[] { instanceId });
+        }
+
+        private static void AssertDestroySystemRegistration(Type componentType)
+        {
+            if (!typeof(IDestroy).IsAssignableFrom(componentType))
+            {
+                throw new InvalidOperationException(
+                    $"FairyGUI form component '{componentType.FullName}' must implement IDestroy.");
+            }
+
+            List<SystemObject> systems = EntitySystemSingleton.Instance.TypeSystems.GetSystems(
+                componentType,
+                typeof(IDestroySystem));
+            if (systems == null ||
+                systems.Count != 1 ||
+                systems[0] is not IDestroySystem destroySystem ||
+                destroySystem.Type() != componentType)
+            {
+                throw new InvalidOperationException(
+                    $"FairyGUI form component '{componentType.FullName}' must have exactly one exact Destroy system.");
+            }
         }
 
         private sealed class SelfCheckLogger : ILog

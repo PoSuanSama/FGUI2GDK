@@ -111,7 +111,11 @@ namespace Game
 
         public bool HasWidgets => !m_Cleared && m_Widgets != null;
 
-        internal void CancelLifetime()
+        /// <summary>
+        /// 取消窗体拥有的异步工作，但不释放上下文资源。
+        /// ET owner 销毁桥和 FairyUIForm.Release 都在业务 OnClose 前调用此方法。
+        /// </summary>
+        public void CancelLifetime()
         {
             if (m_Cleared)
             {

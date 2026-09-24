@@ -18,6 +18,12 @@ namespace ET.Client
     public static partial class FairyItemDetailFormComponentSystem
     {
         [EntitySystem]
+        private static void Destroy(this FairyItemDetailFormComponent self)
+        {
+            UIComponentSystem.CloseFairyUIFormBeforeComponentDestroy(self, FairyUIFormOnClose);
+        }
+
+        [EntitySystem]
         private static void FairyUIFormOnViewReady(this FairyItemDetailFormComponent self)
         {
             UIItemDetailWindow view = self.View as UIItemDetailWindow;

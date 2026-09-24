@@ -16,6 +16,12 @@ namespace ET.Client
     public static partial class FairyInventoryFormComponentSystem
     {
         [EntitySystem]
+        private static void Destroy(this FairyInventoryFormComponent self)
+        {
+            UIComponentSystem.CloseFairyUIFormBeforeComponentDestroy(self, FairyUIFormOnClose);
+        }
+
+        [EntitySystem]
         private static void FairyUIFormOnViewReady(this FairyInventoryFormComponent self)
         {
             UIInventoryView view = self.View as UIInventoryView;

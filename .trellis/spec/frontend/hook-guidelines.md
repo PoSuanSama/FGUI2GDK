@@ -144,8 +144,17 @@ Calling `FairyUIFormService` from ET business code without recording ownership o
   continuation whose original Entity generation was disposed or pooled.
 - Give each open its own CTS. Before the form exists it belongs to `PendingFairyUIOpens`; after success the same CTS
   belongs to `OwnedFairyUIForms[serialId]` and is also the shared host's owner token.
-- `Destroy` order is fixed: cancel pending opens, close/cancel every captured owned serial, dispose CTS instances,
-  clear containers. Never close by asset name.
+- Registered factories create non-pooled, per-open children with `owner.AddChild<T>()`. Do not switch them to
+  `owner.AddChild<T>(true)` while `FairyUIPresenterAdapter` holds a raw component reference; pooling requires an
+  `EntityRef` plus a generation check on every delayed callback before a component can be reused safely.
+- ET `Entity.Dispose()` first marks the owner disposed, recursively destroys its children, and only then dispatches
+  the owner's `Destroy` system. Every concrete `FairyUIFormComponent` type must therefore inherit `IDestroy` and
+  declare its own exact-type `[EntitySystem] Destroy`; `TypeSystems` does not fall back to a base-type system.
+- A form-component `Destroy` directly runs that form's `FairyUIFormOnClose` cleanup, clears component references,
+  calls `FairyUIFormContext.CancelLifetime()` first, then closes its GF serial when one has already been assigned.
+  It must also run cleanup after `OnViewReady` when
+  GF has not reached `OnInit` and no serial exists yet. The later `UIComponent.Destroy` cancels pending opens and
+  closes/cancels captured owned serials as the CTS/serial fallback. Never close by asset name.
 - ModelView may retain presenter state, but Hotfix/HotfixView assemblies reject every property and non-const field via
   `ET0004`. Do not move a stateful `IFairyUIPresenter` class wholesale into HotfixView or suppress the analyzer.
   A future full Presenter split must introduce an explicit state/logic adapter or Entity/System dispatcher.
@@ -153,6 +162,8 @@ Calling `FairyUIFormService` from ET business code without recording ownership o
 ### 4. Validation & Error Matrix
 
 - Owner disposed before/during open -> cancellation; no late form or package diagnostic remains.
+- Concrete form type missing an exact `Destroy` system -> reject the integration; owner disposal can recycle the
+  component before GF closes the host and can retain subscriptions installed by `OnViewReady`.
 - Duplicate close of one serial -> first call closes, later calls are no-ops; sibling same-asset serials remain.
 - Missing bridge injection -> stable `InvalidOperationException`, not a null reference.
 - Stateful Presenter moved to HotfixView -> `ET0004`; restore the state boundary or implement an approved adapter.
@@ -178,6 +189,8 @@ Unity lifecycle smoke and inspect Error logs after the async work settles.
 - Compile with `UNITY_ET` in Unity Editor; a GameHot-only compile is not evidence.
 - Exercise pending-open Destroy, three same-asset serials, idempotent close, owner Destroy, replacement owner, and
   PlayMode stop while a replacement form remains open.
+- For every registered form-component factory, assert an exact concrete `IDestroySystem` exists. Include disposal
+  after `OnViewReady` but before GF assigns a serial, and assert business `OnClose` cleanup runs exactly once.
 - Assert GF forms, GRoot objects, presenters, package leases, pending operations, and owned serial collections return
   to the expected baseline; query Error logs after shutdown.
 
@@ -194,4 +207,18 @@ EntityRef<UIComponent> ownerRef = owner;
 FairyUIForm form = await owner.OpenFairyUIFormAsync(uiId, userData);
 owner = ownerRef;
 if (owner == null) throw new OperationCanceledException();
+
+// Wrong: a base marker alone cannot be found for a concrete runtime type.
+public class NewFormComponent : FairyUIFormComponent { }
+
+// Correct: every registered concrete form has an exact generated DestroySystem<T>.
+[EntitySystemOf(typeof(NewFormComponent))]
+public static partial class NewFormComponentSystem
+{
+    [EntitySystem]
+    private static void Destroy(this NewFormComponent self)
+    {
+        UIComponentSystem.CloseFairyUIFormBeforeComponentDestroy(self, FairyUIFormOnClose);
+    }
+}
 ```

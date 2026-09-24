@@ -14,6 +14,12 @@ namespace ET.Client
     public static partial class FairyRuntimeInspectorFormComponentSystem
     {
         [EntitySystem]
+        private static void Destroy(this FairyRuntimeInspectorFormComponent self)
+        {
+            UIComponentSystem.CloseFairyUIFormBeforeComponentDestroy(self, FairyUIFormOnClose);
+        }
+
+        [EntitySystem]
         private static void FairyUIFormOnViewReady(this FairyRuntimeInspectorFormComponent self)
         {
             UIRuntimeInspectorView view = self.View as UIRuntimeInspectorView;

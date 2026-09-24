@@ -16,7 +16,7 @@ namespace ET.Client
     /// 生命周期数据(userData / isShutdown)由 <see cref="FairyUIPresenterAdapter"/> 写入。
     /// </summary>
     [EnableMethod]
-    public class FairyUIFormComponent : Entity
+    public class FairyUIFormComponent : Entity, IDestroy
     {
         [BsonIgnore]
         [MemoryPackIgnore]

@@ -20,6 +20,12 @@ namespace ET.Client
     public static partial class FairyDemoFormComponentSystem
     {
         [EntitySystem]
+        private static void Destroy(this FairyDemoFormComponent self)
+        {
+            UIComponentSystem.CloseFairyUIFormBeforeComponentDestroy(self, FairyUIFormOnClose);
+        }
+
+        [EntitySystem]
         private static void FairyUIFormOnViewReady(this FairyDemoFormComponent self)
         {
             UIMainView view = self.View as UIMainView;

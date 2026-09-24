@@ -34,6 +34,7 @@ namespace ET.Client
 
         public void OnOpen(object userData)
         {
+            m_Component.FairyForm = m_Component.Context?.Form;
             m_Component.UserData = userData;
             FairyUIFormSystemDispatcher.FairyUIFormOnOpen(m_Component);
         }
