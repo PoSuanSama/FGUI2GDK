@@ -30,6 +30,7 @@ namespace Game.Editor
         private const int FairyItemDetailUIId = 105;
         private const string FailureProbeDescriptorAsset = "Assets/Res/UI/FairyGUI/Dialog.json";
         private const int FailureProbeUIId = 1;
+        private const int FailureProbeRepeatCount = 100;
         private const string FairyInventoryOverlayDescriptorAsset =
             "Assets/Res/UI/FairyGUI/FairyInventoryOverlayForm.json";
         private const int FairyInventoryOverlayUIId = 106;
@@ -463,7 +464,7 @@ namespace Game.Editor
             }
         }
 
-        [AgentCallable("Validate FairyGUI open failure rollback for OnViewReady, OnOpen, binding preparation, and closed Context invalidation.", 120)]
+        [AgentCallable("Validate FairyGUI open failure rollback and closed Context invalidation across 100 retries per case.", 600)]
         public static async UniTask ValidateFairyUIOpenFailureCleanup()
         {
             if (!EditorApplication.isPlaying)
@@ -502,7 +503,7 @@ namespace Game.Editor
 
             try
             {
-                await AssertFairyUIOpenFailure(
+                await AssertFairyUIOpenFailureRepeatedly(
                     uiManager,
                     "OnViewReady",
                     FailureProbeStage.OnViewReady,
@@ -512,7 +513,7 @@ namespace Game.Editor
                     baselineRootChildren,
                     baselinePackageRegistered);
 
-                await AssertFairyUIOpenFailure(
+                await AssertFairyUIOpenFailureRepeatedly(
                     uiManager,
                     "OnOpen",
                     FailureProbeStage.OnOpen,
@@ -524,7 +525,7 @@ namespace Game.Editor
 
                 FairyUIPresenterRegistry.PreparePackage = descriptor =>
                     throw new InvalidOperationException("FairyGUI failure probe binding preparation failed.");
-                await AssertFairyUIOpenFailure(
+                await AssertFairyUIOpenFailureRepeatedly(
                     uiManager,
                     "binding preparation",
                     FailureProbeStage.None,
@@ -539,43 +540,47 @@ namespace Game.Editor
                 FairyUIPresenterRegistry.PreparePackage = originalPreparePackage;
             }
 
-            FairyUIForm form = await FairyUIFormService.OpenFairyUIFormAsync(
-                FailureProbeUIId,
-                new object(),
-                descriptor => new FailureProbePresenter(FailureProbeStage.None));
-            FairyUIFormContext context = form.Context;
-            int serial = form.SerialId;
-            uiManager.CloseUIForm(serial);
-            await WaitForFairyUIFormClosed(serial);
-            if (context.IsAlive)
+            for (int attempt = 0; attempt < FailureProbeRepeatCount; attempt++)
             {
-                throw new InvalidOperationException("FairyGUI Context remained alive after its form closed.");
-            }
+                FairyUIForm form = await FairyUIFormService.OpenFairyUIFormAsync(
+                    FailureProbeUIId,
+                    new object(),
+                    descriptor => new FailureProbePresenter(FailureProbeStage.None));
+                FairyUIFormContext context = form.Context;
+                int serial = form.SerialId;
+                uiManager.CloseUIForm(serial);
+                await WaitForFairyUIFormClosed(serial);
+                if (context.IsAlive)
+                {
+                    throw new InvalidOperationException(
+                        $"FairyGUI Context remained alive after its form closed on attempt {attempt}.");
+                }
 
-            bool contextRejected = false;
-            try
-            {
-                _ = context.LifetimeToken;
-            }
-            catch (ObjectDisposedException)
-            {
-                contextRejected = true;
-            }
+                bool contextRejected = false;
+                try
+                {
+                    _ = context.LifetimeToken;
+                }
+                catch (ObjectDisposedException)
+                {
+                    contextRejected = true;
+                }
 
-            if (!contextRejected)
-            {
-                throw new InvalidOperationException(
-                    "A closed FairyGUI Context still exposed its lifetime token.");
-            }
+                if (!contextRejected)
+                {
+                    throw new InvalidOperationException(
+                        $"A closed FairyGUI Context still exposed its lifetime token on attempt {attempt}.");
+                }
 
-            await AssertFairyUIOpenFailureBaseline(
-                uiManager,
-                baselineLoadedForms,
-                baselineLoadingForms,
-                baselineDiagnostics,
-                baselineRootChildren,
-                baselinePackageRegistered,
-                "closed Context validation");
+                await AssertFairyUIOpenFailureBaseline(
+                    uiManager,
+                    baselineLoadedForms,
+                    baselineLoadingForms,
+                    baselineDiagnostics,
+                    baselineRootChildren,
+                    baselinePackageRegistered,
+                    $"closed Context validation attempt {attempt}");
+            }
         }
 
         [AgentCallable("Validate FairyGUI descriptor resource-load failure cleanup across 100 retries.", 300)]
@@ -636,7 +641,7 @@ namespace Game.Editor
                         new GameFrameworkException(
                             $"FairyGUI resource failure probe rejected descriptor '{path}'."));
 
-                for (int attempt = 0; attempt < 100; attempt++)
+                for (int attempt = 0; attempt < FailureProbeRepeatCount; attempt++)
                 {
                     bool observedFailure = false;
                     try
@@ -723,7 +728,7 @@ namespace Game.Editor
                     }
                 };
 
-                for (int attempt = 0; attempt < 100; attempt++)
+                for (int attempt = 0; attempt < FailureProbeRepeatCount; attempt++)
                 {
                     bool observedFailure = false;
                     FairyUIForm unexpectedForm = null;
@@ -809,6 +814,30 @@ namespace Game.Editor
                 baselineRootChildren,
                 baselinePackageRegistered,
                 failureName);
+        }
+
+        private static async UniTask AssertFairyUIOpenFailureRepeatedly(
+            FairyUIManager uiManager,
+            string failureName,
+            FailureProbeStage failureStage,
+            int baselineLoadedForms,
+            int baselineLoadingForms,
+            IReadOnlyList<FairyPackageDiagnostic> baselineDiagnostics,
+            int baselineRootChildren,
+            bool baselinePackageRegistered)
+        {
+            for (int attempt = 0; attempt < FailureProbeRepeatCount; attempt++)
+            {
+                await AssertFairyUIOpenFailure(
+                    uiManager,
+                    $"{failureName} attempt {attempt}",
+                    failureStage,
+                    baselineLoadedForms,
+                    baselineLoadingForms,
+                    baselineDiagnostics,
+                    baselineRootChildren,
+                    baselinePackageRegistered);
+            }
         }
 
         private static async UniTask AssertFairyUIOpenFailureBaseline(

@@ -15,6 +15,7 @@
 - [x] 让 ET PresenterFactory 释放未采纳的 Component，并让 Adapter 的关闭清理具备异常安全性。
 - [x] 为 Context 增加 lifetime token 和 cleared guard，并将现有 Presenter 异步调用迁移到 owner-scoped cancellation。
 - [x] 为 OnViewReady、OnOpen、资源失败、取消和 owner 销毁增加基础回归测试。
+- [x] 将 GameHot OnViewReady、OnOpen、绑定准备失败和关闭后 Context 失效提升为逐类 100 次压力回归。
 - [x] 增加 OnViewReady 完成、GF serial 尚未分配时 owner 销毁的精确时序测试，并断言业务 OnClose 恰好一次。
 
 风险点：本阶段跨越 GF 回调、FairyGUI 对象和 ET Entity。不能修改 vendor GF core，应在 FairyUIManager/Adapter 边界完成适配。
@@ -51,6 +52,7 @@
 验证基线 `6ed43a50` 及其后续小轮次的运行时证据记录在同目录的 `evidence.md`。其中已收录
 2026-09-24 Unity Agent Bridge 的 GameHot 失败回滚、包 descriptor 资源失败 100 次回归、生成绑定
 类型错配 100 次回归、混合层级/安全区、100 次生命周期、hash 契约和 Shutdown/reinitialize 结果；
+GameHot OnViewReady、OnOpen、绑定准备失败与关闭后 Context 失效的逐类 100 次回归；
 四组 Unity Editor Game View 分辨率矩阵，以及 ET owner Destroy/Fiber Remove 生命周期回归；
 ET serial 分配前 owner Destroy 的精确时序、取消顺序和完整资源基线回归；
 未覆盖项仍按证据边界保持未勾选。

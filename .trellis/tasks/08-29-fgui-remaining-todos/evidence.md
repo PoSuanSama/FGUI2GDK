@@ -123,11 +123,29 @@ OnViewReady 完成、GF serial 尚未分配的窗口；后续精确时序证据�
 这条证据关闭了 OnViewReady 后、GF serial 前 owner Destroy 的精确竞态缺口；仍不等同于 Overlay
 pending、RuntimeInspector 完整业务 OnClose、六类失败统一 100 次矩阵或 ET IL2CPP Player 证据。
 
+## 2026-09-24 GameHot 打开失败与 Context 失效压力回归
+
+在 `HEAD=93bef65d` 的测试切片上，将既有 GameHot 打开失败回归提升为逐类 100 次，并复用同一
+运行时基线断言检查每次回滚：
+
+- Unity 编译 generation `17`：`errorCount=0`、`warningCount=0`。
+- 在 `Assets/FairyGUIDemo.unity` PlayMode 清理 24 条旧日志后，运行时重新发现的
+  `Game.Editor.FairyGUIDemoAgent::ValidateFairyUIOpenFailureCleanup` 返回 `status=ok`。
+- `OnViewReady`、`OnOpen` 和 package Binder 准备失败各执行 100 次；每次都观察到原始失败，且
+  loaded/loading UI、package diagnostics、GRoot child 数和 Package1 注册状态回到进入测试时的基线。
+- 成功打开后关闭并访问已失效 Context 的路径执行 100 次；每次均确认 `IsAlive=false`，且
+  `LifetimeToken` 立即抛出 `ObjectDisposedException`，关闭后运行时状态回到基线。
+- PlayMode 内和停止 PlayMode 后的 Unity Console `type=error` 查询均为 `matched=0`。
+
+这条证据补齐 GameHot `OnViewReady`、`OnOpen`、绑定准备失败和关闭后 Context 失效的逐类压力覆盖；
+资源 descriptor 失败与生成绑定类型错配的 100 次证据见前文。owner cancel/Destroy 的 ET child
+entity 统一 100 次矩阵仍未完成。
+
 ## 证据边界
 
 本轮结果不能证明以下验收项：
 
-- 六类失败统一执行 100 次后的资源/ET child entity 基线；本轮已分别覆盖包 descriptor 资源加载失败、生成绑定类型错配，以及单轮 ET owner Destroy/Fiber Remove；
+- 六类失败统一执行 100 次后的 ET child entity 基线；GameHot OnViewReady、OnOpen、绑定准备失败、Context 关闭失效，以及包 descriptor 资源失败、生成绑定类型错配均已有逐类 100 次证据，ET owner cancel/Destroy 仍只有聚焦生命周期证据；
 - 真机旋转/安全区、输入矩阵和重复 add/remove；本轮已覆盖 Unity Editor 的四组分辨率矩阵；
 - 并发多 package 或语言切换；当前仓库只有一个运行时 Package1；
 - 场景重载、域/热更重载、重复 PlayMode 后旧 PlayerLoop/ResourceManager 引用清零；
