@@ -49,7 +49,7 @@ namespace ET
                 }
                 catch (Exception exception)
                 {
-                    Log.Error("ET Runner {0} failed during shutdown: {1}", stage, exception);
+                    Log.Error($"ET Runner {stage} failed during shutdown: {exception}");
                 }
             }
 
@@ -65,10 +65,13 @@ namespace ET
         }
 
         private Runner m_RunnerComponent;
+        private bool m_UnhandledExceptionSubscribed;
 
         private void Awake()
         {
             Instance = this;
+            AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
+            this.m_UnhandledExceptionSubscribed = true;
 #if UNITY_ET_VIEW && UNITY_EDITOR
             Entity.SetRootView(this.transform);
 #endif
@@ -81,21 +84,32 @@ namespace ET
 
         private void OnDestroy()
         {
-            if (this.m_RunnerComponent != null)
+            try
             {
-                Runner runner = this.m_RunnerComponent;
-                this.m_RunnerComponent = null;
-                DestroyImmediate(runner);
+                if (this.m_RunnerComponent != null)
+                {
+                    Runner runner = this.m_RunnerComponent;
+                    this.m_RunnerComponent = null;
+                    DestroyImmediate(runner);
+                }
+            }
+            finally
+            {
+                if (this.m_UnhandledExceptionSubscribed)
+                {
+                    AppDomain.CurrentDomain.UnhandledException -= HandleUnhandledException;
+                    this.m_UnhandledExceptionSubscribed = false;
+                }
+
+                if (ReferenceEquals(Instance, this))
+                {
+                    Instance = null;
+                }
             }
         }
 
         private async UniTaskVoid StartAsync()
         {
-            AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
-            {
-                Log.Error(e.ExceptionObject.ToString());
-            };
-
             // GameEntry 的 Awake 先于场景对象 Start:GF 组件在 GameEntry.Start 后才可用。
             // ET 与 GameHot 并存时(Standalone 双符号冒烟),这里的 Start 可能在 GameEntry.Start
             // 之前执行,直接访问 GameEntry.CodeRunner 会空引用。有界等待 GameEntry 就绪,
@@ -135,6 +149,11 @@ namespace ET
 
             await CodeLoaderComponent.Instance.StartAsync();
             this.m_RunnerComponent = this.gameObject.AddComponent<Runner>();
+        }
+
+        private static void HandleUnhandledException(object sender, UnhandledExceptionEventArgs eventArgs)
+        {
+            Log.Error(eventArgs.ExceptionObject.ToString());
         }
     }
 }

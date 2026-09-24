@@ -6,6 +6,7 @@
         "ET.Core.Editor",
         "ET.ThirdParty",
         "Game.ET.Editor",
+        "Game.ET.Loader",
         "Game.ET.Code.Hotfix",
         "Game.ET.Code.HotfixView",
         "Game.ET.Code.Model",

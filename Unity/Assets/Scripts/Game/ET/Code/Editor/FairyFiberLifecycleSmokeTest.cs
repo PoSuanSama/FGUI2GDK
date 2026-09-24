@@ -11,6 +11,7 @@ using Game.FairyGUI.Package1;
 using GameFramework;
 using GameFramework.UI;
 using UnityEditor;
+using UnityEngine;
 
 namespace ET
 {
@@ -691,6 +692,408 @@ namespace ET
                             "Failed to restore the main ET demo after bootstrap shutdown testing.");
                     }
                 }
+            }
+        }
+
+        [AgentCallable("销毁真实 ET Runner GameObject，验证生产 OnDestroy 完整复位并由新 Init 重建 FairyGUI。", 240)]
+        public static async UniTask RunFairyRunnerGameObjectDestroyReinitializeSmokeTest()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException(
+                    "ET FairyGUI Runner GameObject smoke test requires PlayMode.");
+            }
+
+            FairyUIManager uiManager = FairyUIManager.Instance;
+            IUIManager frameworkUIManager = GameFrameworkEntry.GetModule<IUIManager>();
+            if (frameworkUIManager == null)
+            {
+                throw new InvalidOperationException("GameFramework IUIManager is unavailable.");
+            }
+
+            FairyUIForm originalDemo = await WaitForProductionMainDemoAsync(
+                frameworkUIManager);
+            Init originalInit = Init.Instance;
+            Component originalRunner = GetETRunnerComponent(originalInit);
+            GameObject originalRunnerGameObject = originalInit?.gameObject;
+            UIComponent originalOwner = GetFairyUIFormOwner(originalDemo);
+            FairyDemoFormComponent originalComponent =
+                originalDemo.Presenter is FairyUIPresenterAdapter originalAdapter
+                    ? originalAdapter.Component as FairyDemoFormComponent
+                    : null;
+            FairyUIFormContext originalContext = originalComponent?.Context;
+            UIMainView originalView = originalComponent?.View as UIMainView;
+            FairyInventoryItemWidget originalWidget = originalComponent?.ItemWidget;
+            FiberManager originalFiberManager = FiberManager.Instance;
+            TimeInfo originalTimeInfo = TimeInfo.Instance;
+            EventSystem originalEventSystem = EventSystem.Instance;
+            CodeLoaderComponent originalCodeLoader = CodeLoaderComponent.Instance;
+            FairyRuntimeBaseline startupBaseline = CaptureFairyRuntimeBaseline(uiManager);
+            int originalGroupCount = frameworkUIManager.UIGroupCount;
+            int originalSerialId = originalDemo.SerialId;
+
+            if (originalInit == null ||
+                originalRunner == null ||
+                originalRunnerGameObject == null ||
+                !string.Equals(originalRunnerGameObject.name, "ET", StringComparison.Ordinal) ||
+                originalRunner.gameObject != originalRunnerGameObject ||
+                originalOwner == null ||
+                originalComponent == null ||
+                originalContext == null ||
+                originalView == null ||
+                originalWidget == null ||
+                originalFiberManager == null ||
+                originalTimeInfo == null ||
+                originalEventSystem == null ||
+                originalCodeLoader == null ||
+                startupBaseline.Package == null ||
+                uiManager.GetAllLoadedUIForms().Length != 1 ||
+                uiManager.GetAllLoadingUIFormSerialIds().Length != 0)
+            {
+                throw new InvalidOperationException(
+                    "Runner GameObject smoke test requires one fully initialized production ET FairyGUI demo.");
+            }
+
+            int shutdownCompletedCount = 0;
+            bool runnerDestroyAttempted = false;
+            GameObject replacementRunnerGameObject = null;
+            UIComponent replacementOwner = null;
+            Action observeShutdownCompleted = () => ++shutdownCompletedCount;
+            try
+            {
+                FairyUIManager.ETRuntimeShutdownCompleted += observeShutdownCompleted;
+                runnerDestroyAttempted = true;
+                UnityEngine.Object.DestroyImmediate(originalRunnerGameObject);
+
+                AssertProductionRunnerShutdownState(
+                    frameworkUIManager,
+                    originalInit,
+                    originalRunner,
+                    originalRunnerGameObject,
+                    originalFiberManager,
+                    originalTimeInfo,
+                    originalEventSystem,
+                    originalCodeLoader,
+                    originalOwner,
+                    originalComponent,
+                    originalContext,
+                    originalView,
+                    originalWidget,
+                    startupBaseline,
+                    shutdownCompletedCount,
+                    "synchronous Runner GameObject destroy");
+
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                AssertProductionRunnerShutdownState(
+                    frameworkUIManager,
+                    originalInit,
+                    originalRunner,
+                    originalRunnerGameObject,
+                    originalFiberManager,
+                    originalTimeInfo,
+                    originalEventSystem,
+                    originalCodeLoader,
+                    originalOwner,
+                    originalComponent,
+                    originalContext,
+                    originalView,
+                    originalWidget,
+                    startupBaseline,
+                    shutdownCompletedCount,
+                    "two frames after Runner GameObject destroy");
+
+                replacementRunnerGameObject = new GameObject("ET");
+                Init replacementInit = replacementRunnerGameObject.AddComponent<Init>();
+                FairyUIForm replacementDemo = await WaitForProductionMainDemoAsync(
+                    frameworkUIManager,
+                    originalInit,
+                    originalFiberManager);
+                Component replacementRunner = GetETRunnerComponent(replacementInit);
+                replacementOwner = GetFairyUIFormOwner(replacementDemo);
+                FairyDemoFormComponent replacementComponent =
+                    replacementDemo.Presenter is FairyUIPresenterAdapter replacementAdapter
+                        ? replacementAdapter.Component as FairyDemoFormComponent
+                        : null;
+                FairyUIFormContext replacementContext = replacementComponent?.Context;
+                UIMainView replacementView = replacementComponent?.View as UIMainView;
+                FairyInventoryItemWidget replacementWidget = replacementComponent?.ItemWidget;
+                UIPackage replacementPackage = UIPackage.GetByName("Package1");
+
+                if (!ReferenceEquals(Init.Instance, replacementInit) ||
+                    replacementRunner == null ||
+                    replacementRunner.gameObject != replacementRunnerGameObject ||
+                    ReferenceEquals(replacementInit, originalInit) ||
+                    ReferenceEquals(replacementRunner, originalRunner) ||
+                    ReferenceEquals(FiberManager.Instance, originalFiberManager) ||
+                    ReferenceEquals(TimeInfo.Instance, originalTimeInfo) ||
+                    ReferenceEquals(EventSystem.Instance, originalEventSystem) ||
+                    ReferenceEquals(CodeLoaderComponent.Instance, originalCodeLoader) ||
+                    replacementOwner == null ||
+                    replacementOwner.IsDisposed ||
+                    ReferenceEquals(replacementOwner, originalOwner) ||
+                    replacementComponent == null ||
+                    replacementContext == null ||
+                    replacementView == null ||
+                    replacementWidget == null ||
+                    ReferenceEquals(replacementComponent, originalComponent) ||
+                    ReferenceEquals(replacementContext, originalContext) ||
+                    ReferenceEquals(replacementView, originalView) ||
+                    ReferenceEquals(replacementWidget, originalWidget) ||
+                    replacementDemo.SerialId == originalSerialId ||
+                    replacementComponent.FairyForm != replacementDemo ||
+                    replacementComponent.SerialId != replacementDemo.SerialId ||
+                    !replacementContext.IsAlive ||
+                    replacementContext.Form != replacementDemo ||
+                    replacementContext.SerialId != replacementDemo.SerialId ||
+                    replacementView.isDisposed ||
+                    !replacementWidget.Opened ||
+                    replacementWidget.View == null ||
+                    replacementPackage == null ||
+                    ReferenceEquals(replacementPackage, startupBaseline.Package) ||
+                    !replacementOwner.OwnsFairyUIForm(replacementDemo.SerialId) ||
+                    shutdownCompletedCount != 1 ||
+                    frameworkUIManager.UIGroupCount != originalGroupCount)
+                {
+                    throw new InvalidOperationException(
+                        "Replacement ET Init did not build a fresh Runner, World, owner, form, and package.");
+                }
+
+                AssertFairyRuntimeGlobalBaseline(
+                    uiManager,
+                    startupBaseline,
+                    "replacement ET production startup",
+                    requireExactPackage: false,
+                    compareGeneration: false);
+
+                int replacementSerial = replacementDemo.SerialId;
+                if (!replacementOwner.CloseFairyUIForm(replacementSerial))
+                {
+                    throw new InvalidOperationException(
+                        "Replacement ET owner could not close its production-opened FairyGUI demo.");
+                }
+
+                await WaitForUIFormClosedAsync(uiManager, replacementSerial);
+                await WaitForFairyPackageDiagnosticsAsync(
+                    Array.Empty<FairyPackageDiagnostic>(),
+                    expectedPackageRegistered: false);
+                AssertReleasedFairyComponent(
+                    replacementComponent,
+                    replacementContext,
+                    replacementView,
+                    replacementWidget,
+                    1,
+                    "replacement ET production demo close");
+                if (replacementOwner.GetPendingFairyUIOpenCount() != 0 ||
+                    replacementOwner.GetOwnedFairyUIFormCount() != 0 ||
+                    uiManager.GetAllLoadedUIForms().Length != 0 ||
+                    uiManager.GetAllLoadingUIFormSerialIds().Length != 0 ||
+                    (GRoot.inst?.numChildren ?? 0) != startupBaseline.RootChildren)
+                {
+                    throw new InvalidOperationException(
+                        "Replacement ET demo close did not return FairyGUI to the closed baseline.");
+                }
+
+                FairyUIForm reopenedDemo = await replacementOwner.OpenFairyUIFormAsync(
+                    UGFUIFormId.FairyDemoForm,
+                    replacementOwner);
+                FairyDemoFormComponent reopenedComponent =
+                    reopenedDemo.Presenter is FairyUIPresenterAdapter reopenedAdapter
+                        ? reopenedAdapter.Component as FairyDemoFormComponent
+                        : null;
+                if (reopenedComponent == null ||
+                    reopenedComponent.IsDisposed ||
+                    ReferenceEquals(reopenedComponent, replacementComponent) ||
+                    !replacementOwner.OwnsFairyUIForm(reopenedDemo.SerialId) ||
+                    !uiManager.HasUIForm(reopenedDemo.SerialId) ||
+                    shutdownCompletedCount != 1)
+                {
+                    throw new InvalidOperationException(
+                        "Replacement ET owner could not reopen a fresh FairyGUI demo component.");
+                }
+
+                AssertFairyRuntimeGlobalBaseline(
+                    uiManager,
+                    startupBaseline,
+                    "replacement ET demo reopen",
+                    requireExactPackage: false,
+                    compareGeneration: false);
+            }
+            finally
+            {
+                FairyUIManager.ETRuntimeShutdownCompleted -= observeShutdownCompleted;
+
+                if (runnerDestroyAttempted)
+                {
+                    if (Init.Instance == null)
+                    {
+                        replacementRunnerGameObject = new GameObject("ET");
+                        replacementRunnerGameObject.AddComponent<Init>();
+                    }
+
+                    FairyUIForm currentDemo =
+                        frameworkUIManager.GetUIForm(DemoAsset) as FairyUIForm;
+                    if ((replacementOwner == null || replacementOwner.IsDisposed) && currentDemo == null)
+                    {
+                        currentDemo = await WaitForProductionMainDemoAsync(
+                            frameworkUIManager,
+                            originalInit,
+                            originalFiberManager);
+                    }
+
+                    if (replacementOwner == null || replacementOwner.IsDisposed)
+                    {
+                        replacementOwner = GetFairyUIFormOwner(currentDemo);
+                    }
+                    if (currentDemo == null && replacementOwner != null && !replacementOwner.IsDisposed)
+                    {
+                        currentDemo = await replacementOwner.OpenFairyUIFormAsync(
+                            UGFUIFormId.FairyDemoForm,
+                            replacementOwner);
+                    }
+
+                    if (currentDemo == null ||
+                        replacementOwner == null ||
+                        replacementOwner.IsDisposed ||
+                        !replacementOwner.OwnsFairyUIForm(currentDemo.SerialId))
+                    {
+                        throw new InvalidOperationException(
+                            "Failed to restore the replacement ET runtime demo after Runner testing.");
+                    }
+                }
+            }
+        }
+
+        private static Component GetETRunnerComponent(Init init)
+        {
+            if (init == null)
+            {
+                return null;
+            }
+
+            Type runnerType = typeof(Init).GetNestedType("Runner", BindingFlags.NonPublic);
+            return runnerType == null ? null : init.GetComponent(runnerType);
+        }
+
+        private static UIComponent GetFairyUIFormOwner(FairyUIForm form)
+        {
+            return form?.Presenter is FairyUIPresenterAdapter adapter && adapter.Component != null
+                ? adapter.Component.Parent as UIComponent
+                : null;
+        }
+
+        private static async UniTask<FairyUIForm> WaitForProductionMainDemoAsync(
+            IUIManager frameworkUIManager,
+            Init previousInit = null,
+            FiberManager previousFiberManager = null)
+        {
+            // FairyUIManager 在 Shutdown 到新 Bootstrap.Initialize 之间会主动拒绝查询；
+            // GF IUIManager 跨 ET 代次存活，可安全轮询生产入口重新打开的窗体。
+            for (int frame = 0; frame < 600; frame++)
+            {
+                Init currentInit = Init.Instance;
+                FiberManager currentFiberManager = FiberManager.Instance;
+                FairyUIForm form = frameworkUIManager.GetUIForm(DemoAsset) as FairyUIForm;
+                UIComponent owner = GetFairyUIFormOwner(form);
+                bool isNewRuntime = previousInit == null ||
+                    (!ReferenceEquals(currentInit, previousInit) &&
+                     !ReferenceEquals(currentFiberManager, previousFiberManager));
+                if (currentInit != null &&
+                    GetETRunnerComponent(currentInit) != null &&
+                    currentFiberManager != null &&
+                    TimeInfo.Instance != null &&
+                    EventSystem.Instance != null &&
+                    CodeLoaderComponent.Instance != null &&
+                    isNewRuntime &&
+                    form != null &&
+                    owner != null &&
+                    !owner.IsDisposed &&
+                    owner.OwnsFairyUIForm(form.SerialId) &&
+                    FairyUIFormComponentRegistry.TryGet(UGFUIFormId.FairyDemoForm, out _) &&
+                    IsFairyBootstrapPreparePackageRegistered() &&
+                    FairyUIManager.UIFormTableProvider != null &&
+                    UIComponentFairyUIBridge.Open != null &&
+                    UIComponentFairyUIBridge.Close != null &&
+                    UIComponentFairyUIBridge.Refocus != null &&
+                    UIPackage.GetByName("Package1") != null)
+                {
+                    return form;
+                }
+
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            throw new InvalidOperationException(
+                "Production ET Init did not reach a fully owned FairyGUI demo within 600 frames.");
+        }
+
+        private static void AssertProductionRunnerShutdownState(
+            IUIManager frameworkUIManager,
+            Init originalInit,
+            Component originalRunner,
+            GameObject originalRunnerGameObject,
+            FiberManager originalFiberManager,
+            TimeInfo originalTimeInfo,
+            EventSystem originalEventSystem,
+            CodeLoaderComponent originalCodeLoader,
+            UIComponent originalOwner,
+            FairyDemoFormComponent originalComponent,
+            FairyUIFormContext originalContext,
+            UIMainView originalView,
+            FairyInventoryItemWidget originalWidget,
+            FairyRuntimeBaseline startupBaseline,
+            int shutdownCompletedCount,
+            string phase)
+        {
+            if (shutdownCompletedCount != 1 ||
+                !ReferenceEquals(Init.Instance, null) ||
+                originalInit != null ||
+                originalRunner != null ||
+                originalRunnerGameObject != null ||
+                FiberManager.Instance != null ||
+                TimeInfo.Instance != null ||
+                EventSystem.Instance != null ||
+                CodeLoaderComponent.Instance != null ||
+                !originalFiberManager.IsDisposed() ||
+                !originalTimeInfo.IsDisposed() ||
+                !originalEventSystem.IsDisposed() ||
+                !originalCodeLoader.IsDisposed())
+            {
+                throw new InvalidOperationException(
+                    $"{phase} did not clear the production Runner, Init, and ET singleton generation exactly once.");
+            }
+
+            if (!originalOwner.IsDisposed ||
+                originalOwner.GetPendingFairyUIOpenCount() != 0 ||
+                originalOwner.GetOwnedFairyUIFormCount() != 0 ||
+                originalOwner.ChildrenCount() != 0)
+            {
+                throw new InvalidOperationException(
+                    $"{phase} left the original ET FairyGUI owner state alive.");
+            }
+
+            AssertReleasedFairyComponent(
+                originalComponent,
+                originalContext,
+                originalView,
+                originalWidget,
+                1,
+                phase);
+
+            if (FairyUIFormComponentRegistry.TryGet(UGFUIFormId.FairyDemoForm, out _) ||
+                IsFairyBootstrapPreparePackageRegistered() ||
+                UIComponentFairyUIBridge.Open != null ||
+                UIComponentFairyUIBridge.Close != null ||
+                UIComponentFairyUIBridge.Refocus != null ||
+                FairyUIManager.UIFormTableProvider != null ||
+                frameworkUIManager.GetAllLoadedUIForms().Length != 0 ||
+                frameworkUIManager.GetAllLoadingUIFormSerialIds().Length != 0 ||
+                FairyPackageManager.GetDiagnostics().Count != 0 ||
+                UIPackage.GetByName("Package1") != null ||
+                (GRoot.inst?.numChildren ?? 0) != startupBaseline.RootChildren)
+            {
+                throw new InvalidOperationException(
+                    $"{phase} left FairyGUI factories, delegates, forms, package state, or root state behind.");
             }
         }
 
