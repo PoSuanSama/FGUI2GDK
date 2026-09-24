@@ -41,6 +41,13 @@ namespace ET.Client
         [global::ET.StaticField]
         public static Func<UIComponent, int, object, bool> Refocus;
 
+        internal static void Reset()
+        {
+            Open = null;
+            Close = null;
+            Refocus = null;
+        }
+
         public static UniTask<FairyUIForm> OpenAsync(UIComponent owner, int uiId, object userData = null)
         {
             Func<UIComponent, int, object, UniTask<FairyUIForm>> open = Open;

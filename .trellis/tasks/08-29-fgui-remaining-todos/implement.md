@@ -4,8 +4,8 @@
 
 - [ ] 代码修改前重新阅读当前任务文件和适用的 GDK/Trellis 规范。
 - [x] 增加 operation、serial、package 诊断信息，不改变现有行为。
-- [ ] 使用现有 GameHot、ET 冒烟流程和 package diagnostics 采集基线，并记录 git 状态。
-- [ ] 任何 Unity 查询或修改前，确认当前 Unity Agent Bridge 是否可用。
+- [x] 使用现有 GameHot、ET 冒烟流程和 package diagnostics 采集基线，并记录 git 状态。
+- [x] 任何 Unity 查询或修改前，确认当前 Unity Agent Bridge 是否可用。
 
 ## 阶段 1：P0 事务和所有权硬化
 
@@ -26,7 +26,8 @@
 - [x] 将按 package 的语言缓存改为串行的进程级 active language 状态。
 - [x] 明确应用失败重试和语言切换后的窗口重建策略。
 - [x] 修复 FairyUIGroupHelper 对安全区/全屏父容器的排序，并限制非法安全区尺寸。
-- [ ] 增加混合层级、旋转/分辨率变化和重复添加/移除测试。
+- [x] 增加混合层级与多组 Editor 分辨率测试。
+- [ ] 增加真机旋转和重复添加/移除测试。
 
 风险点：层级顺序会影响模态窗口行为；必须保持 GF 组深度语义，并记录最终的父容器层级契约。
 
@@ -37,7 +38,10 @@
 - [x] 为 PlayerLoop、事件桥、声音钩子、package registry、Stage 和组辅助器增加明确的 FairyGUI Shutdown/重载处理。
 - [x] 让 FairyInputService 的每次初始化使用独立 PlayerLoop registration；Shutdown 后同帧重初始化时旧 registration 只退场一次，不会复用新会话状态重复轮询。
 - [x] 让 HotEntry 和 ET Runner 从已有生命周期钩子调用 Shutdown。
-- [ ] 增加重复初始化、场景重载、域/热更重载和 hash 不匹配测试。
+- [x] 增加 FairyUIManager shutdown 通知后的 ET Bootstrap 静态注册复位、重复初始化和新 owner 打开/关闭回归。
+- [x] 增加 manifest hash 匹配/不匹配契约测试。
+- [ ] 通过销毁实际 ET Runner 对象验证生产 OnDestroy 集成。
+- [ ] 增加场景重载、domain/hot reload 和重复 PlayMode 的全局资源清理矩阵。
 
 风险点：Shutdown 不能释放仍被 GF 窗体持有的 package。必须先关闭窗体，再通过 lease 释放 package。
 
@@ -59,6 +63,7 @@ GameHot OnViewReady、OnOpen、绑定准备失败与关闭后 Context 失效的�
 ET serial 分配前 owner Destroy 的精确时序、取消顺序和完整资源基线回归；
 ET pending owner 取消与成功打开后 owner Dispose/Fiber Remove 的逐类 100 次压力矩阵；
 FairyInputService Shutdown 后同帧重初始化、重复 Initialize 幂等和 PlayerLoop 单次轮询回归；
+本轮 ET Bootstrap shutdown 通知后的静态注册复位、重复初始化与新 owner 生命周期回归；
 未覆盖项仍按证据边界保持未勾选。
 
 最低确定性检查：
@@ -82,5 +87,5 @@ Unity 专项证据必须来自运行时发现的 Agent Bridge 命令：编译结
 - [ ] 每个 async await 都有 owner/cancellation 决策。
 - [ ] 每个资源/容器都有唯一所有者和释放路径。
 - [ ] 每个警告都已修复，或记录了合理原因。
-- [ ] 行为或契约变化后同步更新相关 Book/spec 文档。
-- [ ] 提交前运行 trellis-check，并分别报告已验证和未验证证据。
+- [x] 行为或契约变化后同步更新相关 spec 文档。
+- [x] 提交前运行全范围 trellis-check，并分别记录已验证和未验证证据。

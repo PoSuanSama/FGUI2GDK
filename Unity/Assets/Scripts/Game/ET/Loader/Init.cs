@@ -29,9 +29,28 @@ namespace ET
             {
                 // ET UIComponent 是 FairyGUI 窗体的 owner:先让 owner 释放窗体,
                 // 再关闭管理器和 package,避免 owner 清理访问已失效的 UI manager。
-                EventSystem.Instance.Invoke(new OnShutdown());
-                World.Instance.Dispose();
-                FairyUIManager.Instance.Shutdown();
+                try
+                {
+                    TryShutdown(() => EventSystem.Instance.Invoke(new OnShutdown()), "OnShutdown");
+                    TryShutdown(() => World.Instance.Dispose(), "World.Dispose");
+                    TryShutdown(() => FairyUIManager.Instance.Shutdown(), "FairyUIManager.Shutdown");
+                }
+                finally
+                {
+                    FairyUIManager.NotifyETRuntimeShutdownCompleted();
+                }
+            }
+
+            private static void TryShutdown(Action shutdown, string stage)
+            {
+                try
+                {
+                    shutdown();
+                }
+                catch (Exception exception)
+                {
+                    Log.Error("ET Runner {0} failed during shutdown: {1}", stage, exception);
+                }
             }
 
             private void OnApplicationPause(bool pauseStatus)

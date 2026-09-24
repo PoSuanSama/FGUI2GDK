@@ -8,6 +8,8 @@ using ET.Client;
 using FairyGUI;
 using Game;
 using Game.FairyGUI.Package1;
+using GameFramework;
+using GameFramework.UI;
 using UnityEditor;
 
 namespace ET
@@ -486,6 +488,217 @@ namespace ET
                         "Failed to restore the main owner demo after the fiber test.");
                 }
             }
+        }
+
+        [AgentCallable("ET FairyGUI Runner shutdown 后复位静态注册并重复初始化，再由新 owner 打开关闭窗体。", 180)]
+        public static async UniTask RunFairyBootstrapShutdownReinitializeSmokeTest()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException(
+                    "ET FairyGUI bootstrap shutdown smoke test requires PlayMode.");
+            }
+
+            await FairyGUIBootstrap.InitializeAsync();
+
+            FairyUIManager uiManager = FairyUIManager.Instance;
+            IUIManager frameworkUIManager = GameFrameworkEntry.GetModule<IUIManager>();
+            if (frameworkUIManager == null)
+            {
+                throw new InvalidOperationException("GameFramework IUIManager is unavailable.");
+            }
+
+            FairyUIForm mainDemo = uiManager.GetUIForm(DemoAsset);
+            UIComponent mainOwner = mainDemo?.Presenter is FairyUIPresenterAdapter mainAdapter &&
+                mainAdapter.Component != null
+                    ? mainAdapter.Component.Parent as UIComponent
+                    : null;
+            bool restoreMainDemo = mainDemo != null &&
+                mainOwner != null &&
+                !mainOwner.IsDisposed &&
+                mainOwner.OwnsFairyUIForm(mainDemo.SerialId);
+            if (mainDemo != null && !restoreMainDemo)
+            {
+                throw new InvalidOperationException(
+                    "The main ET FairyGUI demo is not owned by a live UIComponent.");
+            }
+
+            int originalDemoSerial = restoreMainDemo ? mainDemo.SerialId : 0;
+            int originalGroupCount = frameworkUIManager.UIGroupCount;
+            int fiberId = 0;
+            FairyRuntimeBaseline baseline = default;
+            try
+            {
+                if (restoreMainDemo)
+                {
+                    if (!mainOwner.CloseFairyUIForm(originalDemoSerial))
+                    {
+                        throw new InvalidOperationException(
+                            "Failed to close the main demo before ET bootstrap shutdown.");
+                    }
+
+                    await WaitForUIFormClosedAsync(uiManager, originalDemoSerial);
+                }
+
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                if (uiManager.GetAllLoadedUIForms().Length != 0 ||
+                    uiManager.GetAllLoadingUIFormSerialIds().Length != 0)
+                {
+                    throw new InvalidOperationException(
+                        "ET FairyGUI bootstrap shutdown test requires an otherwise idle UI manager.");
+                }
+
+                baseline = CaptureFairyRuntimeBaseline(uiManager);
+                if (!FairyUIFormComponentRegistry.TryGet(
+                        UGFUIFormId.FairyDemoForm,
+                        out _) ||
+                    !IsFairyBootstrapPreparePackageRegistered() ||
+                    UIComponentFairyUIBridge.Open == null ||
+                    UIComponentFairyUIBridge.Close == null ||
+                    UIComponentFairyUIBridge.Refocus == null)
+                {
+                    throw new InvalidOperationException(
+                        "ET FairyGUI bootstrap was not fully registered before shutdown.");
+                }
+
+                try
+                {
+                    uiManager.Shutdown();
+                }
+                finally
+                {
+                    FairyUIManager.NotifyETRuntimeShutdownCompleted();
+                }
+
+                if (FairyUIFormComponentRegistry.TryGet(UGFUIFormId.FairyDemoForm, out _) ||
+                    IsFairyBootstrapPreparePackageRegistered() ||
+                    UIComponentFairyUIBridge.Open != null ||
+                    UIComponentFairyUIBridge.Close != null ||
+                    UIComponentFairyUIBridge.Refocus != null ||
+                    FairyUIManager.UIFormTableProvider != null)
+                {
+                    throw new InvalidOperationException(
+                        "ET FairyGUI shutdown left bootstrap factories, delegates, or table provider registered.");
+                }
+
+                if (frameworkUIManager.GetAllLoadedUIForms().Length != 0 ||
+                    frameworkUIManager.GetAllLoadingUIFormSerialIds().Length != 0)
+                {
+                    throw new InvalidOperationException(
+                        "ET FairyGUI shutdown left a loaded or loading GF form.");
+                }
+
+                await WaitForFairyPackageDiagnosticsAsync(
+                    Array.Empty<FairyPackageDiagnostic>(),
+                    expectedPackageRegistered: false);
+                if ((GRoot.inst?.numChildren ?? 0) != baseline.RootChildren)
+                {
+                    throw new InvalidOperationException(
+                        "ET FairyGUI shutdown changed the root child baseline after the demo was closed.");
+                }
+
+                await FairyGUIBootstrap.InitializeAsync();
+                await FairyGUIBootstrap.InitializeAsync();
+                if (!FairyUIFormComponentRegistry.TryGet(UGFUIFormId.FairyDemoForm, out _) ||
+                    !IsFairyBootstrapPreparePackageRegistered() ||
+                    FairyUIManager.UIFormTableProvider == null ||
+                    frameworkUIManager.UIGroupCount != originalGroupCount)
+                {
+                    throw new InvalidOperationException(
+                        "Repeated ET FairyGUI bootstrap initialization did not restore one stable registration set.");
+                }
+
+                if (UIComponentFairyUIBridge.Open != null ||
+                    UIComponentFairyUIBridge.Close != null ||
+                    UIComponentFairyUIBridge.Refocus != null)
+                {
+                    throw new InvalidOperationException(
+                        "ET FairyGUI bridge was rebound before a new owner initialized.");
+                }
+
+                fiberId = await FiberManager.Instance.Create(
+                    SchedulerType.Main,
+                    0,
+                    SceneType.NetClient,
+                    "FairyBootstrapShutdownReinitializeTest");
+                Scene root = GetFiber(FiberManager.Instance, fiberId).Root;
+                UIComponent owner = root.AddComponent<UIComponent>();
+                if (UIComponentFairyUIBridge.Open == null ||
+                    UIComponentFairyUIBridge.Close == null ||
+                    UIComponentFairyUIBridge.Refocus == null)
+                {
+                    throw new InvalidOperationException(
+                        "A new ET UIComponent did not bind the FairyGUI bridge after bootstrap reinitialization.");
+                }
+
+                FairyUIForm form = await owner.OpenFairyUIFormAsync(UGFUIFormId.FairyDemoForm, owner);
+                int serialId = form.SerialId;
+                if (!owner.OwnsFairyUIForm(serialId) ||
+                    !uiManager.HasUIForm(serialId) ||
+                    uiManager.GetAllLoadedUIForms().Length != baseline.LoadedForms + 1)
+                {
+                    throw new InvalidOperationException(
+                        "A new ET owner could not open a form after bootstrap shutdown and reinitialization.");
+                }
+
+                if (!owner.CloseFairyUIForm(serialId))
+                {
+                    throw new InvalidOperationException(
+                        "A new ET owner could not close its form after bootstrap reinitialization.");
+                }
+
+                await WaitForUIFormClosedAsync(uiManager, serialId);
+                await FiberManager.Instance.Remove(fiberId);
+                fiberId = 0;
+                await WaitForFairyPackageDiagnosticsAsync(
+                    baseline.PackageDiagnostics,
+                    baseline.Package != null);
+                AssertFairyRuntimeGlobalBaseline(
+                    uiManager,
+                    baseline,
+                    "bootstrap shutdown/reinitialize smoke test",
+                    requireExactPackage: true);
+            }
+            finally
+            {
+                if (fiberId != 0)
+                {
+                    await FiberManager.Instance.Remove(fiberId);
+                }
+
+                await FairyGUIBootstrap.InitializeAsync();
+                if (restoreMainDemo && mainOwner != null && !mainOwner.IsDisposed &&
+                    uiManager.GetUIForm(DemoAsset) == null)
+                {
+                    if (UIComponentFairyUIBridge.Open == null)
+                    {
+                        int bridgeFiberId = await FiberManager.Instance.Create(
+                            SchedulerType.Main,
+                            0,
+                            SceneType.NetClient,
+                            "FairyBootstrapBridgeRestore");
+                        GetFiber(FiberManager.Instance, bridgeFiberId).Root.AddComponent<UIComponent>();
+                        await FiberManager.Instance.Remove(bridgeFiberId);
+                    }
+
+                    FairyUIForm restored = await mainOwner.OpenFairyUIFormAsync(
+                        UGFUIFormId.FairyDemoForm,
+                        mainOwner);
+                    if (!mainOwner.OwnsFairyUIForm(restored.SerialId) ||
+                        !uiManager.HasUIForm(restored.SerialId))
+                    {
+                        throw new InvalidOperationException(
+                            "Failed to restore the main ET demo after bootstrap shutdown testing.");
+                    }
+                }
+            }
+        }
+
+        private static bool IsFairyBootstrapPreparePackageRegistered()
+        {
+            Action<FairyUIFormDescriptor> preparePackage = FairyUIPresenterRegistry.PreparePackage;
+            return preparePackage != null &&
+                preparePackage.Method.DeclaringType == typeof(FairyGUIBootstrap);
         }
 
         private static async UniTask RunPendingOwnerDestroyPressureIterationAsync(

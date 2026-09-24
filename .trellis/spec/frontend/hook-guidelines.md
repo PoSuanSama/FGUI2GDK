@@ -231,3 +231,66 @@ public static partial class NewFormComponentSystem
     }
 }
 ```
+
+## Scenario: ET FairyGUI Runtime Shutdown Reset
+
+### 1. Scope / Trigger
+
+Apply this contract when an ET Runner shutdown must reset FairyGUI state owned by ModelView without adding a
+reverse assembly reference from `Game.ET.Loader` to `Game.ET.Code.ModelView`.
+
+### 2. Signatures
+
+- `FairyUIManager.ETRuntimeShutdownCompleted` is a one-shot `Action` event for completed ET runtime shutdown.
+- `FairyUIManager.NotifyETRuntimeShutdownCompleted()` drains and invokes the event subscribers.
+- `FairyGUIBootstrap.InitializeAsync()` registers ET-owned factories, bridge delegates and package preparation.
+
+### 3. Contracts
+
+- Runner shutdown order is `OnShutdown` -> `World.Dispose()` -> `FairyUIManager.Shutdown()` -> notify completion.
+- Each shutdown step is attempted even if an earlier step throws; failures are logged, and the completion event is
+  drained in `finally`.
+- The completion event is cleared before invocation; each callback failure is logged and does not prevent later
+  callbacks. Calling it without subscribers is a no-op.
+- ET Bootstrap reset clears its component factory registry and `UIComponentFairyUIBridge`, resets its initialized
+  state, and advances its lifecycle generation. It clears `FairyUIPresenterRegistry.PreparePackage` only while
+  the current delegate is still the exact ET-owned callback.
+- Bootstrap captures its generation before asynchronous waits and throws `OperationCanceledException` after a
+  wait if shutdown advanced the generation. A new runtime can then initialize and register a fresh generation.
+
+### 4. Validation & Error Matrix
+
+- Normal shutdown after owner disposal -> ET factories, bridge delegates, and table provider are empty.
+- `OnShutdown` or `World.Dispose()` throws -> later teardown steps and the reset notification still run.
+- Shutdown during bootstrap await -> stale initialization exits with `OperationCanceledException` and cannot
+  publish provider/groups or mark itself initialized.
+- Another owner replaced `PreparePackage` -> ET reset preserves that replacement.
+- One shutdown subscriber throws -> the failure is logged and remaining subscribers still run.
+
+### 5. Good / Base / Bad Cases
+
+- Good: dispose ET owners first, attempt each teardown step, then notify ModelView to clear ET static state.
+- Base: repeated initialization after reset restores one factory set and a new UI owner can open/close.
+- Bad: clear bridge delegates before `World.Dispose()`, which prevents owner Destroy systems from closing forms.
+- Bad: unconditionally clear `PreparePackage`, which can erase a callback installed by another runtime owner.
+
+### 6. Tests Required
+
+- In Unity PlayMode, assert shutdown empties factories, owned callbacks, bridge delegates, forms and package state.
+- Initialize twice after reset; assert one stable UIGroup set, then open/close through a newly initialized owner.
+- Cover initialization cancellation across a shutdown generation change and query Fairy Error logs after cleanup.
+- Separately destroy the actual Runner object to verify the production `OnDestroy` route; direct notification tests
+  do not prove that Unity invoked the Runner callback.
+
+### 7. Wrong vs Correct
+
+```csharp
+// Wrong: owner cleanup still needs the bridge and live FairyUIManager.
+NotifyETRuntimeShutdownCompleted();
+World.Instance.Dispose();
+
+// Correct: attempt owner and manager teardown before resetting ModelView statics.
+TryShutdown(() => World.Instance.Dispose(), "World.Dispose");
+try { TryShutdown(() => FairyUIManager.Instance.Shutdown(), "FairyUIManager.Shutdown"); }
+finally { FairyUIManager.NotifyETRuntimeShutdownCompleted(); }
+```

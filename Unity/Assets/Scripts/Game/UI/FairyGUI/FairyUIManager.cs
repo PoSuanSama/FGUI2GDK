@@ -50,6 +50,12 @@ namespace Game
         /// </summary>
         public static event EventHandler<OpenUIFormDependencyAssetEventArgs> OpenUIFormDependencyAsset;
 
+        /// <summary>
+        /// ET Runner invokes this after disposing the ET World and shutting down FairyUIManager.
+        /// Subscribers are one-shot so they do not retain a completed runtime generation.
+        /// </summary>
+        public static event Action ETRuntimeShutdownCompleted;
+
         private const string DescriptorAssetRoot = "Assets/Res/UI/FairyGUI";
         private const int DesignResolutionX = 1280;
         private const int DesignResolutionY = 720;
@@ -319,59 +325,87 @@ namespace Game
                 }
             }
 
-            IUIManager uiManager = m_UIManager;
-            if (uiManager != null)
+            try
             {
-                IUIForm[] forms = uiManager.GetAllLoadedUIForms();
-                foreach (IUIForm form in forms)
+                IUIManager uiManager = m_UIManager;
+                if (uiManager != null)
                 {
-                    if (form != null && uiManager.HasUIForm(form.SerialId))
+                    IUIForm[] forms = uiManager.GetAllLoadedUIForms();
+                    foreach (IUIForm form in forms)
                     {
-                        try
+                        if (form != null && uiManager.HasUIForm(form.SerialId))
                         {
-                            uiManager.CloseUIForm(form.SerialId);
+                            try
+                            {
+                                uiManager.CloseUIForm(form.SerialId);
+                            }
+                            catch (Exception exception)
+                            {
+                                Log.Error("Failed to close FairyGUI form '{0}' during shutdown: {1}", form.SerialId, exception);
+                            }
                         }
-                        catch (Exception exception)
-                        {
-                            Log.Error("Failed to close FairyGUI form '{0}' during shutdown: {1}", form.SerialId, exception);
-                        }
+                    }
+
+                    try
+                    {
+                        uiManager.CloseAllLoadingUIForms();
+                    }
+                    catch (Exception exception)
+                    {
+                        Log.Error("Failed to close loading FairyGUI forms during shutdown: {0}", exception);
+                    }
+
+                    DetachUIManagerEvents(uiManager);
+                }
+
+                FairyUIFormPendingState[] pendingStates = FairyUIFormPendingRegistry.Drain();
+                foreach (FairyUIFormPendingState pendingState in pendingStates)
+                {
+                    if (pendingState.IsAdopted && pendingState.AdoptedForm != null)
+                    {
+                        TryRelease(
+                            pendingState.AdoptedForm.ReleaseAfterFailedOpen,
+                            pendingState.DescriptorKey,
+                            "adopted form");
+                    }
+                    else
+                    {
+                        ReleasePendingState(pendingState);
                     }
                 }
 
+                FairyInputService.Instance.Shutdown();
+                FairySound.Shutdown();
+                FairyLocalization.Reset();
+                FairyPackageManager.Shutdown();
+            }
+            finally
+            {
+                UIFormTableProvider = null;
+                lifecycleCancellation?.Dispose();
+            }
+        }
+
+        public static void NotifyETRuntimeShutdownCompleted()
+        {
+            Action callbacks = ETRuntimeShutdownCompleted;
+            ETRuntimeShutdownCompleted = null;
+            if (callbacks == null)
+            {
+                return;
+            }
+
+            foreach (Action callback in callbacks.GetInvocationList())
+            {
                 try
                 {
-                    uiManager.CloseAllLoadingUIForms();
+                    callback();
                 }
                 catch (Exception exception)
                 {
-                    Log.Error("Failed to close loading FairyGUI forms during shutdown: {0}", exception);
-                }
-
-                DetachUIManagerEvents(uiManager);
-            }
-
-            FairyUIFormPendingState[] pendingStates = FairyUIFormPendingRegistry.Drain();
-            foreach (FairyUIFormPendingState pendingState in pendingStates)
-            {
-                if (pendingState.IsAdopted && pendingState.AdoptedForm != null)
-                {
-                    TryRelease(
-                        pendingState.AdoptedForm.ReleaseAfterFailedOpen,
-                        pendingState.DescriptorKey,
-                        "adopted form");
-                }
-                else
-                {
-                    ReleasePendingState(pendingState);
+                    Log.Error("FairyGUI ET runtime shutdown callback failed: {0}", exception);
                 }
             }
-
-            FairyInputService.Instance.Shutdown();
-            FairySound.Shutdown();
-            FairyLocalization.Reset();
-            FairyPackageManager.Shutdown();
-            UIFormTableProvider = null;
-            lifecycleCancellation?.Dispose();
         }
 
         public async UniTask<FairyUIForm> OpenFairyUIFormAsync(

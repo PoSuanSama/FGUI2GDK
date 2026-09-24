@@ -50,5 +50,10 @@ namespace ET.Client
         {
             return s_Factories.TryGetValue(uiId, out factory);
         }
+
+        internal static void Clear()
+        {
+            s_Factories.Clear();
+        }
     }
 }

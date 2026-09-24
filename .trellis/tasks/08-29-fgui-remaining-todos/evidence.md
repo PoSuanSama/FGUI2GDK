@@ -196,6 +196,29 @@ OnViewReady、OnOpen、绑定和资源失败压力测试仍不直接创建 ET ch
 这条证据关闭了同一运行时会话内输入 PlayerLoop 重复注册的确定性缺口；跨场景、domain reload、
 禁用 domain reload 的重复 PlayMode，以及旧 ResourceManager/Stage/静态委托清零仍需独立矩阵。
 
+## 2026-09-24 ET FairyGUI Bootstrap shutdown reset/reinitialize
+
+在 `HEAD=6d988581` 的未提交代码切片上，给 ET Runner 完整关闭后的 ModelView 静态状态增加一次性
+通知。Runner 在 `World.Dispose()` 和 `FairyUIManager.Shutdown()` 后通知；ET Bootstrap 只移除自己
+占有的 `PreparePackage` 回调，并清理 Component factory、UI bridge 和初始化代次。
+
+- 双符号 `UNITY_ET + UNITY_GAMEHOT` 编译 generation `41`：`errorCount=0`、`warningCount=0`。
+- `Assets/FairyGUIDemoET.unity` PlayMode 中，`ET.FairyFiberLifecycleSmokeTest::RunFairyBootstrapShutdownReinitializeSmokeTest`
+  返回 `status=ok`。探针先关闭已有 ET Demo，再执行 FairyUIManager shutdown 与 ET shutdown-completed 通知；
+  断言 factory、ET-owned package callback、bridge delegates、table provider、GF loaded/loading forms 和
+  package diagnostics 清空；随后连续 Initialize 两次，由新的 Fiber/UIComponent 打开并关闭 Demo form，
+  再核对 owner、GRoot、package 和 GF 计数恢复到基线。`finally` 恢复进入测试前的主 Demo。
+- 同一 PlayMode 的 Unity Console Fairy Error 查询为 `matched=0`（扫描 46 条日志）。
+- 通过 `RestoreDefaultSymbols` 恢复客户端平台符号，再执行 `Game/Define Symbol/Refresh`；默认符号编译
+  generation `42`：`errorCount=0`、`warningCount=0`，Unity PlayMode 已停止。
+- 模式恢复后 Luban、资源规则和 `link.xml` 均回到 Git 基线，没有把模式切换副作用纳入提交。
+- `validate_changes.py` 已通过，检查 6 个代码变更路径为 0 error / 0 warning。
+
+探针直接调用 FairyUIManager shutdown 和完成通知来覆盖 ET reset/reinitialize 契约；它没有销毁实际 ET
+Runner GameObject，因此 Unity 对生产 `Runner.OnDestroy` 接线的实际调用仍待单独验证。真实
+`CodeLoader.ReloadAsync()` 后 HotfixView bridge 重绑、跨场景/domain reload 和禁用 domain reload 的重复
+PlayMode 也未由此证据覆盖。
+
 ## 证据边界
 
 本轮结果不能证明以下验收项：
@@ -203,7 +226,7 @@ OnViewReady、OnOpen、绑定和资源失败压力测试仍不直接创建 ET ch
 - 六类失败统一执行 100 次后的 ET child entity 基线；GameHot OnViewReady、OnOpen、绑定准备失败、Context 关闭失效，以及包 descriptor 资源失败、生成绑定类型错配均已有逐类 100 次证据；ET owner cancel/Destroy 也已有逐类 100 次 child/entity 与资源基线，但前四类尚未在 ET Component 路径复跑；
 - 真机旋转/安全区、输入矩阵和重复 add/remove；本轮已覆盖 Unity Editor 的四组分辨率矩阵；
 - 并发多 package 或语言切换；当前仓库只有一个运行时 Package1；
-- 场景重载、域/热更重载、重复 PlayMode 后旧 PlayerLoop/ResourceManager 引用清零；
+- 实际销毁 ET Runner GameObject 的 OnDestroy 接线；场景重载、真实热更/domain reload、重复 PlayMode 后旧 PlayerLoop/ResourceManager 引用清零；
 - ET IL2CPP Player、真机安全区/输入、URP 色觉方案和性能 Profiler 基线；
 - 版本检查/资源更新 UX 的产品决策。
 

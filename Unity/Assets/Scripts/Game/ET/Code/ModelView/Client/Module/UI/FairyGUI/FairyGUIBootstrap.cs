@@ -12,12 +12,25 @@ namespace ET.Client
         [global::ET.StaticField]
         private static bool s_Initialized;
 
+        [global::ET.StaticField]
+        private static long s_LifecycleGeneration;
+
+        [global::ET.StaticField]
+        private static readonly Action<FairyUIFormDescriptor> s_PreparePackage = PreparePackage;
+
+        internal static bool IsPreparePackageRegistered =>
+            FairyUIPresenterRegistry.PreparePackage == s_PreparePackage;
+
         public static async UniTask InitializeAsync()
         {
             if (s_Initialized)
             {
                 return;
             }
+
+            FairyUIManager.ETRuntimeShutdownCompleted -= HandleETRuntimeShutdownCompleted;
+            FairyUIManager.ETRuntimeShutdownCompleted += HandleETRuntimeShutdownCompleted;
+            long generation = s_LifecycleGeneration;
 
             // Component/System 打开链的映射登记:UI ID -> Component 工厂(泛型 AddChild)。
             FairyUIFormComponentRegistry.Register(
@@ -38,8 +51,7 @@ namespace ET.Client
 
             // ET 全部界面走 Component/System 打开链(per-open 工厂),不再注册类 Presenter;
             // 未命中注册表的打开会由 FairyUIManager 直接报稳定错误。
-            FairyUIPresenterRegistry.PreparePackage = descriptor =>
-                FairyPackageBinderRegistryGenerated.BindAllPackages(descriptor);
+            FairyUIPresenterRegistry.PreparePackage = s_PreparePackage;
 
             FairyUIManager uiManager = FairyUIManager.Instance;
             uiManager.Initialize();
@@ -59,12 +71,14 @@ namespace ET.Client
                 waitFrames++;
             }
 
+            ThrowIfLifecycleChanged(generation);
             if (tables == null)
             {
                 throw new GameFrameworkException("ET FairyGUI bootstrap requires a common TablesComponent.");
             }
 
             await tables.LoadAllAsync();
+            ThrowIfLifecycleChanged(generation);
             FairyUIManager.UIFormTableProvider = uiId => tables.DTUIForm.GetOrDefault(uiId);
 
             EnsureGroup(uiManager, "Default", 0);
@@ -74,6 +88,32 @@ namespace ET.Client
             EnsureGroup(uiManager, "RuntimeInspector", 400);
 
             s_Initialized = true;
+        }
+
+        private static void PreparePackage(FairyUIFormDescriptor descriptor)
+        {
+            FairyPackageBinderRegistryGenerated.BindAllPackages(descriptor);
+        }
+
+        private static void HandleETRuntimeShutdownCompleted()
+        {
+            s_LifecycleGeneration++;
+            s_Initialized = false;
+            FairyUIFormComponentRegistry.Clear();
+            UIComponentFairyUIBridge.Reset();
+            if (FairyUIPresenterRegistry.PreparePackage == s_PreparePackage)
+            {
+                FairyUIPresenterRegistry.PreparePackage = null;
+            }
+        }
+
+        private static void ThrowIfLifecycleChanged(long generation)
+        {
+            if (generation != s_LifecycleGeneration)
+            {
+                throw new OperationCanceledException(
+                    "ET FairyGUI bootstrap belongs to a previous runtime generation.");
+            }
         }
 
         private static void EnsureGroup(FairyUIManager uiManager, string name, int depth)
