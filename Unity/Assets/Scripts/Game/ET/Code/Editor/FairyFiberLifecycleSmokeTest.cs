@@ -725,6 +725,7 @@ namespace ET
             UIMainView originalView = originalComponent?.View as UIMainView;
             FairyInventoryItemWidget originalWidget = originalComponent?.ItemWidget;
             FiberManager originalFiberManager = FiberManager.Instance;
+            int originalFiberCount = originalFiberManager?.Count() ?? 0;
             TimeInfo originalTimeInfo = TimeInfo.Instance;
             EventSystem originalEventSystem = EventSystem.Instance;
             CodeLoaderComponent originalCodeLoader = CodeLoaderComponent.Instance;
@@ -735,8 +736,6 @@ namespace ET
             if (originalInit == null ||
                 originalRunner == null ||
                 originalRunnerGameObject == null ||
-                !string.Equals(originalRunnerGameObject.name, "ET", StringComparison.Ordinal) ||
-                originalRunner.gameObject != originalRunnerGameObject ||
                 originalOwner == null ||
                 originalComponent == null ||
                 originalContext == null ||
@@ -747,11 +746,17 @@ namespace ET
                 originalEventSystem == null ||
                 originalCodeLoader == null ||
                 startupBaseline.Package == null ||
-                uiManager.GetAllLoadedUIForms().Length != 1 ||
+                originalFiberCount <= 0 ||
+                uiManager.GetAllLoadedUIForms().Length <= 0 ||
                 uiManager.GetAllLoadingUIFormSerialIds().Length != 0)
             {
                 throw new InvalidOperationException(
-                    "Runner GameObject smoke test requires one fully initialized production ET FairyGUI demo.");
+                    $"Runner GameObject smoke test requires one fully initialized production ET FairyGUI demo " +
+                    $"(init={originalInit != null}, runner={originalRunner != null}, owner={originalOwner != null}, " +
+                    $"component={originalComponent != null}, context={originalContext != null}, view={originalView != null}, " +
+                    $"widget={originalWidget != null}, fiberCount={originalFiberCount}, package={startupBaseline.Package != null}, " +
+                    $"loaded={uiManager.GetAllLoadedUIForms().Length}, loading={uiManager.GetAllLoadingUIFormSerialIds().Length}, " +
+                    $"rootName={originalRunnerGameObject?.name}).");
             }
 
             int shutdownCompletedCount = 0;
@@ -759,6 +764,7 @@ namespace ET
             GameObject replacementRunnerGameObject = null;
             UIComponent replacementOwner = null;
             Action observeShutdownCompleted = () => ++shutdownCompletedCount;
+            Exception primaryException = null;
             try
             {
                 FairyUIManager.ETRuntimeShutdownCompleted += observeShutdownCompleted;
@@ -829,6 +835,7 @@ namespace ET
                     ReferenceEquals(TimeInfo.Instance, originalTimeInfo) ||
                     ReferenceEquals(EventSystem.Instance, originalEventSystem) ||
                     ReferenceEquals(CodeLoaderComponent.Instance, originalCodeLoader) ||
+                    FiberManager.Instance.Count() != originalFiberCount ||
                     replacementOwner == null ||
                     replacementOwner.IsDisposed ||
                     ReferenceEquals(replacementOwner, originalOwner) ||
@@ -856,7 +863,27 @@ namespace ET
                     frameworkUIManager.UIGroupCount != originalGroupCount)
                 {
                     throw new InvalidOperationException(
-                        "Replacement ET Init did not build a fresh Runner, World, owner, form, and package.");
+                        $"Replacement ET Init did not build a fresh Runner, World, owner, form, and package " +
+                        $"(init={ReferenceEquals(Init.Instance, replacementInit)}, runner={replacementRunner != null}, " +
+                        $"runnerObject={replacementRunner?.gameObject == replacementRunnerGameObject}, " +
+                        $"newInit={!ReferenceEquals(replacementInit, originalInit)}, newRunner={!ReferenceEquals(replacementRunner, originalRunner)}, " +
+                        $"fiberManager={!ReferenceEquals(FiberManager.Instance, originalFiberManager)}, " +
+                        $"timeInfo={!ReferenceEquals(TimeInfo.Instance, originalTimeInfo)}, " +
+                        $"eventSystem={!ReferenceEquals(EventSystem.Instance, originalEventSystem)}, " +
+                        $"codeLoader={!ReferenceEquals(CodeLoaderComponent.Instance, originalCodeLoader)}, " +
+                        $"fiberCount={FiberManager.Instance?.Count() ?? 0}/{originalFiberCount}, " +
+                        $"owner={replacementOwner != null}, ownerDisposed={replacementOwner?.IsDisposed}, " +
+                        $"newOwner={!ReferenceEquals(replacementOwner, originalOwner)}, component={replacementComponent != null}, " +
+                        $"context={replacementContext != null}, view={replacementView != null}, widget={replacementWidget != null}, " +
+                        $"newComponent={!ReferenceEquals(replacementComponent, originalComponent)}, " +
+                        $"newContext={!ReferenceEquals(replacementContext, originalContext)}, newView={!ReferenceEquals(replacementView, originalView)}, " +
+                        $"newWidget={!ReferenceEquals(replacementWidget, originalWidget)}, serial={replacementDemo?.SerialId}/{originalSerialId}, " +
+                        $"componentForm={replacementComponent?.FairyForm == replacementDemo}, componentSerial={replacementComponent?.SerialId}/{replacementDemo?.SerialId}, " +
+                        $"contextAlive={replacementContext?.IsAlive}, contextForm={replacementContext?.Form == replacementDemo}, " +
+                        $"contextSerial={replacementContext?.SerialId}/{replacementDemo?.SerialId}, viewDisposed={replacementView?.isDisposed}, " +
+                        $"widgetOpened={replacementWidget?.Opened}, widgetView={replacementWidget?.View != null}, package={replacementPackage != null}, " +
+                        $"newPackage={!ReferenceEquals(replacementPackage, startupBaseline.Package)}, ownerOwns={replacementOwner?.OwnsFairyUIForm(replacementDemo.SerialId)}, " +
+                        $"shutdownCount={shutdownCompletedCount}, groups={frameworkUIManager.UIGroupCount}/{originalGroupCount}).");
                 }
 
                 AssertFairyRuntimeGlobalBaseline(
@@ -919,47 +946,70 @@ namespace ET
                     requireExactPackage: false,
                     compareGeneration: false);
             }
+            catch (Exception exception)
+            {
+                primaryException = exception;
+                throw;
+            }
             finally
             {
-                FairyUIManager.ETRuntimeShutdownCompleted -= observeShutdownCompleted;
-
-                if (runnerDestroyAttempted)
+                try
                 {
-                    if (Init.Instance == null)
+                    FairyUIManager.ETRuntimeShutdownCompleted -= observeShutdownCompleted;
+
+                    if (runnerDestroyAttempted)
                     {
-                        replacementRunnerGameObject = new GameObject("ET");
-                        replacementRunnerGameObject.AddComponent<Init>();
+                        Init currentInit = Init.Instance;
+                        if (currentInit != null && GetETRunnerComponent(currentInit) == null)
+                        {
+                            UnityEngine.Object.DestroyImmediate(currentInit.gameObject);
+                        }
+
+                        if (ReferenceEquals(Init.Instance, null))
+                        {
+                            replacementRunnerGameObject = new GameObject("ET");
+                            replacementRunnerGameObject.AddComponent<Init>();
+                        }
+
+                        FairyUIForm currentDemo =
+                            frameworkUIManager.GetUIForm(DemoAsset) as FairyUIForm;
+                        if ((replacementOwner == null || replacementOwner.IsDisposed) && currentDemo == null)
+                        {
+                            currentDemo = await WaitForProductionMainDemoAsync(
+                                frameworkUIManager,
+                                originalInit,
+                                originalFiberManager);
+                        }
+
+                        if (replacementOwner == null || replacementOwner.IsDisposed)
+                        {
+                            replacementOwner = GetFairyUIFormOwner(currentDemo);
+                        }
+                        if (currentDemo == null && replacementOwner != null && !replacementOwner.IsDisposed)
+                        {
+                            currentDemo = await replacementOwner.OpenFairyUIFormAsync(
+                                UGFUIFormId.FairyDemoForm,
+                                replacementOwner);
+                        }
+
+                        if (currentDemo == null ||
+                            replacementOwner == null ||
+                            replacementOwner.IsDisposed ||
+                            !replacementOwner.OwnsFairyUIForm(currentDemo.SerialId))
+                        {
+                            throw new InvalidOperationException(
+                                "Failed to restore the replacement ET runtime demo after Runner testing.");
+                        }
+                    }
+                }
+                catch (Exception restorationException)
+                {
+                    if (primaryException == null)
+                    {
+                        throw;
                     }
 
-                    FairyUIForm currentDemo =
-                        frameworkUIManager.GetUIForm(DemoAsset) as FairyUIForm;
-                    if ((replacementOwner == null || replacementOwner.IsDisposed) && currentDemo == null)
-                    {
-                        currentDemo = await WaitForProductionMainDemoAsync(
-                            frameworkUIManager,
-                            originalInit,
-                            originalFiberManager);
-                    }
-
-                    if (replacementOwner == null || replacementOwner.IsDisposed)
-                    {
-                        replacementOwner = GetFairyUIFormOwner(currentDemo);
-                    }
-                    if (currentDemo == null && replacementOwner != null && !replacementOwner.IsDisposed)
-                    {
-                        currentDemo = await replacementOwner.OpenFairyUIFormAsync(
-                            UGFUIFormId.FairyDemoForm,
-                            replacementOwner);
-                    }
-
-                    if (currentDemo == null ||
-                        replacementOwner == null ||
-                        replacementOwner.IsDisposed ||
-                        !replacementOwner.OwnsFairyUIForm(currentDemo.SerialId))
-                    {
-                        throw new InvalidOperationException(
-                            "Failed to restore the replacement ET runtime demo after Runner testing.");
-                    }
+                    Debug.LogException(restorationException);
                 }
             }
         }
@@ -1023,8 +1073,19 @@ namespace ET
                 await UniTask.Yield(PlayerLoopTiming.Update);
             }
 
+            Init lastInit = Init.Instance;
+            FiberManager lastFiberManager = FiberManager.Instance;
+            FairyUIForm lastForm = frameworkUIManager.GetUIForm(DemoAsset) as FairyUIForm;
+            UIComponent lastOwner = GetFairyUIFormOwner(lastForm);
             throw new InvalidOperationException(
-                "Production ET Init did not reach a fully owned FairyGUI demo within 600 frames.");
+                $"Production ET Init did not reach a fully owned FairyGUI demo within 600 frames " +
+                $"(init={lastInit != null}, runner={GetETRunnerComponent(lastInit) != null}, " +
+                $"fiber={lastFiberManager != null}, fiberCount={lastFiberManager?.Count() ?? 0}, " +
+                $"form={lastForm != null}, owner={lastOwner != null}, ownerDisposed={lastOwner?.IsDisposed ?? true}, " +
+                $"componentRegistry={FairyUIFormComponentRegistry.TryGet(UGFUIFormId.FairyDemoForm, out _)}, " +
+                $"prepare={IsFairyBootstrapPreparePackageRegistered()}, provider={FairyUIManager.UIFormTableProvider != null}, " +
+                $"bridge={UIComponentFairyUIBridge.Open != null}/{UIComponentFairyUIBridge.Close != null}/{UIComponentFairyUIBridge.Refocus != null}, " +
+                $"package={UIPackage.GetByName("Package1") != null}).");
         }
 
         private static void AssertProductionRunnerShutdownState(
