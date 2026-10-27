@@ -15,6 +15,7 @@
     "com.unity.render-pipelines.universal": "17.3.0",
     "com.unity.scriptablebuildpipeline": "4.0.0",
     "com.unity.searcher": "4.9.5",
+    "com.xw.remote-execution": "https://github.com/XuToWei/UnityRemoteExecution.git",
     "me.xw.protobufunity": "https://github.com/XuToWei/Protobuf-Unity.git",
     "me.xw.reactivebinding": "https://github.com/XuToWei/ReactiveBinding.git?path=Unity",
     "me.xw.toolbarextension": "https://github.com/XuToWei/ToolbarExtension.git",

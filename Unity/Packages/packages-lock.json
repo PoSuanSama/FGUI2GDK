@@ -243,6 +243,13 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
+    "com.xw.remote-execution": {
+      "version": "https://github.com/XuToWei/UnityRemoteExecution.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "4177555eaab61d45a82e9dfcd9ac9fe9f56cc539"
+    },
     "me.xw.protobufunity": {
       "version": "https://github.com/XuToWei/Protobuf-Unity.git",
       "depth": 0,
