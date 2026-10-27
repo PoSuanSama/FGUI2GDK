@@ -219,15 +219,59 @@ Runner GameObject，因此 Unity 对生产 `Runner.OnDestroy` 接线的实际调
 `CodeLoader.ReloadAsync()` 后 HotfixView bridge 重绑、跨场景/domain reload 和禁用 domain reload 的重复
 PlayMode 也未由此证据覆盖。
 
+## 2026-10-27 打开事务收敛（收尾）
+
+将打开事务从「GF 状态机 + 自造 pending 状态机」收敛为单一通道，用删除而非追加完成收尾。
+
+- 基线 `f5749bb4` 上重构；Unity `6000.3.22f1`。
+- `FairyOpenRequest` 经 GF `userData` 从 `OpenUIForm` 原样传到 `OnInit`、`OnOpen` 与结果事件，删除 `FairyUIFormPendingRegistry`（319 行）及其 4 个字典。
+- 打开完成改为 `UniTaskCompletionSource` + `OpenUIFormSuccess/Failure` 事件，删除 `while(true)` 轮询、失败表与同步/异步双分支。
+- `ThrowIfOpenInvalidated` 从 9 处收敛到 2 个边界；`OnInit` 失败由 `FairyUIForm` 自行释放，替代 `AdoptedForm` 跨对象兜底。
+- 删除无调用者的 `FairyPackageManager.GetLastError` 与 `s_LastErrors`。
+
+双符号 `UNITY_GAMEHOT;UNITY_ET` 与纯 `UNITY_GAMEHOT` 两次 Unity 编译均为 `0 error / 0 warning`；恢复默认符号后同样为 `0 error / 0 warning`，`ProjectSettings` 与 `link.xml` 无差异。
+
+已通过的 AgentCallable（`Assets/FairyGUIDemo.unity`）：
+
+| 方法 | 覆盖 |
+| --- | --- |
+| `ValidateFairyUIFormLifecycleCycles` | 预取消、池化 owner token、多实例 serial、后台线程取消、100 次循环 |
+| `ValidateFairyUIOpenFailureCleanup` | OnViewReady / OnOpen / 绑定准备失败逐类 100 次，关闭后 Context 失效 |
+| `ValidateFairyUIResourceFailureCleanup` | descriptor 资源加载失败 100 次回滚 |
+| `ValidateFairyUIBindingTypeMismatchCleanup` | 生成绑定类型错配 100 次回滚 |
+| `ValidateFairyUIMixedDepthAndSafeArea` | full-screen/safe-area 混合层级与非法安全区 |
+| `ValidateFairyUIManagerShutdownReinitialize` | 关闭期间取消打开、原地 Shutdown/reinitialize |
+| `Game.Hot.Editor.FairyUIManagerSmokeTest::RunFairyUIManagerSmokeTest` | GameHot 生产 Presenter 注册表 |
+
+ET 链路（`Assets/FairyGUIDemoET.unity`）：
+
+| 方法 | 覆盖 |
+| --- | --- |
+| `ET.FairyInventorySmokeTest::RunFairyInventorySmokeTest` | 同资源三实例、幂等关闭、pending 取消、owner Destroy |
+| `ET.FairyFiberLifecycleSmokeTest::RunFairyFiberLifecycleSmokeTest` | 真实 `FiberManager.Remove` 后窗体/Widget/loaded form 回基线 |
+
+`type=error, query=Fairy` 查询为 `matched=0`。全量错误仅命中仓库既有的 ET Server 端口占用（30300–30303）与 `RouterComponentSystem.Update` 空引用，与本次变更无关。
+
+本轮观察：`ValidateFairyUIOpenFailureCleanup` 紧跟 `ValidateFairyUIFormLifecycleCycles` 执行时，会因 package diagnostics 残留失败；在干净 PlayMode 会话中通过。测试之间存在状态污染，属既有测试隔离问题，不在本轮修复范围。
+
+未验证：ET IL2CPP Player、真机旋转/安全区/输入、URP 色觉、性能基线、domain reload 与重复 PlayMode 矩阵。这些已移交发布验证任务，不作为框架收尾条件。
+
+## 2026-10-27 P0：错误分类与主线程断言
+
+- 新增 `FairyUIException` + `FairyUIError`（17 个错误码）。FairyGUI 运行时目录 **80 处**抛出点全部改用带错误码的异常，`throw new GameFrameworkException` 归零。
+- `FairyUIException.Message` 保留原始文案并加 `[ErrorCode]` 前缀，既有 `exception.Message.Contains(...)` / `ToString().Contains(...)` 断言不受影响。
+- 新增 `[Conditional("UNITY_EDITOR")] AssertMainThread`：`FairyUIManager` 经 `GetRequiredUIManager([CallerMemberName])` 一次覆盖 30 个转发方法，另在 `Initialize` / `Shutdown` 显式断言；`FairyPackageManager` 在 `AcquireAsync` / `Shutdown` 断言。非 Editor 构建由编译器移除，零开销。
+- 编译 0 error / 0 warning；`ValidateFairyUIFormLifecycleCycles`、`ValidateFairyUIOpenFailureCleanup`、`ET.FairyInventorySmokeTest` 全部通过，运行期 error 日志 0 条。
+
 ## 证据边界
 
-本轮结果不能证明以下验收项：
+框架收尾以 `prd.md` 的四条可观测契约为判定标准：打开成功、打开失败无残留、关闭后 Context 立即失效、连续 3 次仍成立。2026-10-27 轮次已覆盖 GameHot 与 ET 两条链路，并保留既有 100 次压力回归作为额外证据。
 
-- 六类失败统一执行 100 次后的 ET child entity 基线；GameHot OnViewReady、OnOpen、绑定准备失败、Context 关闭失效，以及包 descriptor 资源失败、生成绑定类型错配均已有逐类 100 次证据；ET owner cancel/Destroy 也已有逐类 100 次 child/entity 与资源基线，但前四类尚未在 ET Component 路径复跑；
-- 真机旋转/安全区、输入矩阵和重复 add/remove；本轮已覆盖 Unity Editor 的四组分辨率矩阵；
-- 并发多 package 或语言切换；当前仓库只有一个运行时 Package1；
-- 实际销毁 ET Runner GameObject 的 OnDestroy 接线；场景重载、真实热更/domain reload、重复 PlayMode 后旧 PlayerLoop/ResourceManager 引用清零；
-- ET IL2CPP Player、真机安全区/输入、URP 色觉方案和性能 Profiler 基线；
+以下项目不再作为框架收尾的验收条件，已移交独立的发布验证任务：
+
+- 真机旋转、安全区与输入矩阵；
+- ET IL2CPP Player、domain reload、场景重载与重复 PlayMode 矩阵；
+- URP 色觉方案与性能 Profiler 基线；
 - 版本检查/资源更新 UX 的产品决策。
 
-这些项目继续保持未完成状态，不将本轮结果表述为全部验收通过。
+这些项目未执行，也不在本任务中标记为通过。

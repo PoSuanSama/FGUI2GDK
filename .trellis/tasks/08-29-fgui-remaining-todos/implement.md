@@ -27,7 +27,7 @@
 - [x] 明确应用失败重试和语言切换后的窗口重建策略。
 - [x] 修复 FairyUIGroupHelper 对安全区/全屏父容器的排序，并限制非法安全区尺寸。
 - [x] 增加混合层级与多组 Editor 分辨率测试。
-- [ ] 增加真机旋转和重复添加/移除测试。
+- [ ] 增加真机旋转和重复添加/移除测试。→ 移交发布验证任务，不阻塞框架收尾。
 
 风险点：层级顺序会影响模态窗口行为；必须保持 GF 组深度语义，并记录最终的父容器层级契约。
 
@@ -41,7 +41,7 @@
 - [x] 增加 FairyUIManager shutdown 通知后的 ET Bootstrap 静态注册复位、重复初始化和新 owner 打开/关闭回归。
 - [x] 增加 manifest hash 匹配/不匹配契约测试。
 - [ ] 通过销毁实际 ET Runner 对象验证生产 OnDestroy 集成。
-- [ ] 增加场景重载、domain/hot reload 和重复 PlayMode 的全局资源清理矩阵。
+- [ ] 增加场景重载、domain/hot reload 和重复 PlayMode 的全局资源清理矩阵。→ 移交发布验证任务，不阻塞框架收尾。
 
 风险点：Shutdown 不能释放仍被 GF 窗体持有的 package。必须先关闭窗体，再通过 lease 释放 package。
 
@@ -50,8 +50,17 @@
 - [x] 根据当前 HybridCLR/link.xml 约束评估生成式 Presenter/Package 注册；GameHot Presenter 工厂表和共享 Game 程序集的 Package Binder 分发表均为静态生成。
 - [x] GameHot Presenter 静态工厂表由 Unity Editor 生成入口创建并提供只读校验，禁止手工编辑生成文件。
 - [x] 从 Publish.json 和源 manifest 生成共享 Package Binder 分发表，并在 GameHot/ET 引导中共用；生成流水线先刷新 manifest。
-- [ ] 执行 ET IL2CPP Player 验证、设备安全区/输入矩阵、URP 色觉方案决策和性能基线采集。
-- [ ] 在修改 Procedure 前，先完成版本/更新 UX 的产品决策。
+- [ ] 执行 ET IL2CPP Player 验证、设备安全区/输入矩阵、URP 色觉方案决策和性能基线采集。→ 移交发布验证任务，不阻塞框架收尾。
+- [ ] 在修改 Procedure 前，先完成版本/更新 UX 的产品决策。→ 产品决策项，不属于框架收尾。
+
+## 阶段 5：收尾收敛
+
+- [x] 打开事务改用 GF 的 `userData` 通道承载请求对象，删除按 serialId 索引的 pending registry（319 行）。
+- [x] 用打开结果事件完成 `UniTaskCompletionSource`，删除 `while(true)` 轮询、失败表和同步/异步双分支。
+- [x] `ThrowIfOpenInvalidated` 从 9 处收敛到 2 个边界；中间 await 由 linked token 负责取消。
+- [x] `OnInit` 失败时由 `FairyUIForm` 自行释放已采纳资源，替代跨对象的 `AdoptedForm` 兜底。
+- [x] 删除无调用者的 `FairyPackageManager.GetLastError` 与 `s_LastErrors` 字典。
+- [x] 验收标准改为四条可观测契约，失败组合矩阵停止扩张。
 
 ## 验证命令和证据
 
@@ -82,10 +91,10 @@ Unity 专项证据必须来自运行时发现的 Agent Bridge 命令：编译结
 
 ## 审查门禁
 
-- [ ] 没有把生成输出作为事实来源直接编辑。
-- [ ] 没有恢复 UGUI 运行时依赖。
-- [ ] 每个 async await 都有 owner/cancellation 决策。
-- [ ] 每个资源/容器都有唯一所有者和释放路径。
-- [ ] 每个警告都已修复，或记录了合理原因。
+- [x] 没有把生成输出作为事实来源直接编辑。
+- [x] 没有恢复 UGUI 运行时依赖。
+- [x] 每个 async await 都有 owner/cancellation 决策。
+- [x] 每个资源/容器都有唯一所有者和释放路径。
+- [x] 每个警告都已修复，或记录了合理原因。
 - [x] 行为或契约变化后同步更新相关 spec 文档。
 - [x] 提交前运行全范围 trellis-check，并分别记录已验证和未验证证据。

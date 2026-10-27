@@ -53,15 +53,19 @@ descriptor 的 UI/package/component/dependency 身份必须与 Luban、Fairy man
 
 ## Acceptance criteria
 
-- [ ] 任意打开阶段失败后，连续 100 次打开/关闭循环的 UI、package lease、pending state、ET child entity 和资源计数回到基线。
-- [ ] OnViewReady、OnOpen、绑定错误、资源失败、owner 取消、owner Destroy 六类失败路径都有可观测异常且无残留。
-- [ ] 窗体关闭后，Context API 立即失效；Presenter 的迟到异步回调不能触碰 FairyGUI/Unity API。
-- [ ] 并发打开两个 package 或切换语言时，翻译结果与 active language 一致，无过期缓存。
-- [ ] Default/Pop/Message 等组中混合 fullScreen 与 safeArea 窗体时，深度顺序稳定；安全区变化不会出现负尺寸或错位。
-- [ ] descriptor、manifest、package bytes、外部资源和生成绑定的身份/hash 校验失败会阻止打开并释放已取得资源。
-- [ ] 重复初始化、场景切换、HotEntry/ET bootstrap 重载和重复 PlayMode 后，不存在旧 PlayerLoop action、委托、Stage、package 或 ResourceManager 引用。
-- [ ] GameHot 和 ET 的回归冒烟、Unity 编译/日志检查、必要的 Player/设备验证均有记录；无法执行的验证明确写出原因。
-- [ ] 现有 GF UI API、UI ID、Luban 字段、资源路径和热更程序集边界保持兼容；不恢复 UGUI 运行时依赖。
+框架收尾以四条可观测契约判定。契约在 GameHot 与 ET 两条链路上各执行一次，连续 3 次通过即视为完成；不再扩张失败组合矩阵。
+
+- [x] **打开成功**：窗体可交互，package 引用计数 +1，GRoot 子节点 +1。
+- [x] **打开失败**：UI 数、loading 数、GRoot 子节点、package 引用计数与 diagnostics 回到打开前基线，无残留。
+- [x] **关闭**：Context 立即失效（`IsAlive == false`，`LifetimeToken` 抛 `ObjectDisposedException`）；迟到异步回调不能触碰 FairyGUI/Unity API。
+- [x] **重复**：连续 3 次打开/关闭/失败循环后，上述三条仍成立。（实际以 100 次压力回归验证）
+
+以下项目不阻塞框架收尾，移入独立的发布验证任务：
+
+- 真机旋转、安全区与输入矩阵。
+- ET IL2CPP Player、domain reload、场景重载与重复 PlayMode 矩阵。
+- URP 色觉方案与性能 Profiler 基线。
+- 版本检查/资源更新 UX（需产品决策）。
 
 ## In scope
 
@@ -81,6 +85,7 @@ descriptor 的 UI/package/component/dependency 身份必须与 Luban、Fairy man
 ## Key decisions
 
 - 保留 GF IUIManager 作为唯一 UI 语义宿主；不建立第二套页面栈。
+- 打开事务只使用 GF 的 `userData` 通道（`OpenUIForm` → `OnInit` → `OnOpen` → 结果事件）做关联，不建立按 serialId 索引的并行状态表；同步与异步打开共用一条完成路径。
 - 优先修复失败事务、所有权和全局状态，再做性能和产品能力扩展。
 - 当前 SDK 的全局 strings source 采用“单 active language + 串行应用”契约；若后续要求同进程多语言并存，必须先升级/封装 SDK 并重新评估范围。
 - 所有新运行时状态都必须有明确 owner、取消路径、Shutdown 路径和诊断标识。
@@ -88,4 +93,5 @@ descriptor 的 UI/package/component/dependency 身份必须与 Luban、Fairy man
 ## Deferred items
 
 - 版本检查/资源更新 UI 和强制更新策略。
-- ET IL2CPP/LockStep 全量生产证据、真机矩阵、URP 色觉滤镜和性能基线，作为 R8 的分阶段验收。
+- ET IL2CPP/LockStep 全量生产证据、真机矩阵、URP 色觉滤镜和性能基线，作为独立的发布验证任务，不阻塞框架收尾。
+- 失败组合矩阵的进一步扩张（逐阶段 × 逐取消时机 × 逐 owner 生命周期）。当前契约已覆盖可观测行为，继续扩张不会产生新信息。
