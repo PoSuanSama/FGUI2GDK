@@ -111,7 +111,7 @@ namespace ET.Client
             FairyUIFormService.PresenterFactory presenterFactory =
                 new FairyUIFormService.PresenterFactory(
                     () => CreateComponentPresenter(self, ownerRef, uiId, afterViewReadyForTesting),
-                    presenter => (presenter as FairyUIPresenterAdapter)?.Component.Dispose());
+                    presenter => (presenter as FairyUIFormComponent)?.Dispose());
             try
             {
                 openedForm = await FairyUIFormService.OpenFairyUIFormAsync(
@@ -193,7 +193,7 @@ namespace ET.Client
                 return false;
             }
 
-            FairyUIManager.Instance.RefocusUIForm(form, userData);
+            FairyUIManager.Instance.Manager.RefocusUIForm(form, userData);
             return true;
         }
 
@@ -274,10 +274,16 @@ namespace ET.Client
 #if UNITY_EDITOR
             if (afterViewReadyForTesting != null)
             {
-                return new FairyUIPresenterAdapter(component, afterViewReadyForTesting);
+                FairyUIManager.AfterViewReadyForTesting = presenter =>
+                {
+                    if (presenter is FairyUIFormComponent target)
+                    {
+                        afterViewReadyForTesting(target);
+                    }
+                };
             }
 #endif
-            return new FairyUIPresenterAdapter(component);
+            return component;
         }
 
         private static void Cancel(CancellationTokenSource cancellation)
@@ -291,9 +297,9 @@ namespace ET.Client
         private static void CloseBySerialId(int serialId)
         {
             FairyUIManager uiManager = FairyUIManager.Instance;
-            if (uiManager.HasUIForm(serialId) || uiManager.IsLoadingUIForm(serialId))
+            if (uiManager.Manager.HasUIForm(serialId) || uiManager.Manager.IsLoadingUIForm(serialId))
             {
-                uiManager.CloseUIForm(serialId);
+                uiManager.Manager.CloseUIForm(serialId);
             }
         }
 

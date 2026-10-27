@@ -88,7 +88,7 @@ namespace ET.Client
 
             FairyUIManager uiManager = FairyUIManager.Instance;
             int loadedForms = uiManager.GetAllLoadedUIForms().Length;
-            int loadingForms = uiManager.GetAllLoadingUIFormSerialIds().Length;
+            int loadingForms = uiManager.Manager.GetAllLoadingUIFormSerialIds().Length;
             int tableCount = 0;
             if (Tables.Instance != null && Tables.Instance.DataTables != null)
             {

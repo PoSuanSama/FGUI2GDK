@@ -18,6 +18,13 @@ namespace ET.Client
         [global::ET.StaticField]
         private static readonly Action<FairyUIFormDescriptor> s_PreparePackage = PreparePackage;
 
+        /// <summary>
+        /// 常驻包白名单：填包名后，这些包在窗体全部关闭时也不会卸载。
+        /// 默认空，由业务按需填写；常驻会占用内存，不要放低频界面。
+        /// </summary>
+        [global::ET.StaticField]
+        private static readonly string[] WarmPackages = Array.Empty<string>();
+
         internal static bool IsPreparePackageRegistered =>
             FairyUIPresenterRegistry.PreparePackage == s_PreparePackage;
 
@@ -87,6 +94,20 @@ namespace ET.Client
             EnsureGroup(uiManager, "Guide", 300);
             EnsureGroup(uiManager, "RuntimeInspector", 400);
 
+            // 白名单为空时不产生任何加载，仅保留接入位。
+            for (int i = 0; i < WarmPackages.Length; i++)
+            {
+                try
+                {
+                    await uiManager.WarmPackageAsync(WarmPackages[i]);
+                }
+                catch (Exception exception)
+                {
+                    Log.Warning(
+                        $"Failed to warm FairyGUI package '{WarmPackages[i]}': {exception}");
+                }
+            }
+
             s_Initialized = true;
         }
 
@@ -118,7 +139,7 @@ namespace ET.Client
 
         private static void EnsureGroup(FairyUIManager uiManager, string name, int depth)
         {
-            if (uiManager.HasUIGroup(name))
+            if (uiManager.Manager.HasUIGroup(name))
             {
                 return;
             }

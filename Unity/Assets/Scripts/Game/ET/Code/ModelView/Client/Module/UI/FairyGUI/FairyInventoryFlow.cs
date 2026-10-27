@@ -56,7 +56,7 @@ namespace ET.Client
                 openData);
             openData.Attach(uiForm);
 
-            if (!FairyUIManager.Instance.HasUIForm(uiForm.SerialId))
+            if (!FairyUIManager.Instance.Manager.HasUIForm(uiForm.SerialId))
             {
                 return;
             }

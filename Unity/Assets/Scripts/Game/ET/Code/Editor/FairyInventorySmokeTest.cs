@@ -33,10 +33,10 @@ namespace ET
 
             FairyUIForm demoForm = uiManager.GetUIForm(DemoAsset);
             ET.Client.UIComponent owner = null;
-            if (demoForm?.Presenter is ET.Client.FairyUIPresenterAdapter adapter && adapter.Component != null)
+            if (demoForm?.Presenter is ET.Client.FairyUIFormComponent adapter && !adapter.IsDisposed)
             {
                 // Component/System 打开链:Adapter 包装的 Component 是 owner 的子实体。
-                owner = adapter.Component.Parent as ET.Client.UIComponent;
+                owner = adapter.Parent as ET.Client.UIComponent;
             }
 
             if (owner == null || owner.IsDisposed || !owner.OwnsFairyUIForm(demoForm.SerialId))
@@ -85,8 +85,8 @@ namespace ET
             }
 
             ET.Client.FairyItemDetailFormComponent detailComponent =
-                detailForm?.Presenter is ET.Client.FairyUIPresenterAdapter detailAdapter
-                    ? detailAdapter.Component as ET.Client.FairyItemDetailFormComponent
+                detailForm?.Presenter is ET.Client.FairyUIFormComponent detailAdapter
+                    ? detailAdapter as ET.Client.FairyItemDetailFormComponent
                     : null;
             if (detailComponent == null)
             {
@@ -198,8 +198,8 @@ namespace ET
             // 必须随宿主上下文统一回收(View 已释放、Opened 复位)。
             FairyUIForm demoForm = uiManager.GetUIForm(DemoAsset);
             ET.Client.FairyDemoFormComponent demoComponent =
-                demoForm?.Presenter is ET.Client.FairyUIPresenterAdapter demoAdapter
-                    ? demoAdapter.Component as ET.Client.FairyDemoFormComponent
+                demoForm?.Presenter is ET.Client.FairyUIFormComponent demoAdapter
+                    ? demoAdapter as ET.Client.FairyDemoFormComponent
                     : null;
             Game.FairyInventoryItemWidget demoWidget = demoComponent?.ItemWidget;
             if (demoWidget == null || demoWidget.Opened == false || demoWidget.View == null)

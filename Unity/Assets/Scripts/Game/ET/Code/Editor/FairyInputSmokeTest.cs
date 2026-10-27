@@ -99,9 +99,9 @@ namespace ET
                 // 取消:打开 overlay(最上层)后 CancelTopForm 应关闭它。
                 FairyUIForm overlayForm = null;
                 UIComponent owner = null;
-                if (demoForm.Presenter is FairyUIPresenterAdapter adapter && adapter.Component != null)
+                if (demoForm.Presenter is FairyUIFormComponent adapter && !adapter.IsDisposed)
                 {
-                    owner = adapter.Component.Parent as UIComponent;
+                    owner = adapter.Parent as UIComponent;
                 }
 
                 if (owner != null)

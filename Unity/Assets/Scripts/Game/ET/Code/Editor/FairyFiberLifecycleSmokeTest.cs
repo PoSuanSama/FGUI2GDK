@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using AgentBridge;
@@ -45,9 +46,9 @@ namespace ET
             FairyUIForm mainDemo = uiManager.GetUIForm(DemoAsset);
             UIComponent mainOwner = null;
             int mainDemoSerial = 0;
-            if (mainDemo?.Presenter is FairyUIPresenterAdapter mainAdapter && mainAdapter.Component != null)
+            if (mainDemo?.Presenter is FairyUIFormComponent mainAdapter && !mainAdapter.IsDisposed)
             {
-                mainOwner = mainAdapter.Component.Parent as UIComponent;
+                mainOwner = mainAdapter.Parent as UIComponent;
             }
 
             int originalLoadedForms = uiManager.GetAllLoadedUIForms().Length;
@@ -301,9 +302,9 @@ namespace ET
             FairyUIManager uiManager = FairyUIManager.Instance;
             FairyUIForm mainDemo = uiManager.GetUIForm(DemoAsset);
             UIComponent mainOwner = null;
-            if (mainDemo?.Presenter is FairyUIPresenterAdapter mainAdapter && mainAdapter.Component != null)
+            if (mainDemo?.Presenter is FairyUIFormComponent mainAdapter && !mainAdapter.IsDisposed)
             {
-                mainOwner = mainAdapter.Component.Parent as UIComponent;
+                mainOwner = mainAdapter.Parent as UIComponent;
             }
 
             bool restoreMainDemo = mainDemo != null &&
@@ -392,9 +393,9 @@ namespace ET
             FairyUIForm mainDemo = uiManager.GetUIForm(DemoAsset);
             UIComponent mainOwner = null;
             int mainDemoSerial = 0;
-            if (mainDemo?.Presenter is FairyUIPresenterAdapter mainAdapter && mainAdapter.Component != null)
+            if (mainDemo?.Presenter is FairyUIFormComponent mainAdapter && !mainAdapter.IsDisposed)
             {
-                mainOwner = mainAdapter.Component.Parent as UIComponent;
+                mainOwner = mainAdapter.Parent as UIComponent;
             }
 
             if (mainOwner != null && mainOwner.OwnsFairyUIForm(mainDemo.SerialId))
@@ -439,8 +440,8 @@ namespace ET
                 }
 
                 FairyDemoFormComponent demoComponent =
-                    demoForm.Presenter is FairyUIPresenterAdapter adapter
-                        ? adapter.Component as FairyDemoFormComponent
+                    demoForm.Presenter is FairyUIFormComponent adapter
+                        ? adapter as FairyDemoFormComponent
                         : null;
                 demoWidget = demoComponent?.ItemWidget;
                 if (demoWidget == null || demoWidget.Opened == false)
@@ -510,9 +511,9 @@ namespace ET
             }
 
             FairyUIForm mainDemo = uiManager.GetUIForm(DemoAsset);
-            UIComponent mainOwner = mainDemo?.Presenter is FairyUIPresenterAdapter mainAdapter &&
-                mainAdapter.Component != null
-                    ? mainAdapter.Component.Parent as UIComponent
+            UIComponent mainOwner = mainDemo?.Presenter is FairyUIFormComponent mainAdapter &&
+                !mainAdapter.IsDisposed
+                    ? mainAdapter.Parent as UIComponent
                     : null;
             bool restoreMainDemo = mainDemo != null &&
                 mainOwner != null &&
@@ -718,8 +719,8 @@ namespace ET
             GameObject originalRunnerGameObject = originalInit?.gameObject;
             UIComponent originalOwner = GetFairyUIFormOwner(originalDemo);
             FairyDemoFormComponent originalComponent =
-                originalDemo.Presenter is FairyUIPresenterAdapter originalAdapter
-                    ? originalAdapter.Component as FairyDemoFormComponent
+                originalDemo.Presenter is FairyUIFormComponent originalAdapter
+                    ? originalAdapter as FairyDemoFormComponent
                     : null;
             FairyUIFormContext originalContext = originalComponent?.Context;
             UIMainView originalView = originalComponent?.View as UIMainView;
@@ -818,8 +819,8 @@ namespace ET
                 Component replacementRunner = GetETRunnerComponent(replacementInit);
                 replacementOwner = GetFairyUIFormOwner(replacementDemo);
                 FairyDemoFormComponent replacementComponent =
-                    replacementDemo.Presenter is FairyUIPresenterAdapter replacementAdapter
-                        ? replacementAdapter.Component as FairyDemoFormComponent
+                    replacementDemo.Presenter is FairyUIFormComponent replacementAdapter
+                        ? replacementAdapter as FairyDemoFormComponent
                         : null;
                 FairyUIFormContext replacementContext = replacementComponent?.Context;
                 UIMainView replacementView = replacementComponent?.View as UIMainView;
@@ -925,8 +926,8 @@ namespace ET
                     UGFUIFormId.FairyDemoForm,
                     replacementOwner);
                 FairyDemoFormComponent reopenedComponent =
-                    reopenedDemo.Presenter is FairyUIPresenterAdapter reopenedAdapter
-                        ? reopenedAdapter.Component as FairyDemoFormComponent
+                    reopenedDemo.Presenter is FairyUIFormComponent reopenedAdapter
+                        ? reopenedAdapter as FairyDemoFormComponent
                         : null;
                 if (reopenedComponent == null ||
                     reopenedComponent.IsDisposed ||
@@ -1027,8 +1028,8 @@ namespace ET
 
         private static UIComponent GetFairyUIFormOwner(FairyUIForm form)
         {
-            return form?.Presenter is FairyUIPresenterAdapter adapter && adapter.Component != null
-                ? adapter.Component.Parent as UIComponent
+            return form?.Presenter is FairyUIFormComponent adapter && !adapter.IsDisposed
+                ? adapter.Parent as UIComponent
                 : null;
         }
 
@@ -1328,8 +1329,8 @@ namespace ET
                 owner = root.AddComponent<UIComponent>();
                 form = await owner.OpenFairyUIFormAsync(UGFUIFormId.FairyDemoForm, owner);
                 serialId = form.SerialId;
-                component = form.Presenter is FairyUIPresenterAdapter adapter
-                    ? adapter.Component as FairyDemoFormComponent
+                component = form.Presenter is FairyUIFormComponent adapter
+                    ? adapter as FairyDemoFormComponent
                     : null;
                 context = component?.Context;
                 view = component?.View as UIMainView;
@@ -1596,7 +1597,8 @@ namespace ET
                         expected,
                         FairyPackageManager.GetDiagnostics(),
                         compareGeneration) &&
-                    (UIPackage.GetByName("Package1") != null) == expectedPackageRegistered)
+                    (UIPackage.GetByName("Package1") != null) ==
+                    (expectedPackageRegistered || FairyPackageManager.IsPackageWarm("Package1")))
                 {
                     return;
                 }
@@ -1616,15 +1618,21 @@ namespace ET
             IReadOnlyList<FairyPackageDiagnostic> actual,
             bool compareGeneration = true)
         {
-            if (expected.Count != actual.Count)
+            // 常驻包在窗体全部关闭后仍留在诊断里，不参与基线比较。
+            List<FairyPackageDiagnostic> expectedItems =
+                expected.Where(item => !item.IsPinned).ToList();
+            List<FairyPackageDiagnostic> actualItems =
+                actual.Where(item => !item.IsPinned).ToList();
+
+            if (expectedItems.Count != actualItems.Count)
             {
                 return false;
             }
 
-            for (int i = 0; i < expected.Count; i++)
+            for (int i = 0; i < expectedItems.Count; i++)
             {
-                FairyPackageDiagnostic expectedItem = expected[i];
-                FairyPackageDiagnostic actualItem = actual[i];
+                FairyPackageDiagnostic expectedItem = expectedItems[i];
+                FairyPackageDiagnostic actualItem = actualItems[i];
                 if (!string.Equals(expectedItem.Name, actualItem.Name, StringComparison.Ordinal) ||
                     expectedItem.Status != actualItem.Status ||
                     (compareGeneration && expectedItem.Generation != actualItem.Generation) ||
