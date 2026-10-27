@@ -25,7 +25,9 @@ namespace Game
         public IUIForm CreateUIForm(object uiFormInstance, IUIGroup uiGroup, object userData)
         {
             return uiFormInstance as FairyUIForm
-                ?? throw new GameFrameworkException("FairyUI form instance is invalid.");
+                ?? throw new FairyUIException(
+                    FairyUIError.FormOpenFailed,
+                    "FairyUI form instance is invalid.");
         }
 
         public void ReleaseUIForm(object uiFormAsset, object uiFormInstance)

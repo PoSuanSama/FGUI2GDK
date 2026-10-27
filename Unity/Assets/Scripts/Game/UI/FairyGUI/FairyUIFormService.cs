@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 
@@ -14,6 +15,18 @@ namespace Game
             CancellationToken ownerToken = default)
         {
             return FairyUIManager.Instance.OpenFairyUIFormAsync(uiId, userData, ownerToken);
+        }
+
+        /// <summary>
+        /// 带进度回调的打开重载。进度单调递增到 1.0，取消与失败不会推送 Completed。
+        /// </summary>
+        public static UniTask<FairyUIForm> OpenFairyUIFormAsync(
+            int uiId,
+            object userData,
+            IProgress<FairyUIOpenProgress> progress,
+            CancellationToken ownerToken = default)
+        {
+            return FairyUIManager.Instance.OpenFairyUIFormAsync(uiId, userData, progress, ownerToken);
         }
 
         /// <summary>

@@ -1,11 +1,57 @@
 using System;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using FairyGUI;
 using GameFramework;
 using GameFramework.UI;
 
 namespace Game
 {
+    /// <summary>
+    /// 一次打开请求的载体。经 GF 的 userData 通道从 OpenUIForm 入口原样传到
+    /// OnInit、OnOpen 和打开结果事件，取代按 serialId 关联的全局状态表。
+    /// </summary>
+    internal sealed class FairyOpenRequest
+    {
+        internal FairyOpenRequest(FairyUIFormPendingState state)
+        {
+            State = state ?? throw new ArgumentNullException(nameof(state));
+        }
+
+        internal FairyUIFormPendingState State { get; }
+
+        internal object UserData => State.UserData;
+
+        internal UniTaskCompletionSource<FairyUIForm> Completion { get; } =
+            new UniTaskCompletionSource<FairyUIForm>();
+
+        /// <summary>
+        /// 可选的进度回调。仅在调用方显式传入时非空。
+        /// </summary>
+        internal IProgress<FairyUIOpenProgress> Progress { get; set; }
+
+        /// <summary>
+        /// 上报阶段进度。Value 单调递增，避免 GF 的资源回调导致进度回退。
+        /// </summary>
+        internal void ReportProgress(FairyUIOpenStage stage, float value, string packageName = null)
+        {
+            if (Progress == null)
+            {
+                return;
+            }
+
+            if (value <= m_ReportedProgress)
+            {
+                return;
+            }
+
+            m_ReportedProgress = value;
+            Progress.Report(new FairyUIOpenProgress(stage, value, packageName));
+        }
+
+        private float m_ReportedProgress;
+    }
+
     /// <summary>
     /// 打开 FairyGUI 界面前已就绪的资源与视图，等待 UIManager 回调时被 FairyUIForm 采纳。
     /// </summary>
@@ -40,26 +86,18 @@ namespace Game
         public FairyUIFormContext Context { get; }
         public object UserData { get; }
         public bool IsAdopted { get; private set; }
-        public FairyUIForm AdoptedForm { get; private set; }
-        public Exception OpenFailure { get; private set; }
         private bool m_ReleaseStarted;
 
-        public void MarkAdopted(FairyUIForm form)
+        public void MarkAdopted()
         {
             if (IsAdopted)
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(
+                    FairyUIError.FormOpenFailed,
                     $"FairyGUI pending state '{DescriptorKey}' (operation {OperationId}) was adopted more than once.");
             }
 
             IsAdopted = true;
-            AdoptedForm = form;
-        }
-
-        public void MarkOpenFailure(Exception exception)
-        {
-            OpenFailure ??= exception ?? new GameFrameworkException(
-                $"FairyGUI UI form '{DescriptorKey}' (operation {OperationId}) failed to open.");
         }
 
         internal bool TryBeginRelease()
@@ -114,10 +152,12 @@ namespace Game
 
             if (m_PendingState != null)
             {
-                throw new GameFrameworkException("FairyUI form already adopted a pending state.");
+                throw new FairyUIException(
+                    FairyUIError.FormOpenFailed,
+                    "FairyUI form already adopted a pending state.");
             }
 
-            pendingState.MarkAdopted(this);
+            pendingState.MarkAdopted();
             m_PendingState = pendingState;
             m_Descriptor = pendingState.Descriptor;
             m_View = pendingState.View;
@@ -143,7 +183,8 @@ namespace Game
 
             if (m_Disposed || !m_Opened || SerialId <= 0)
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(
+                    FairyUIError.FormOpenFailed,
                     "Owner cancellation can only be attached to an opened FairyGUI form.");
             }
 
@@ -177,34 +218,46 @@ namespace Game
             m_Opened = false;
             m_Disposed = false;
 
-            string descriptorKey = System.IO.Path.GetFileNameWithoutExtension(uiFormAssetName);
-            FairyUIFormPendingState pendingState = FairyUIFormPendingRegistry.ConsumeNewInstance(
-                serialId,
-                descriptorKey,
-                userData);
-            Adopt(pendingState);
-
-            m_GroupHelper = uiGroup.Helper as FairyUIGroupHelper;
-            if (m_GroupHelper == null)
+            if (userData is not FairyOpenRequest request)
             {
-                throw new GameFrameworkException(
-                    $"UI group '{uiGroup.Name}' must use '{typeof(FairyUIGroupHelper).FullName}'.");
+                throw new FairyUIException(
+                    FairyUIError.FormOpenFailed,
+                    $"FairyGUI form '{uiFormAssetName}' must be opened through FairyUIManager.OpenFairyUIFormAsync.");
             }
 
-            if (m_Context != null)
-            {
-                m_Context.Form = this;
-                m_Context.SerialId = serialId;
-                m_Context.OperationId = m_PendingState.OperationId;
-                m_Context.UIGroupName = uiGroup.Name;
-                m_Context.PauseCoveredUIForm = pauseCoveredUIForm;
-            }
+            Adopt(request.State);
 
-            // 安全区桥(design §10.3):默认挂安全区容器;descriptor fullScreen
-            // 的覆盖层/背景界面挂全屏容器。
-            bool attachToSafeArea = !(m_Descriptor?.FullScreen ?? false);
-            m_GroupHelper.AddForm(m_View, 0, attachToSafeArea);
-            SetVisible(false);
+            try
+            {
+                m_GroupHelper = uiGroup.Helper as FairyUIGroupHelper;
+                if (m_GroupHelper == null)
+                {
+                    throw new FairyUIException(
+                        FairyUIError.UIGroupMissing,
+                        $"UI group '{uiGroup.Name}' must use '{typeof(FairyUIGroupHelper).FullName}'.");
+                }
+
+                if (m_Context != null)
+                {
+                    m_Context.Form = this;
+                    m_Context.SerialId = serialId;
+                    m_Context.OperationId = m_PendingState.OperationId;
+                    m_Context.UIGroupName = uiGroup.Name;
+                    m_Context.PauseCoveredUIForm = pauseCoveredUIForm;
+                }
+
+                // 安全区桥(design §10.3):默认挂安全区容器;descriptor fullScreen
+                // 的覆盖层/背景界面挂全屏容器。
+                bool attachToSafeArea = !(m_Descriptor?.FullScreen ?? false);
+                m_GroupHelper.AddForm(m_View, 0, attachToSafeArea);
+                SetVisible(false);
+            }
+            catch
+            {
+                // GF 在 OnInit 抛异常时只发失败事件、不回收实例,这里自行释放已采纳的资源。
+                Release(isShutdown: false, userData: m_UserData);
+                throw;
+            }
         }
 
         public void OnRecycle()
@@ -218,11 +271,13 @@ namespace Game
             m_Descriptor = null;
             m_UserData = null;
         }
+
         public void OnOpen(object userData)
         {
+            // GF 传入的是打开请求载体，业务参数已在 OnInit 中解包。
             SetVisible(true);
             m_Opened = true;
-            m_Presenter.OnOpen(userData);
+            m_Presenter.OnOpen(m_UserData);
         }
 
         public void OnClose(bool isShutdown, object userData)
@@ -365,18 +420,12 @@ namespace Game
             }
 
             m_PendingState = null;
-            FairyUIFormPendingRegistry.RemoveAdopted(SerialId);
             m_Opened = false;
 
             if (firstException != null)
             {
                 throw firstException;
             }
-        }
-
-        internal void ReleaseAfterFailedOpen()
-        {
-            Release(isShutdown: false, userData: m_UserData);
         }
 
         private void DisposeOwnerCancellationRegistration()

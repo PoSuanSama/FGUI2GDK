@@ -36,7 +36,7 @@ namespace Game
         {
             if (string.IsNullOrWhiteSpace(json))
             {
-                throw new GameFrameworkException("FairyGUI UI form descriptor is empty.");
+                throw new FairyUIException(FairyUIError.DescriptorInvalid, "FairyGUI UI form descriptor is empty.");
             }
 
             DescriptorData data;
@@ -46,23 +46,23 @@ namespace Game
             }
             catch (Exception exception)
             {
-                throw new GameFrameworkException("FairyGUI UI form descriptor is not valid JSON.", exception);
+                throw new FairyUIException(FairyUIError.DescriptorInvalid, "FairyGUI UI form descriptor is not valid JSON.", exception);
             }
 
             if (data == null)
             {
-                throw new GameFrameworkException("FairyGUI UI form descriptor is not valid JSON.");
+                throw new FairyUIException(FairyUIError.DescriptorInvalid, "FairyGUI UI form descriptor is not valid JSON.");
             }
 
             if (data.SchemaVersion != SupportedSchemaVersion)
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.DescriptorInvalid,
                     $"FairyGUI UI form descriptor schema must be {SupportedSchemaVersion}, found {data.SchemaVersion}.");
             }
 
             if (data.UiId <= 0)
             {
-                throw new GameFrameworkException("FairyGUI UI form descriptor uiId must be positive.");
+                throw new FairyUIException(FairyUIError.DescriptorInvalid, "FairyGUI UI form descriptor uiId must be positive.");
             }
 
             if (string.IsNullOrWhiteSpace(data.CsName) ||
@@ -72,7 +72,7 @@ namespace Game
                 string.IsNullOrWhiteSpace(data.ComponentName) ||
                 string.IsNullOrWhiteSpace(data.BindingType))
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.DescriptorInvalid,
                     "FairyGUI UI form descriptor is missing a required field.");
             }
 

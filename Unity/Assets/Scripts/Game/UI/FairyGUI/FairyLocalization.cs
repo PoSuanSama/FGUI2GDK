@@ -144,7 +144,8 @@ namespace Game
         {
             if (GameEntry.Resource == null)
             {
-                throw new InvalidOperationException(
+                throw new FairyUIException(
+                    FairyUIError.ResourceLoadFailed,
                     "FairyGUI localization requires the GDK resource component before package load.");
             }
 
@@ -155,7 +156,8 @@ namespace Game
             {
                 if (stringsAsset == null || stringsAsset.text == null)
                 {
-                    throw new InvalidOperationException(
+                    throw new FairyUIException(
+                        FairyUIError.LocalizationMissing,
                         $"FairyGUI localization strings asset is missing: {assetName}. Run the FairyGUI localization generator first.");
                 }
 
@@ -171,7 +173,8 @@ namespace Game
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
-                throw new InvalidOperationException(
+                throw new FairyUIException(
+                    FairyUIError.LocalizationInvalid,
                     $"FairyGUI localization strings asset is invalid: {assetName}", exception);
             }
             finally

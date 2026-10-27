@@ -27,20 +27,23 @@ namespace Game
 
                 if (type.IsAbstract || !typeof(IFairyUIPresenter).IsAssignableFrom(type))
                 {
-                    throw new GameFrameworkException(
+                    throw new FairyUIException(
+                        FairyUIError.PresenterMissing,
                         $"FairyGUI presenter '{type.FullName}' must be a concrete IFairyUIPresenter.");
                 }
 
                 ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
                 if (constructor == null)
                 {
-                    throw new GameFrameworkException(
+                    throw new FairyUIException(
+                        FairyUIError.PresenterMissing,
                         $"FairyGUI presenter '{type.FullName}' requires a parameterless constructor.");
                 }
 
                 if (factories.ContainsKey(attribute.UiFormId))
                 {
-                    throw new GameFrameworkException(
+                    throw new FairyUIException(
+                        FairyUIError.PresenterMissing,
                         $"Duplicate FairyGUI presenter registered for UIFormId '{attribute.UiFormId}'.");
                 }
 

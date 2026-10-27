@@ -23,7 +23,7 @@ namespace Game
         {
             if (string.IsNullOrWhiteSpace(json))
             {
-                throw new GameFrameworkException("FairyGUI runtime manifest is empty.");
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid, "FairyGUI runtime manifest is empty.");
             }
 
             ManifestData manifest;
@@ -33,18 +33,18 @@ namespace Game
             }
             catch (Exception exception)
             {
-                throw new GameFrameworkException("FairyGUI runtime manifest is invalid JSON.", exception);
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid, "FairyGUI runtime manifest is invalid JSON.", exception);
             }
 
             if (manifest == null || manifest.SchemaVersion != SupportedSchemaVersion)
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     $"FairyGUI runtime manifest schema must be {SupportedSchemaVersion}.");
             }
 
             if (manifest.Packages == null || manifest.Packages.Length == 0)
             {
-                throw new GameFrameworkException("FairyGUI runtime manifest contains no packages.");
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid, "FairyGUI runtime manifest contains no packages.");
             }
 
             Dictionary<string, PackageDefinition> packagesById =
@@ -56,18 +56,18 @@ namespace Game
             {
                 if (packageData == null || string.IsNullOrWhiteSpace(packageData.Id))
                 {
-                    throw new GameFrameworkException("FairyGUI runtime manifest contains a package without an id.");
+                    throw new FairyUIException(FairyUIError.PackageManifestInvalid, "FairyGUI runtime manifest contains a package without an id.");
                 }
 
                 if (string.IsNullOrWhiteSpace(packageData.Name))
                 {
-                    throw new GameFrameworkException(
+                    throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                         $"FairyGUI runtime manifest package '{packageData.Id}' has no name.");
                 }
 
                 if (string.IsNullOrWhiteSpace(packageData.DescriptorAsset))
                 {
-                    throw new GameFrameworkException(
+                    throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                         $"FairyGUI runtime manifest package '{packageData.Name}' has no descriptorAsset.");
                 }
 
@@ -80,13 +80,13 @@ namespace Game
                     NormalizeHash(packageData.DescriptorSha256, packageData.Name, packageData.DescriptorAsset));
                 if (!packagesById.TryAdd(definition.Id, definition))
                 {
-                    throw new GameFrameworkException(
+                    throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                         $"FairyGUI runtime manifest contains duplicate package id '{definition.Id}'.");
                 }
 
                 if (!packagesByName.TryAdd(definition.Name, definition))
                 {
-                    throw new GameFrameworkException(
+                    throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                         $"FairyGUI runtime manifest contains duplicate package name '{definition.Name}'.");
                 }
 
@@ -94,7 +94,7 @@ namespace Game
                 {
                     if (runtimeAsset == null || string.IsNullOrWhiteSpace(runtimeAsset.Path))
                     {
-                        throw new GameFrameworkException(
+                        throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                             $"FairyGUI package '{definition.Name}' contains an empty runtime asset path.");
                     }
 
@@ -107,7 +107,7 @@ namespace Game
                                 runtimeAsset.Path,
                                 NormalizeHash(runtimeAsset.Sha256, definition.Name, runtimeAsset.Path))))
                     {
-                        throw new GameFrameworkException(
+                        throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                             $"FairyGUI package '{definition.Name}' contains duplicate runtime asset basename '{fileName}'.");
                     }
                 }
@@ -122,7 +122,7 @@ namespace Game
                 {
                     if (string.IsNullOrWhiteSpace(dependencyId))
                     {
-                        throw new GameFrameworkException(
+                        throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                             $"FairyGUI package '{definition.Name}' contains an empty dependency id.");
                     }
 
@@ -133,7 +133,7 @@ namespace Game
 
                     if (!packagesById.TryGetValue(dependencyId, out PackageDefinition dependency))
                     {
-                        throw new GameFrameworkException(
+                        throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                             $"FairyGUI package '{definition.Name}' references unknown dependency '{dependencyId}'.");
                     }
 
@@ -150,7 +150,7 @@ namespace Game
         {
             if (!m_PackagesByName.TryGetValue(packageName, out PackageDefinition root))
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     $"FairyGUI package '{packageName}' is not declared in the runtime manifest.");
             }
 
@@ -169,20 +169,20 @@ namespace Game
 
             if (!m_PackagesByName.TryGetValue(descriptor.PackageName, out PackageDefinition package))
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     $"FairyGUI descriptor references undeclared package '{descriptor.PackageName}'.");
             }
 
             if (string.IsNullOrWhiteSpace(descriptor.PackageId) ||
                 !string.Equals(descriptor.PackageId, package.Id, StringComparison.Ordinal))
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     $"FairyGUI descriptor package id '{descriptor.PackageId}' does not match manifest package '{package.Name}'.");
             }
 
             if (string.IsNullOrWhiteSpace(descriptor.ComponentId))
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     $"FairyGUI descriptor for package '{package.Name}' has no component id.");
             }
 
@@ -196,7 +196,7 @@ namespace Game
                 new HashSet<string>(descriptor.Dependencies ?? Array.Empty<string>(), StringComparer.Ordinal);
             if (!expectedDependencies.SetEquals(descriptorDependencies))
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     $"FairyGUI descriptor dependencies do not match manifest package '{package.Name}'.");
             }
         }
@@ -205,7 +205,7 @@ namespace Game
         {
             if (!m_PackagesByName.TryGetValue(packageName, out PackageDefinition package))
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     $"FairyGUI package '{packageName}' is not declared in the runtime manifest.");
             }
 
@@ -217,7 +217,7 @@ namespace Game
                     fileName,
                     out RuntimeAssetDefinition runtimeAsset))
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     $"FairyGUI package '{packageName}' requested undeclared runtime asset '{fileName}'.");
             }
 
@@ -228,7 +228,7 @@ namespace Game
         {
             if (!m_PackagesByName.TryGetValue(packageName, out PackageDefinition package))
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     $"FairyGUI package '{packageName}' is not declared in the runtime manifest.");
             }
 
@@ -245,7 +245,7 @@ namespace Game
                 }
             }
 
-            throw new GameFrameworkException(
+            throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                 $"FairyGUI package '{packageName}' has no manifest entry for asset '{assetPath}'.");
         }
 
@@ -253,7 +253,7 @@ namespace Game
         {
             if (bytes == null)
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     $"FairyGUI asset '{assetPath}' for package '{packageName}' has no bytes to verify.");
             }
 
@@ -269,7 +269,7 @@ namespace Game
                 .ToLowerInvariant();
             if (!string.Equals(actualHash, expectedHash, StringComparison.Ordinal))
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     Utility.Text.Format(
                         "FairyGUI asset hash mismatch for package '{0}', asset '{1}': expected '{2}', actual '{3}'.",
                         packageName,
@@ -301,7 +301,7 @@ namespace Game
                 normalized.Contains("/./", StringComparison.Ordinal) ||
                 normalized.Contains(":", StringComparison.Ordinal))
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     $"FairyGUI package '{definitionName}' contains a runtime path outside '{RuntimeAssetRoot}'.");
             }
         }
@@ -316,7 +316,7 @@ namespace Game
             string normalized = hash.Trim().ToLowerInvariant();
             if (normalized.Length != 64)
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     $"FairyGUI package '{packageName}' has an invalid SHA-256 for '{assetPath}'.");
             }
 
@@ -325,7 +325,7 @@ namespace Game
                 char value = normalized[i];
                 if ((value < '0' || value > '9') && (value < 'a' || value > 'f'))
                 {
-                    throw new GameFrameworkException(
+                    throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                         $"FairyGUI package '{packageName}' has an invalid SHA-256 for '{assetPath}'.");
                 }
             }
@@ -354,7 +354,7 @@ namespace Game
                 }
 
                 cycle.Add(package.Name);
-                throw new GameFrameworkException(
+                throw new FairyUIException(FairyUIError.PackageManifestInvalid,
                     $"FairyGUI package dependency cycle: {string.Join(" -> ", cycle)}.");
             }
 

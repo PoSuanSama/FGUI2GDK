@@ -303,7 +303,7 @@ namespace Game
                 return false;
             }
 
-            FairyUIManager.Instance.CloseUIForm(top.SerialId);
+            FairyUIManager.Instance.Manager.CloseUIForm(top.SerialId);
             return true;
         }
 

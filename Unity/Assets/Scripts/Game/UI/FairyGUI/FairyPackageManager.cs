@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using FairyGUI;
@@ -16,6 +18,7 @@ namespace Game
     internal sealed class FairyPackageLease : IDisposable
     {
         private FairyPackageManager.PackageState[] m_States;
+        private bool m_Pinned;
 
         internal FairyPackageLease(FairyPackageManager.PackageState[] states)
         {
@@ -27,6 +30,46 @@ namespace Game
             : m_States[m_States.Length - 1].Package;
 
         internal FairyPackageManager.PackageState[] States => m_States;
+
+        /// <summary>
+        /// 把租约覆盖的包（含依赖闭包）标记为常驻。常驻后引用归零也不卸载，
+        /// 直到 <see cref="UnpinAndDispose"/> 显式解除。
+        /// </summary>
+        internal void MarkPinned()
+        {
+            FairyPackageManager.PackageState[] states = m_States;
+            if (states == null || m_Pinned)
+            {
+                return;
+            }
+
+            m_Pinned = true;
+            for (int i = 0; i < states.Length; i++)
+            {
+                states[i].PinCount++;
+            }
+        }
+
+        /// <summary>
+        /// 解除常驻并释放租约。解除后若引用计数与常驻计数均为零，包会被卸载。
+        /// </summary>
+        internal void UnpinAndDispose()
+        {
+            FairyPackageManager.PackageState[] states = m_States;
+            if (states != null && m_Pinned)
+            {
+                m_Pinned = false;
+                for (int i = 0; i < states.Length; i++)
+                {
+                    if (states[i].PinCount > 0)
+                    {
+                        states[i].PinCount--;
+                    }
+                }
+            }
+
+            Dispose();
+        }
 
         public void Dispose()
         {
@@ -54,8 +97,12 @@ namespace Game
 
         private static readonly Dictionary<string, PackageState> s_States =
             new Dictionary<string, PackageState>(StringComparer.Ordinal);
-        private static readonly Dictionary<string, Exception> s_LastErrors =
-            new Dictionary<string, Exception>(StringComparer.Ordinal);
+
+        /// <summary>
+        /// 常驻包名 → 持有中的租约。租约不释放，包因此保持 Ready。
+        /// </summary>
+        private static readonly Dictionary<string, FairyPackageLease> s_WarmLeases =
+            new Dictionary<string, FairyPackageLease>(StringComparer.Ordinal);
 
         private static FairyPackageCatalog s_Catalog;
         private static UniTaskCompletionSource<FairyPackageCatalog> s_CatalogLoading;
@@ -76,6 +123,7 @@ namespace Game
             string packageName,
             CancellationToken cancellationToken = default)
         {
+            AssertMainThread();
             if (string.IsNullOrWhiteSpace(packageName))
             {
                 throw new ArgumentException("FairyGUI package name is required.", nameof(packageName));
@@ -105,6 +153,87 @@ namespace Game
             }
         }
 
+        /// <summary>
+        /// 预热并常驻一个包（含其依赖闭包）。已常驻时直接返回。
+        /// 预热等价于常驻：引用归零即卸载，因此「预热后立刻释放」没有意义。
+        /// 不应用本地化——strings source 是全局单槽，多个包预热会互相覆盖。
+        /// </summary>
+        internal static async UniTask WarmPackageAsync(
+            string packageName,
+            CancellationToken cancellationToken = default)
+        {
+            AssertMainThread();
+            if (string.IsNullOrWhiteSpace(packageName))
+            {
+                throw new ArgumentException("FairyGUI package name is required.", nameof(packageName));
+            }
+
+            if (s_WarmLeases.ContainsKey(packageName))
+            {
+                return;
+            }
+
+            FairyPackageLease lease = await AcquireAsync(packageName, cancellationToken);
+
+            // await 期间可能被另一个 warm 抢先登记。
+            if (s_WarmLeases.ContainsKey(packageName))
+            {
+                lease.Dispose();
+                return;
+            }
+
+            lease.MarkPinned();
+            s_WarmLeases.Add(packageName, lease);
+        }
+
+        /// <summary>
+        /// 解除指定包的常驻。返回是否确实解除。
+        /// </summary>
+        internal static bool ReleaseWarmPackage(string packageName)
+        {
+            AssertMainThread();
+            if (string.IsNullOrEmpty(packageName) ||
+                !s_WarmLeases.TryGetValue(packageName, out FairyPackageLease lease))
+            {
+                return false;
+            }
+
+            s_WarmLeases.Remove(packageName);
+            lease.UnpinAndDispose();
+            return true;
+        }
+
+        internal static bool IsPackageWarm(string packageName)
+        {
+            return !string.IsNullOrEmpty(packageName) && s_WarmLeases.ContainsKey(packageName);
+        }
+
+        /// <summary>
+        /// 解除全部常驻。必须在 Shutdown 之前调用，避免常驻状态跨运行时代残留。
+        /// </summary>
+        internal static void ClearWarmPackages()
+        {
+            AssertMainThread();
+            if (s_WarmLeases.Count == 0)
+            {
+                return;
+            }
+
+            List<FairyPackageLease> leases = new List<FairyPackageLease>(s_WarmLeases.Values);
+            s_WarmLeases.Clear();
+            for (int i = 0; i < leases.Count; i++)
+            {
+                try
+                {
+                    leases[i].UnpinAndDispose();
+                }
+                catch (Exception exception)
+                {
+                    Log.Error("Failed to release a warm FairyGUI package: {0}", exception);
+                }
+            }
+        }
+
         internal static async UniTask WaitForPendingAssetsAsync(
             FairyPackageLease packageLease,
             CancellationToken cancellationToken)
@@ -112,7 +241,9 @@ namespace Game
             PackageState[] states = packageLease?.States;
             if (states == null)
             {
-                throw new GameFrameworkException("FairyGUI package lease has no states.");
+                throw new FairyUIException(
+                    FairyUIError.PackageNotReady,
+                    "FairyGUI package lease has no states.");
             }
 
             foreach (PackageState state in states)
@@ -132,24 +263,40 @@ namespace Game
                     state.Generation,
                     state.ReferenceCount,
                     state.LoadedAssets.Count,
-                    state.LastError?.Message));
+                    state.LastError?.Message,
+                    state.PinCount > 0));
             }
 
             diagnostics.Sort((left, right) => string.CompareOrdinal(left.Name, right.Name));
             return diagnostics;
         }
 
-        internal static Exception GetLastError(string packageName)
+        /// <summary>
+        /// 编辑器下校验调用线程。包状态表是静态且无锁的，只在主线程维护；
+        /// 非编辑器构建被编译器移除，零开销。
+        /// </summary>
+        [Conditional("UNITY_EDITOR")]
+        private static void AssertMainThread([CallerMemberName] string member = null)
         {
-            s_LastErrors.TryGetValue(packageName, out Exception exception);
-            return exception;
+            if (!PlayerLoopHelper.IsMainThread)
+            {
+                throw new FairyUIException(
+                    FairyUIError.ThreadViolation,
+                    $"FairyPackageManager.{member} must be called on the Unity main thread.");
+            }
         }
 
         internal static void Shutdown()
         {
+            AssertMainThread();
+
+            // 租约随 state 一同销毁，这里只清表；state 随后被 ReleaseReadyState 释放。
+            s_WarmLeases.Clear();
+
             List<PackageState> states = new List<PackageState>(s_States.Values);
             foreach (PackageState state in states)
             {
+                state.PinCount = 0;
                 state.ReferenceCount = Math.Max(1, state.ReferenceCount);
                 if (state.Status == FairyPackageStatus.Loading)
                 {
@@ -162,7 +309,6 @@ namespace Game
             }
 
             s_States.Clear();
-            s_LastErrors.Clear();
             s_Catalog = null;
             s_CatalogGeneration++;
             s_CatalogLoading?.TrySetCanceled();
@@ -186,7 +332,9 @@ namespace Game
         {
             if (s_Catalog == null)
             {
-                throw new GameFrameworkException("FairyGUI package catalog is not loaded.");
+                throw new FairyUIException(
+                    FairyUIError.PackageManifestInvalid,
+                    "FairyGUI package catalog is not loaded.");
             }
 
             s_Catalog.ValidateDescriptorIdentity(descriptor);
@@ -199,7 +347,9 @@ namespace Game
         {
             if (s_Catalog == null)
             {
-                throw new GameFrameworkException("FairyGUI package catalog is not loaded.");
+                throw new FairyUIException(
+                    FairyUIError.PackageManifestInvalid,
+                    "FairyGUI package catalog is not loaded.");
             }
 
             s_Catalog.VerifyAssetHash(packageName, assetPath, bytes);
@@ -222,7 +372,8 @@ namespace Game
                 return;
             }
 
-            throw new GameFrameworkException(
+            throw new FairyUIException(
+                FairyUIError.PackageManifestInvalid,
                 Utility.Text.Format(
                     "FairyGUI asset '{0}' for package '{1}' declares a hash, but imported type '{2}' cannot expose source bytes.",
                     assetPath,
@@ -238,7 +389,7 @@ namespace Game
             }
 
             state.ReferenceCount--;
-            if (state.ReferenceCount > 0 || !state.IsActive)
+            if (state.ReferenceCount > 0 || !state.IsActive || state.PinCount > 0)
             {
                 return;
             }
@@ -285,13 +436,16 @@ namespace Game
             {
                 if (resourceComponent == null)
                 {
-                    throw new GameFrameworkException("FairyGUI resource component is unavailable.");
+                    throw new FairyUIException(
+                        FairyUIError.ResourceLoadFailed,
+                        "FairyGUI resource component is unavailable.");
                 }
 
                 manifest = await resourceComponent.LoadAssetAsync<TextAsset>(ManifestAssetPath);
                 if (manifest == null)
                 {
-                    throw new GameFrameworkException(
+                    throw new FairyUIException(
+                        FairyUIError.PackageManifestInvalid,
                         $"FairyGUI runtime manifest asset is missing: {ManifestAssetPath}.");
                 }
 
@@ -369,7 +523,8 @@ namespace Game
 
                 if (!state.IsActive || state.Status != FairyPackageStatus.Ready || state.Package == null)
                 {
-                    throw new GameFrameworkException(
+                    throw new FairyUIException(
+                        FairyUIError.PackageNotReady,
                         $"FairyGUI package '{packageName}' did not reach the Ready state.");
                 }
 
@@ -394,7 +549,9 @@ namespace Game
                 state.ResourceComponent = GameEntry.Resource;
                 if (state.ResourceComponent == null)
                 {
-                    throw new GameFrameworkException("FairyGUI resource component is unavailable.");
+                    throw new FairyUIException(
+                        FairyUIError.ResourceLoadFailed,
+                        "FairyGUI resource component is unavailable.");
                 }
 
                 TextAsset descriptor;
@@ -417,7 +574,8 @@ namespace Game
                 state.Descriptor = descriptor;
                 if (descriptor == null)
                 {
-                    throw new GameFrameworkException(
+                    throw new FairyUIException(
+                        FairyUIError.PackageLoadFailed,
                         $"FairyGUI package descriptor asset is missing: {descriptorPath}.");
                 }
 
@@ -435,7 +593,8 @@ namespace Game
                     (name, extension, type, item) => LoadPackageResourceAsync(state, name, extension, type, item));
                 if (package == null)
                 {
-                    throw new GameFrameworkException(
+                    throw new FairyUIException(
+                        FairyUIError.PackageLoadFailed,
                         $"Unable to register FairyGUI package '{state.Name}'.");
                 }
 
@@ -453,14 +612,14 @@ namespace Game
                 await WaitForPendingAssetsAsync(state, state.LoadCancellation.Token);
                 if (state.PendingAssetError != null)
                 {
-                    throw new GameFrameworkException(
+                    throw new FairyUIException(
+                        FairyUIError.ResourceLoadFailed,
                         $"Failed to load an external asset for FairyGUI package '{state.Name}'.",
                         state.PendingAssetError);
                 }
 
                 state.Status = FairyPackageStatus.Ready;
                 state.LastError = null;
-                s_LastErrors.Remove(state.Name);
                 loading.TrySetResult(package);
                 if (state.ReferenceCount == 0 && state.IsActive)
                 {
@@ -470,10 +629,6 @@ namespace Game
             catch (Exception exception)
             {
                 state.LastError = exception;
-                if (exception is not OperationCanceledException)
-                {
-                    s_LastErrors[state.Name] = exception;
-                }
 
                 if (exception is OperationCanceledException canceledException)
                 {
@@ -662,7 +817,6 @@ namespace Game
                 {
                     state.LastError = exception;
                     state.PendingAssetError ??= exception;
-                    s_LastErrors[state.Name] = exception;
                     Log.Error(
                         "Failed to load FairyGUI package asset '{0}' ({1}): {2}",
                         assetPath ?? Utility.Text.Format("{0}{1}", name, extension),
@@ -699,7 +853,8 @@ namespace Game
 
             if (state.PendingAssetError != null)
             {
-                throw new GameFrameworkException(
+                throw new FairyUIException(
+                    FairyUIError.ResourceLoadFailed,
                     $"Failed to load an external asset for FairyGUI package '{state.Name}'.",
                     state.PendingAssetError);
             }
@@ -713,7 +868,9 @@ namespace Game
         {
             if (resourceComponent == null)
             {
-                throw new GameFrameworkException("FairyGUI resource component is unavailable.");
+                throw new FairyUIException(
+                    FairyUIError.ResourceLoadFailed,
+                    "FairyGUI resource component is unavailable.");
             }
 
             if (type == typeof(Texture))
@@ -763,6 +920,12 @@ namespace Game
             internal Exception PendingAssetError;
             internal int PendingAssetLoads;
             internal int ReferenceCount;
+
+            /// <summary>
+            /// 常驻计数。大于 0 时引用归零也不卸载包，由 warm/白名单持有。
+            /// </summary>
+            internal int PinCount;
+
             internal bool LoadCancellationDisposed;
             internal bool IsActive = true;
             internal FairyPackageStatus Status = FairyPackageStatus.Loading;
@@ -792,6 +955,7 @@ namespace Game
         internal int ReferenceCount { get; }
         internal int LoadedAssetCount { get; }
         internal string LastError { get; }
+        internal bool IsPinned { get; }
 
         internal FairyPackageDiagnostic(
             string name,
@@ -799,7 +963,8 @@ namespace Game
             long generation,
             int referenceCount,
             int loadedAssetCount,
-            string lastError)
+            string lastError,
+            bool isPinned)
         {
             Name = name;
             Status = status;
@@ -807,6 +972,7 @@ namespace Game
             ReferenceCount = referenceCount;
             LoadedAssetCount = loadedAssetCount;
             LastError = lastError;
+            IsPinned = isPinned;
         }
     }
 }
