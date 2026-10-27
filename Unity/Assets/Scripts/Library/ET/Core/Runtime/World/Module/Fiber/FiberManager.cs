@@ -64,9 +64,11 @@ namespace ET
 
         public async UniTask<int> Create(SchedulerType schedulerType, int fiberId, int zone, SceneType sceneType, string name)
         {
+            // GDK vendor 补丁: fiber 提到 try 外,失败时才能回滚已登记的残留实例。
+            Fiber fiber = null;
             try
             {
-                Fiber fiber = new(fiberId, zone, sceneType, name);
+                fiber = new(fiberId, zone, sceneType, name);
 
                 if (!this.fibers.TryAdd(fiberId, fiber))
                 {
@@ -84,11 +86,14 @@ namespace ET
                         {
                             // 根据Fiber的SceneType分发Init,必须在Fiber线程中执行
                             await EventSystem.Instance.Invoke<FiberInit, UniTask>((long)sceneType, new FiberInit() {Fiber = fiber});
-                            tcs.SetResult(true);
+                            tcs.TrySetResult(true);
                         }
                         catch (Exception e)
                         {
+                            // GDK vendor 补丁: 原实现只记日志不完成 tcs,导致下面 await tcs.Task 永久挂起,
+                            // 启动直接卡死且无明确报错。Init 失败必须让等待方看到异常。
                             Log.Error($"init fiber fail: {sceneType} {e}");
+                            tcs.TrySetException(e);
                         }
                     }
                     RunAsync().Forget();
@@ -99,6 +104,32 @@ namespace ET
             }
             catch (Exception e)
             {
+                // GDK vendor 补丁: 初始化失败的 fiber 已进 fibers 与 scheduler,不回滚会留下半初始化实例,
+                // 同 id 重试会撞 "same fiber already existed"。scheduler 无 Remove 接口,
+                // 其 id 残留属上游设计,不影响正确性。
+                if (fiber != null && this.fibers.TryRemove(fiberId, out Fiber removed))
+                {
+                    try
+                    {
+                        // 在 fiber 线程释放,避免与刚失败的 Init 竞争。
+                        removed.ThreadSynchronizationContext.Post(() =>
+                        {
+                            try
+                            {
+                                removed.Dispose();
+                            }
+                            catch (Exception disposeError)
+                            {
+                                Log.Error($"dispose failed fiber fail: {fiberId} {disposeError}");
+                            }
+                        });
+                    }
+                    catch (Exception postError)
+                    {
+                        Log.Error($"post dispose failed fiber fail: {fiberId} {postError}");
+                    }
+                }
+
                 throw new Exception($"create fiber error: {fiberId} {sceneType}", e);
             }
         }
@@ -112,15 +143,31 @@ namespace ET
         public async UniTask Remove(int id)
         {
             Fiber fiber = this.Get(id);
+            // GDK vendor 补丁: fiber 不存在时原实现直接访问 ThreadSynchronizationContext 抛 NRE,
+            // 且 tcs 永不完成导致 await 挂起。移除不存在的 fiber 应视为幂等成功。
+            if (fiber == null)
+            {
+                return;
+            }
+
             TaskCompletionSource<bool> tcs = new();
             // 要扔到fiber线程执行，否则会出现线程竞争
             fiber.ThreadSynchronizationContext.Post(() =>
             {
-                if (this.fibers.Remove(id, out Fiber f))
+                try
                 {
-                    f.Dispose();
+                    if (this.fibers.Remove(id, out Fiber f))
+                    {
+                        f.Dispose();
+                    }
+                    tcs.TrySetResult(true);
                 }
-                tcs.SetResult(true);
+                catch (Exception e)
+                {
+                    // GDK vendor 补丁: Dispose 抛异常时原实现会跳过 SetResult,导致 await 永久挂起。
+                    Log.Error($"remove fiber fail: {id} {e}");
+                    tcs.TrySetException(e);
+                }
             });
             await tcs.Task;
         }
