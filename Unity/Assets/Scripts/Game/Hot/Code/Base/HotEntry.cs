@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using Game.FairyGUI;
 using GameFramework;
 using UnityEngine;
@@ -54,6 +55,31 @@ namespace Game.Hot
             #endregion
         }
 
+        /// <summary>
+        /// 常驻包白名单：填包名后，这些包在窗体全部关闭时也不会卸载，
+        /// 重新打开可省去 UIPackage.AddPackage 与纹理重建。
+        /// 默认空，由业务按需填写；常驻会占用内存，不要放低频界面。
+        /// </summary>
+        private static readonly string[] WarmPackages = Array.Empty<string>();
+
+        private static async UniTaskVoid WarmPackagesAsync()
+        {
+            for (int i = 0; i < WarmPackages.Length; i++)
+            {
+                try
+                {
+                    await FairyUIManager.Instance.WarmPackageAsync(WarmPackages[i]);
+                }
+                catch (Exception exception)
+                {
+                    Log.Warning(
+                        "Failed to warm FairyGUI package '{0}': {1}",
+                        WarmPackages[i],
+                        exception);
+                }
+            }
+        }
+
         private static void InitializeFairyGUI()
         {
             IReadOnlyDictionary<int, Func<IFairyUIPresenter>> presenterFactories =
@@ -72,6 +98,9 @@ namespace Game.Hot
             uiManager.AddUIGroup("Message", 200);
             uiManager.AddUIGroup("Guide", 300);
             uiManager.AddUIGroup("RuntimeInspector", 400);
+
+            // 白名单为空时不产生任何加载，仅保留接入位。
+            WarmPackagesAsync().Forget();
 
             FairyUIPresenterRegistry.CreatePresenter = descriptor =>
             {

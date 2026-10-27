@@ -80,7 +80,7 @@ namespace Game.Hot
 
             FairyUIManager uiManager = FairyUIManager.Instance;
             int loadedForms = uiManager.GetAllLoadedUIForms().Length;
-            int loadingForms = uiManager.GetAllLoadingUIFormSerialIds().Length;
+            int loadingForms = uiManager.Manager.GetAllLoadingUIFormSerialIds().Length;
             int tableCount = 0;
             if (HotEntry.Tables != null && HotEntry.Tables.DataTables != null)
             {
@@ -102,7 +102,7 @@ namespace Game.Hot
 
         private void OnCloseClick()
         {
-            FairyUIManager.Instance.CloseUIForm(
+            FairyUIManager.Instance.Manager.CloseUIForm(
                 FairyUIManager.Instance.GetUIForm("Assets/Res/UI/FairyGUI/FairyRuntimeInspectorForm.json"));
         }
     }

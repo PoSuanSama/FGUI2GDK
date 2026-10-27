@@ -32,9 +32,9 @@ namespace Game.Hot
                 return;
             }
 
-            if (FairyUIManager.Instance.HasUIForm(uiForm.SerialId))
+            if (FairyUIManager.Instance.Manager.HasUIForm(uiForm.SerialId))
             {
-                FairyUIManager.Instance.CloseUIForm(uiForm.SerialId);
+                FairyUIManager.Instance.Manager.CloseUIForm(uiForm.SerialId);
             }
         }
     }

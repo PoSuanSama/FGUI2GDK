@@ -146,9 +146,10 @@ namespace Game.Hot.Editor
             EventHandler<OpenUIFormUpdateEventArgs> onUpdate = (_, _) => updateCount++;
             EventHandler<OpenUIFormDependencyAssetEventArgs> onDependency = (_, _) => dependencyCount++;
 
-            FairyUIManager.OpenUIFormSuccess += onSuccess;
-            FairyUIManager.OpenUIFormUpdate += onUpdate;
-            FairyUIManager.OpenUIFormDependencyAsset += onDependency;
+            IUIManager manager = uiManager.Manager;
+            manager.OpenUIFormSuccess += onSuccess;
+            manager.OpenUIFormUpdate += onUpdate;
+            manager.OpenUIFormDependencyAsset += onDependency;
             try
             {
                 FairyUIForm form = await uiManager.OpenFairyUIFormAsync(UIFormId.FairyDemoForm, "passthrough-smoke");
@@ -163,9 +164,9 @@ namespace Game.Hot.Editor
             }
             finally
             {
-                FairyUIManager.OpenUIFormSuccess -= onSuccess;
-                FairyUIManager.OpenUIFormUpdate -= onUpdate;
-                FairyUIManager.OpenUIFormDependencyAsset -= onDependency;
+                manager.OpenUIFormSuccess -= onSuccess;
+                manager.OpenUIFormUpdate -= onUpdate;
+                manager.OpenUIFormDependencyAsset -= onDependency;
             }
 
             if (successCount != 1)

@@ -27,7 +27,7 @@ namespace Game.Hot
             FairyUIForm existing = FairyUIManager.Instance.GetUIForm(InventoryDescriptor);
             if (existing != null)
             {
-                FairyUIManager.Instance.RefocusUIForm(existing);
+                FairyUIManager.Instance.Manager.RefocusUIForm(existing);
                 return;
             }
 
@@ -51,7 +51,7 @@ namespace Game.Hot
                 cancellationToken);
             openData.Attach(uiForm);
 
-            if (!FairyUIManager.Instance.HasUIForm(uiForm.SerialId))
+            if (!FairyUIManager.Instance.Manager.HasUIForm(uiForm.SerialId))
             {
                 return;
             }
@@ -65,7 +65,7 @@ namespace Game.Hot
             FairyUIForm existing = FairyUIManager.Instance.GetUIForm(OverlayDescriptor);
             if (existing != null)
             {
-                FairyUIManager.Instance.RefocusUIForm(existing);
+                FairyUIManager.Instance.Manager.RefocusUIForm(existing);
                 return;
             }
 
@@ -81,18 +81,18 @@ namespace Game.Hot
         {
             FairyUIForm uiForm = openData?.UIForm;
             if (uiForm != null &&
-                (FairyUIManager.Instance.HasUIForm(uiForm.SerialId) || FairyUIManager.Instance.IsLoadingUIForm(uiForm.SerialId)))
+                (FairyUIManager.Instance.Manager.HasUIForm(uiForm.SerialId) || FairyUIManager.Instance.Manager.IsLoadingUIForm(uiForm.SerialId)))
             {
-                FairyUIManager.Instance.CloseUIForm(uiForm.SerialId);
+                FairyUIManager.Instance.Manager.CloseUIForm(uiForm.SerialId);
             }
         }
 
         public static void Refocus(FairyItemDetailOpenData openData)
         {
             FairyUIForm uiForm = openData?.UIForm;
-            if (uiForm != null && FairyUIManager.Instance.HasUIForm(uiForm.SerialId))
+            if (uiForm != null && FairyUIManager.Instance.Manager.HasUIForm(uiForm.SerialId))
             {
-                FairyUIManager.Instance.RefocusUIForm(uiForm, openData);
+                FairyUIManager.Instance.Manager.RefocusUIForm(uiForm, openData);
             }
         }
 
@@ -117,9 +117,9 @@ namespace Game.Hot
             List<FairyUIForm> forms = new List<FairyUIForm>(s_DetailForms.Values);
             foreach (FairyUIForm uiForm in forms)
             {
-                if (uiForm != null && FairyUIManager.Instance.HasUIForm(uiForm.SerialId))
+                if (uiForm != null && FairyUIManager.Instance.Manager.HasUIForm(uiForm.SerialId))
                 {
-                    FairyUIManager.Instance.CloseUIForm(uiForm.SerialId);
+                    FairyUIManager.Instance.Manager.CloseUIForm(uiForm.SerialId);
                 }
             }
 

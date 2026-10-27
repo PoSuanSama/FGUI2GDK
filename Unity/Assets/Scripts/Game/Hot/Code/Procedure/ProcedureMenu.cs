@@ -42,9 +42,9 @@ namespace Game.Hot
 
             if (!isShutdown && m_FairyDemoUIForm != null)
             {
-                if (FairyUIManager.Instance.HasUIForm(m_FairyDemoUIForm.SerialId))
+                if (FairyUIManager.Instance.Manager.HasUIForm(m_FairyDemoUIForm.SerialId))
                 {
-                    FairyUIManager.Instance.CloseUIForm(m_FairyDemoUIForm.SerialId);
+                    FairyUIManager.Instance.Manager.CloseUIForm(m_FairyDemoUIForm.SerialId);
                 }
 
                 m_FairyDemoUIForm = null;
