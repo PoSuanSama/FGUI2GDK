@@ -56,8 +56,15 @@ namespace Game.Editor
                 {
                     if (SwitchActiveBuildTarget(m_Platform))
                     {
-                        BuildHelper.BuildResource(m_Platform);
-                        Debug.Log($"Build {m_Platform} Resource Success!");
+                        // GUI 里不抛异常，失败只记错误，避免中断 OnGUI。
+                        if (BuildHelper.BuildResource(m_Platform))
+                        {
+                            Debug.Log($"Build {m_Platform} Resource Success!");
+                        }
+                        else
+                        {
+                            Debug.LogError($"Build {m_Platform} Resource Failed!");
+                        }
                     }
                 }
                 

@@ -67,7 +67,10 @@ namespace Game.Editor
                 Directory.CreateDirectory(fold);
             }
             
-            BuildResource(platform);
+            if (!BuildResource(platform))
+            {
+                throw new GameFrameworkException($"build resource fail : {platform}");
+            }
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
             
@@ -100,15 +103,16 @@ namespace Game.Editor
             return buildReport;
         }
 
-        public static void BuildResource(Platform platform)
+        public static bool BuildResource(Platform platform)
         {
             Debug.Log("start refresh resource collection");
             ResourceRuleEditorUtility.RefreshResourceCollectionWithOptimize();
             Debug.Log("finish refresh resource collection");
             
             Debug.Log("start build resource");
-            ResourceBuildHelper.StartBuild(platform);
-            Debug.Log("finish build resource");
+            bool success = ResourceBuildHelper.StartBuild(platform);
+            Debug.Log(success ? "finish build resource" : "build resource failed");
+            return success;
         }
 
         public static void RefreshWindowsPkgResource()
@@ -119,8 +123,11 @@ namespace Game.Editor
                 throw new GameFrameworkException($"RefreshExePkgResource fail! {targetPath} not exist!");
             }
             
-            BuildResource(Platform.Windows);
-            
+            if (!BuildResource(Platform.Windows))
+            {
+                throw new GameFrameworkException($"build resource fail : {Platform.Windows}");
+            }
+
             FileTool.CleanDirectory(targetPath);
             string bundleFold = Path.Combine(ResourceBuildHelper.GetNewestBundlePath(), Platform.Windows.ToString());
             bundleFold = Utility.Path.GetRegularPath(bundleFold);
@@ -136,8 +143,11 @@ namespace Game.Editor
                 throw new GameFrameworkException($"RefreshExePkgResource fail! {targetPath} not exist!");
             }
             
-            BuildResource(Platform.Windows64);
-            
+            if (!BuildResource(Platform.Windows64))
+            {
+                throw new GameFrameworkException($"build resource fail : {Platform.Windows64}");
+            }
+
             FileTool.CleanDirectory(targetPath);
             string bundleFold = Path.Combine(ResourceBuildHelper.GetNewestBundlePath(), Platform.Windows64.ToString());
             bundleFold = Utility.Path.GetRegularPath(bundleFold);

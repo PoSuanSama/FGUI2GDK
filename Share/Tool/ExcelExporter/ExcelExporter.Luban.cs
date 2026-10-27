@@ -217,6 +217,13 @@ namespace ET
                         }
                     }).Wait();
 
+                // 任一导出任务失败即中止：不再复制输出、不再生成 ID，
+                // 否则产物会变成"看起来成功、实际新旧混合"。
+                if (!isSuccess)
+                {
+                    throw new Exception($"Luban excel {actionStr} fail, see log above.");
+                }
+
                 if (!isCheck)
                 {
                     foreach (var cmdInfo in cmdInfos)
@@ -248,14 +255,7 @@ namespace ET
                     GenerateUGFSceneId.GenerateCode();
                 }
 
-                if (isSuccess)
-                {
-                    Log.Info($"Luban excel {actionStr} success!");
-                }
-                else
-                {
-                    Log.Warning($"Luban excel {actionStr} fail!");
-                }
+                Log.Info($"Luban excel {actionStr} success!");
             }
 
             private static async Task<bool> RunCommand(string cmd, string workDir, string logHeader, bool showInfo)
@@ -315,6 +315,18 @@ namespace ET
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
                     await process.WaitForExitAsync();
+
+                    // WaitForExitAsync 不等待异步读取线程排空，这里补一次同步等待，
+                    // 否则稍后到达的 |ERROR| 会被漏掉，失败被误判成成功。
+                    process.WaitForExit();
+
+                    // ExitCode 必须在 finally 的 Close 之前读取，Close 后访问会抛
+                    // InvalidOperationException。退出码非 0 与文本匹配一起作为失败信号。
+                    if (process.ExitCode != 0)
+                    {
+                        isSuccess = false;
+                        Log.Warning($"{logHeader} : luban exit code {process.ExitCode}");
+                    }
                 }
                 catch (Exception e)
                 {

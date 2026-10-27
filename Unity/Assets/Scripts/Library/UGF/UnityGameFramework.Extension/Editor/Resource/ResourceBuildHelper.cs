@@ -21,7 +21,9 @@ namespace UnityGameFramework.Extension.Editor
         /// build resource
         /// </summary>
         /// <param name="specificPlatform">为Undefined使用设置的平台</param>
-        public static void StartBuild(Platform specificPlatform)
+        // GDK vendor 补丁: 原实现返回 void，构建失败的信号在调用链上被丢弃，
+        // 上层 BuildHelper 无法中止后续的 Player 构建。改为返回 bool。
+        public static bool StartBuild(Platform specificPlatform)
         {
             //获取启动场景的资源加载类型来打包
             ResourceMode resourceMode = EntryUtility.GetEntryResourceMode();
@@ -83,7 +85,8 @@ namespace UnityGameFramework.Extension.Editor
             }
             else
             {
-                Debug.LogWarning("Load configuration failure.");
+                Debug.LogError("Load configuration failure.");
+                return false;
             }
 
             GetBuildMessage(out string buildMessage, out MessageType buildMessageType);
@@ -92,15 +95,14 @@ namespace UnityGameFramework.Extension.Editor
                 case MessageType.None:
                 case MessageType.Info:
                     Debug.Log(buildMessage);
-                    BuildResources();
-                    break;
+                    return BuildResources();
                 case MessageType.Warning:
                     Debug.LogWarning(buildMessage);
-                    BuildResources();
-                    break;
+                    return BuildResources();
                 case MessageType.Error:
+                default:
                     Debug.LogError(buildMessage);
-                    break;
+                    return false;
             }
         }
 
@@ -193,17 +195,17 @@ namespace UnityGameFramework.Extension.Editor
             message = "Ready to build.";
         }
 
-        private static void BuildResources()
+        private static bool BuildResources()
         {
             if (m_Controller.BuildResources())
             {
                 Debug.Log("Build resources success.");
                 SaveConfiguration();
+                return true;
             }
-            else
-            {
-                Debug.LogError($"Build resources failure. <a href=\"file:///{Utility.Path.GetRegularPath(Path.Combine(m_Controller.BuildReportPath, "BuildLog.txt"))}\" line=\"0\">[ Open BuildLog.txt ]</a>");
-            }
+
+            Debug.LogError($"Build resources failure. <a href=\"file:///{Utility.Path.GetRegularPath(Path.Combine(m_Controller.BuildReportPath, "BuildLog.txt"))}\" line=\"0\">[ Open BuildLog.txt ]</a>");
+            return false;
         }
 
         private static void SaveConfiguration()
