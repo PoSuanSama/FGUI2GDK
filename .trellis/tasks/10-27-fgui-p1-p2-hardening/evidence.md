@@ -65,3 +65,32 @@
 - 测试间存在既有状态污染：`ValidateFairyPackagePinLifecycle` 紧跟生命周期测试会因 `GameEntry.Resource` 被清空而失败，干净会话通过。属既有隔离问题，非本轮引入。
 - ET 场景启动约 50 秒；`isPlayingOrWillChangePlaymode` 在该仓库 Bridge 上可能长期为 true，属状态缓存，不影响测试执行。
 - 未验证：真机、IL2CPP、性能基线。P1 的「预热后首次打开耗时 ≤ 50%」需在真机或带资源计时的场景下补测。
+
+## 2026-10-27 四项真缺陷修复
+
+外部静态审查列了 14 项，按「触发条件是否成立 / 最坏结果 / 有无运行时证据」三道闸筛完，只有 4 项进入修复队列。
+
+| 缺陷 | 修复 | 提交 |
+| --- | --- | --- |
+| `FiberManager` Init 失败不完成 tcs | `TrySetException` + 回滚残留 fiber；`Remove` 补 null 检查与异常完成 | `4bcd965f` |
+| `ResourceContainer` 清空后代际不失效 | `m_Version` 改 long 并在三处递增；`Clear` 补 CTS Cancel；四处回调补代际检查 | `10cd3c05` |
+| 资源构建失败不中止 | `StartBuild`/`BuildResources`/`BuildResource` 改 bool，三处调用点失败即抛 | `04d02e60` |
+| Luban 导出失败不中止 | 补读 `ExitCode` + 同步 `WaitForExit` 排空；复制与 ID 生成移到失败判断之后 | `04d02e60` |
+
+比原审查多发现两处：`FiberManager.Remove` 在 fiber 不存在时 NRE 且 tcs 永不完成；`Clear` 里 CTS 既不 Cancel 也不 Dispose 导致在途加载永不结束。
+
+### 验证
+
+- Unity 编译 0 error / 0 warning；`Share.Tool` 独立编译 0 error / 0 warning
+- `RunFairyFiberLifecycleSmokeTest`、`RunFairyInventorySmokeTest`（ET 场景）通过
+- `ValidateFairyUIFormLifecycleCycles`、`ValidateFairyUIBindingTypeMismatchCleanup`、`ValidateFairyUIOpenFailureCleanup`（GameHot 场景，后者干净会话单跑）通过
+- 运行期 `type=error` 日志 0 条
+
+### 未做
+
+- 手工失败注入未执行：`Create` 传无效 `SceneType` 验证 1 帧内抛错、Luban 改非法表验证非 0 退出。这两项需要构造脏数据，且会污染工作区，留作独立验证任务。
+- `IScheduler` 无 `Remove` 接口，失败 fiber 在 scheduler 里的 id 无法回收，属上游设计，进 deferred。
+
+### 审查封板
+
+本轮修复后不再发起新的静态审查。重新审查的触发条件只有三个：运行时证据（崩溃/卡顿/用户反馈）、大版本迭代前、上游 merge 涉及本目录代码。收敛判据为「P0 清零 + 关键路径有回归 + P1 有明确排期决定 + P2/P3 有书面记录」，不是「零问题」。
