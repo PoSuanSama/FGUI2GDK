@@ -270,6 +270,83 @@ namespace Game.Editor
             }
         }
 
+        [AgentCallable("Validate FairyGUI package pin/warm lifecycle.", 180)]
+        public static async UniTask ValidateFairyPackagePinLifecycle()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException("FairyGUI pin validation requires PlayMode.");
+            }
+
+            FairyUIManager uiManager = FairyUIManager.Instance;
+            uiManager.Initialize();
+            for (int frame = 0;
+                 frame < 120 &&
+                 (FairyUIPresenterRegistry.PreparePackage == null || !uiManager.HasUIGroup("Default"));
+                 frame++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            const string PackageName = "Package1";
+            IReadOnlyList<FairyPackageDiagnostic> baseline = FairyPackageManager.GetDiagnostics();
+
+            await uiManager.WarmPackageAsync(PackageName);
+            if (!uiManager.IsPackageWarm(PackageName))
+            {
+                throw new InvalidOperationException("Warm package was not marked as pinned.");
+            }
+
+            // 重复 warm 必须幂等，且不重复计租约。
+            await uiManager.WarmPackageAsync(PackageName);
+
+            FairyUIForm form = await OpenFairyUIProbeForm(FairyItemDetailUIId);
+            uiManager.CloseUIForm(form.SerialId);
+            for (int frame = 0;
+                 frame < 300 &&
+                 uiManager.GetAllLoadedUIForms().Length != 0;
+                 frame++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            if (UIPackage.GetByName(PackageName) == null)
+            {
+                throw new InvalidOperationException(
+                    "Pinned package was unloaded after every form closed.");
+            }
+
+            if (!uiManager.ReleaseWarmPackage(PackageName))
+            {
+                throw new InvalidOperationException("ReleaseWarmPackage reported no pinned package.");
+            }
+
+            if (uiManager.IsPackageWarm(PackageName))
+            {
+                throw new InvalidOperationException("Package remained pinned after release.");
+            }
+
+            if (uiManager.ReleaseWarmPackage(PackageName))
+            {
+                throw new InvalidOperationException("Second ReleaseWarmPackage should report false.");
+            }
+
+            for (int frame = 0;
+                 frame < 300 &&
+                 FairyPackageManager.GetDiagnostics().Count != baseline.Count;
+                 frame++)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            int restored = FairyPackageManager.GetDiagnostics().Count;
+            if (restored != baseline.Count)
+            {
+                throw new InvalidOperationException(
+                    $"FairyGUI package diagnostics did not return to baseline: expected {baseline.Count}, got {restored}.");
+            }
+        }
+
         [AgentCallable("Validate FairyGUI package manifest topology, cancellation, coalescing, and reverse release.", 60)]
         public static async UniTask ValidateFairyPackageManagerLifecycle()
         {
